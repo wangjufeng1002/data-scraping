@@ -5,7 +5,7 @@ import json, re, demjson
 import time, random
 from requests_html import HTMLSession, AsyncHTMLSession
 import dataReptiledb
-from entity import ItemUrl,Logger
+from entity import ItemUrl, Logger
 import threading, time
 import logging
 import constants
@@ -108,6 +108,7 @@ def process_page_list(url, page,category):
             url_format = url.format(pageNo=tempPage)
             listResult = session.get(url=url_format, headers=headers[headerIndex],
                                      proxies={'http': random.choice(ip_list)})
+            listResult.encoding = "utf-8"
             detailUrl = eval(listResult.text)
             detailUrl = list(set(detailUrl))
             #干扰函数
