@@ -8,9 +8,9 @@ import dataReptiledb
 from entity import ItemUrl,Logger
 import threading, time
 import logging
-
+import constants
 # 综合排序
-wenxuan_url = "https://winshare.tmall.com/i/asynSearch.htm?_ksTS=1621580321867_126&callback=jsonp&mid=w-23389038992-0&wid=23389038992&path=/search.htm&search=y&spm=a1z10.3-b-s.w4011-23389038992.447.274e7652DYiZdX&orderType=defaultSort&pageNo={pageNo}&tsearch=y"
+wenxuan_url = "https://winshare.tmall.com/i/asynSearch.htm?_ksTS=1622799637450_126&callback=jsonp127&mid=w-23389038992-0&wid=23389038992&path=/category-491550351.htm&spm=a1z10.3-b-s.w4011-23389038992.126.48c57652OYn3TO&catId=491550351&pageNo={pageNo}&tsearch=y&scid=491550351"
 # 销量排序
 wenxuan_sale_url = "https://winshare.tmall.com/i/asynSearch.htm?_ksTS=1622014477031_126&callback=jsonp&mid=w-23389038992-0&wid=23389038992&path=/search.htm&search=y&spm=a1z10.3-b-s.w4011-23389038992.272.73b67652D3iZj3&pageNo={pageNo}&tsearch=y"
 # 新品排序
@@ -85,14 +85,14 @@ def disturbUrl(header,ip):
 
 
 
-def process_page_list(url, page):
+def process_page_list(url, page,category):
     headers = dataReptiledb.getHeaders()
-    headerIndex = 0
+    headerIndex = 7
     ip_list = dataReptiledb.getIpList()
     # 暂时弃用
     getPageNum = page
     # 获取要处理的页数
-    page_pool = dataReptiledb.getPageRecords(shopId=1, isSuccess=0)
+    page_pool = dataReptiledb.getPageRecords(shopId=1, isSuccess=0,category=category)
     if page_pool is None or len(page_pool) <= 0:
         return
     successPagePool = set()
@@ -120,11 +120,11 @@ def process_page_list(url, page):
             # 干扰函数
             disturbUrl(headers[headerIndex], random.choice(ip_list))
             # 更新库 ，，查询新的
-            dataReptiledb.updatePageRecordsBatch(successPagePool, 1, 1)
+            dataReptiledb.updatePageRecordsBatch(successPagePool, 1, 1,category)
             # 清空成功 页数池
             successPagePool.clear()
             # 重新查询
-            page_pool = dataReptiledb.getPageRecords(1, 0)
+            page_pool = dataReptiledb.getPageRecords(1, 0,category)
             # record_file.write(getPageNum)
             logUtils.logger.error(" %s 线程 抓取第 %d页 发生了一些异常 ： %s " % (threading.current_thread().getName(), tempPage, e))
             if headerIndex == len(headers) - 1:
@@ -142,18 +142,18 @@ def process_page_list(url, page):
             successPagePool.add(tempPage)
             if len(successPagePool) >= 5:
                 # 更新库 ，，查询新的
-                dataReptiledb.updatePageRecordsBatch(successPagePool, 1, 1)
+                dataReptiledb.updatePageRecordsBatch(successPagePool, 1, 1,category)
                 # 清空成功 页数池
                 successPagePool.clear()
                 # 重新查询
-                page_pool = dataReptiledb.getPageRecords(1, 0)
+                page_pool = dataReptiledb.getPageRecords(1, 0,category)
             time.sleep(random.randint(10, 20))
             # time.sleep(random.randint(10, 20))
             getPageNum += 1
 
 
 if __name__ == '__main__':
-    threading.Thread(target=process_page_list, args=(wenxuan_url, 1,), name="默认排序url").start()
+    thread= threading.Thread(target=process_page_list, args=(constants.w_xs, 1,'xs'), name="默认排序url").start()
     # time.sleep(5)
     # threading.Thread(target=process_page_list, args=(wenxuan_sale_url, 1,), name="销量排序url").start()
     # time.sleep(5)

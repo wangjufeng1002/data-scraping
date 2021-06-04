@@ -11,7 +11,7 @@ def dict2obj(obj, dict):
 
 
 def getHeaders():
-    conn = pymysql.connect(host="127.0.0.1", port=3306, user="root", password="123456", database="data-reptile",
+    conn = pymysql.connect(host="192.168.47.210", port=3306, user="root", password="123456", database="data-reptile",
                            charset="utf8")
     headers = []
     cursor = conn.cursor()
@@ -35,7 +35,7 @@ def getHeaders():
 
 
 def insertDetailPrice(book):
-    conn = pymysql.connect(host="127.0.0.1", port=3306, user="root", password="123456", database="data-reptile",
+    conn = pymysql.connect(host="192.168.47.210", port=3306, user="root", password="123456", database="data-reptile",
                            charset="utf8")
     cursor = conn.cursor()
     sql = "INSERT INTO `data-reptile`.`book`" \
@@ -75,7 +75,7 @@ def insertDetailPrice(book):
 
 
 def insertIp(ip):
-    conn = pymysql.connect(host="127.0.0.1", port=3306, user="root", password="123456", database="data-reptile",
+    conn = pymysql.connect(host="192.168.47.210", port=3306, user="root", password="123456", database="data-reptile",
                            charset="utf8")
     cursor = conn.cursor()
     sql = "INSERT INTO `data-reptile`.`ip_pool` (`ip`) VALUES ('%s') ON DUPLICATE KEY UPDATE ip = '%s'" % (ip, ip)
@@ -90,7 +90,7 @@ def insertIp(ip):
 
 
 def insertIps(ips):
-    conn = pymysql.connect(host="127.0.0.1", port=3306, user="root", password="123456", database="data-reptile",
+    conn = pymysql.connect(host="192.168.47.210", port=3306, user="root", password="123456", database="data-reptile",
                            charset="utf8")
     sql = "INSERT INTO `data-reptile`.`ip_pool` (`ip`) VALUES ('%s') ON DUPLICATE KEY UPDATE ip = ip"
     cursor = conn.cursor()
@@ -106,7 +106,7 @@ def insertIps(ips):
 
 
 def getIpList():
-    conn = pymysql.connect(host="127.0.0.1", port=3306, user="root", password="123456", database="data-reptile",
+    conn = pymysql.connect(host="192.168.47.210", port=3306, user="root", password="123456", database="data-reptile",
                            charset="utf8")
     cursor = conn.cursor()
     sql = "select ip from `ip_pool`"
@@ -127,7 +127,7 @@ def getIpList():
 
 
 def insertItemUrl(itemUrls):
-    conn = pymysql.connect(host="127.0.0.1", port=3306, user="root", password="123456", database="data-reptile",
+    conn = pymysql.connect(host="192.168.47.210", port=3306, user="root", password="123456", database="data-reptile",
                            charset="utf8")
     cursor = conn.cursor()
     sql = "INSERT INTO `data-reptile`.`item_url` ( `item_id`, `item_url`, `shop_name`) VALUES ( '%s', '%s', '%s')" \
@@ -147,7 +147,7 @@ def insertItemUrl(itemUrls):
 
 
 def getItemUrl(page, page_size):
-    conn = pymysql.connect(host="127.0.0.1", port=3306, user="root", password="123456", database="data-reptile",
+    conn = pymysql.connect(host="192.168.47.210", port=3306, user="root", password="123456", database="data-reptile",
                            charset="utf8")
     cursor = conn.cursor()
     if page is None or page <= 0:
@@ -179,7 +179,7 @@ def getItemUrl(page, page_size):
 
 
 def updateSuccessFlag(flag, itemId):
-    conn = pymysql.connect(host="127.0.0.1", port=3306, user="root", password="123456", database="data-reptile",
+    conn = pymysql.connect(host="192.168.47.210", port=3306, user="root", password="123456", database="data-reptile",
                            charset="utf8")
     cursor = conn.cursor()
     sql = "update  `item_url` set is_success = '%d' where item_id = '%s' " % (flag, itemId)
@@ -198,7 +198,7 @@ def updateSuccessFlag(flag, itemId):
 
 
 def getPageIndex(page, shopId, isSuccess):
-    conn = pymysql.connect(host="127.0.0.1", port=3306, user="root", password="123456", database="data-reptile",
+    conn = pymysql.connect(host="192.168.47.210", port=3306, user="root", password="123456", database="data-reptile",
                            charset="utf8")
     cursor = conn.cursor()
     sql = "select page_index  from `page_record` where  page_index = %d and shop_id = %d and is_success = %d"
@@ -213,12 +213,12 @@ def getPageIndex(page, shopId, isSuccess):
     return pageIndex
 
 
-def getPageRecords(shopId, isSuccess):
-    conn = pymysql.connect(host="127.0.0.1", port=3306, user="root", password="123456", database="data-reptile",
+def getPageRecords(shopId, isSuccess,category):
+    conn = pymysql.connect(host="192.168.47.210", port=3306, user="root", password="123456", database="data-reptile",
                            charset="utf8")
     cursor = conn.cursor()
-    sql = "select page_index  from `page_record` where  shop_id = %d and is_success = %d"
-    cursor.execute(sql % (shopId, isSuccess))
+    sql = "select page_index  from `page_record` where  shop_id = %d and is_success = %d and category ='%s'"
+    cursor.execute(sql % (shopId, isSuccess,category))
     fetchall = cursor.fetchall()
     pageIndex = []
     for page in list(fetchall):
@@ -229,43 +229,45 @@ def getPageRecords(shopId, isSuccess):
     return pageIndex
 
 
-def updatePageRecords(page, shopId, isSuccess):
-    conn = pymysql.connect(host="127.0.0.1", port=3306, user="root", password="123456", database="data-reptile",
+def updatePageRecords(page, shopId, isSuccess,category):
+    conn = pymysql.connect(host="192.168.47.210", port=3306, user="root", password="123456", database="data-reptile",
                            charset="utf8")
     cursor = conn.cursor()
-    sql = "update `page_record` set is_success = %d  where page_index = %d and shop_id = %d"
-    cursor.execute(sql % (isSuccess, page, shopId))
+    sql = "update `page_record` set is_success = %d  where page_index = %d and shop_id = %d and category='%s'"
+    cursor.execute(sql % (isSuccess, page, shopId,category))
     conn.commit()
     cursor.close()
 
 
-def updatePageRecordsBatch(page, shopId, isSuccess):
-    conn = pymysql.connect(host="127.0.0.1", port=3306, user="root", password="123456", database="data-reptile",
+def updatePageRecordsBatch(page, shopId, isSuccess,category):
+    conn = pymysql.connect(host="192.168.47.210", port=3306, user="root", password="123456", database="data-reptile",
                            charset="utf8")
     cursor = conn.cursor()
-    sql = "update `page_record` set is_success = %d  where page_index = %d and shop_id = %d"
+    sql = "update `page_record` set is_success = %d  where page_index = %d and shop_id = %d and category='%s'"
 
     for tempPage in page:
-        cursor.execute(sql % (isSuccess, tempPage, shopId))
+        cursor.execute(sql % (isSuccess, tempPage, shopId,category))
 
     conn.commit()
     cursor.close()
 
 
-def insertPageIndex(page, shopId, isSuccess):
-    conn = pymysql.connect(host="127.0.0.1", port=3306, user="root", password="123456", database="data-reptile",
+def insertPageIndex(page, shopId, isSuccess,category):
+    conn = pymysql.connect(host="192.168.47.210", port=3306, user="root", password="123456", database="data-reptile",
                            charset="utf8")
-    sql = "insert into `page_record`(page_index,shop_id,is_success) values(%d,%d,%d)"
+    sql = "insert into `page_record`(page_index,shop_id,is_success,category) values(%d,%d,%d,'%s')"
     cursor = conn.cursor()
-    cursor.execute(sql % (page, shopId, isSuccess))
+    cursor.execute(sql % (page, shopId, isSuccess,category))
     conn.commit()
     cursor.close()
 
 
-s = [10000,10000000,10000]
-updatePageRecordsBatch(s,1,0)
-#
-# for i in range(1, 1001):
-#     insertPageIndex(i, 1, 0)
-# print(getItemUrl(page=100, page_size=1000))
-# print(getIpList())
+# s = [10000,10000000,10000]
+# updatePageRecordsBatch(s,1,0)
+# #
+# if __name__ == '__main__':
+#     for i in range(1, 1001):
+#         insertPageIndex(i, 1, 0, 'xs')
+#     print(getItemUrl(page=100, page_size=1000))
+#     print(getIpList())
+
