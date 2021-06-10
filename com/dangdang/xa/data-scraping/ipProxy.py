@@ -27,7 +27,7 @@ def checkip(ip_list):
 
 def getIp():
     ips = []
-    for i in range(1, 500):
+    for i in range(1, 100):
         print("开始爬取第{page} 页".format(page=i))
         time.sleep(2)
         session = HTMLSession()
@@ -71,7 +71,7 @@ def getIp_2():
     ips = []
     for areaIndex in range(1, 34):
         j = 0
-        while j < 500:
+        while j < 100:
             print("开始爬取第{page} 页".format(page=i))
             contents = []
             try:

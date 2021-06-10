@@ -10,7 +10,7 @@ class Book:
                  activeDesc,
                  activeStartTime,
                  activeEndTime,
-                 shopName):
+                 shopName,category):
         self.tmId = tmId
         self.name = name
         self.isbn = isbn
@@ -24,6 +24,7 @@ class Book:
         self.activeStartTime = activeStartTime
         self.activeEndTime = activeEndTime
         self.shopName = shopName
+        self.category = category
 
     def setFixPrice(self, fixPrice):
         self.fixPrice = fixPrice
@@ -129,6 +130,14 @@ class Book:
         timearr = time.localtime(activeEndTime)
         return time.strftime("%Y-%m-%d %H:%M:%S", timearr)
 
+    def getCategory(self):
+        if self.category is None:
+            return ""
+        return self.category
+
+    def setCategory(self, category):
+        self.category = category
+
     def toString(self):
         result = []
         result.append("[天猫ID:" + self.getTmId() + "]")
@@ -144,10 +153,11 @@ class Book:
 
 
 class ItemUrl:
-    def __init__(self, itemId, itemUrl, shopName):
+    def __init__(self, itemId, itemUrl, shopName,category):
         self.itemId = itemId
         self.itemUrl = itemUrl
         self.shopName = shopName
+        self.category=category
 
     def __setattr__(self, name: str, value: Any) -> None:
         super().__setattr__(name, value)

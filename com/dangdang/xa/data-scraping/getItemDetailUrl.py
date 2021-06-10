@@ -9,6 +9,7 @@ from entity import ItemUrl, Logger
 import threading, time
 import logging
 import constants
+
 # 综合排序
 wenxuan_url = "https://winshare.tmall.com/i/asynSearch.htm?_ksTS=1622799637450_126&callback=jsonp127&mid=w-23389038992-0&wid=23389038992&path=/category-491550351.htm&spm=a1z10.3-b-s.w4011-23389038992.126.48c57652OYn3TO&catId=491550351&pageNo={pageNo}&tsearch=y&scid=491550351"
 # 销量排序
@@ -32,15 +33,21 @@ url = [
     "https://item.taobao.com/item.htm?spm=a230r.1.14.103.3afd7408nYsLtv&id=541989840451&ns=1&abbucket=17#detail",
     "https://s.taobao.com/search?q=%E7%83%A4%E7%AE%B1&imgfile=&commend=all&ssid=s5-e&search_type=item&sourceId=tb.index&spm=a21bo.21814703.201856-taobao-item.1&ie=utf8&initiative_id=tbindexz_20170306",
     "https://detail.tmall.com/item.htm?spm=a1z10.1-b-s.w15914280-18716446969.2.3ec85f3bDI42Bi&id=639769508905&scene=taobao_shop&sku_properties=10004:7195672376",
+    "https://item.taobao.com/item.htm?spm=a211oj.20087502.2458555970.ditem1.161f2a7bvMjm5c&id=639750024278&utparam=null",
+    "https://detail.tmall.com/item.htm?id=644956601075&ali_refid=a3_430583_1006:1123397704:N:y3PNKr3XJ12utMymM/mooQ==:8be43003608f1b0d5114253118183bcf&ali_trackid=1_8be43003608f1b0d5114253118183bcf&spm=a230r.1.14.1&sku_properties=10004:7195672376;5919063:6536025",
+    "https://detail.tmall.com/item.htm?spm=a230r.1.14.8.5eee6fbeW1QJix&id=617932940345&cm_id=140105335569ed55e27b&abbucket=18&sku_properties=5919063:6536025",
+    "https://chaoshi.detail.tmall.com/item.htm?spm=a230r.1.14.46.5eee6fbeW1QJix&id=632506861144&ns=1&abbucket=18&sku_properties=5919063:6536025;122216431:27772",
+    "https://detail.tmall.com/item.htm?spm=a230r.1.14.77.5eee6fbeW1QJix&id=632454557541&ns=1&abbucket=18&sku_properties=5919063:6536025",
+    "https://s.taobao.com/search?spm=a21bo.21814703.201867-main.17.5af911d9hgOf6o&q=%E5%8A%9E%E5%85%AC",
+    "https://detail.tmall.com/item.htm?spm=a230r.1.14.20.768e1aefoyLEp6&id=571102285943&ns=1&abbucket=18",
+    "https://detail.tmall.com/item.htm?spm=a230r.1.14.46.768e1aefoyLEp6&id=629901738583&ns=1&abbucket=18",
+    "https://s.taobao.com/search?spm=a21bo.21814703.201867-main.10.5af911d9hgOf6o&q=%E7%94%B7%E8%A3%85",
+    "https://detail.tmall.com/item.htm?spm=a230r.1.14.6.5343442buCOyAA&id=623503217270&cm_id=140105335569ed55e27b&abbucket=18"
 ]
-# LOG_FORMAT = "%(asctime)s - %(levelname)s - %(message)s"
-# DATE_FORMAT = "%m/%d/%Y %H:%M:%S %p"
-# logging.basicConfig(filename="./logs/wenxuan-url.log", level=logging.INFO, format=LOG_FORMAT, datefmt=DATE_FORMAT)
+
 logUtils = Logger(filename='./logs/wenxuan-url.log', level='info')
-
-file_object = open('D:\\爬虫\\TM\\item-detail-url.txt', "a", encoding='utf-8')
-record_file = open('D:\\爬虫\\TM\\item-list-record.txt', "a+", encoding='utf-8')
-
+#dataReptiledb.host="192.168.47.210"
+dataReptiledb.host="127.0.0.1"
 
 def jsonp(str):
     detailUrl = []
@@ -52,58 +59,46 @@ def jsonp(str):
     return detailUrl
 
 
-# 将item url 写入 文件
-def write(detailUrl, page):
-    file_object.write("==================={page}===========".format(page=page) + '\n')
-    file_object.flush()
-    for url in detailUrl:
-        if url is not None:
-            file_object.write("http:" + url + '\n')
-    file_object.flush()
-
-
-def write_db(detailUrl, page, shopName):
+def write_db(detailUrl, shopName, category):
     item_urls = []
     for url in detailUrl:
         if url is not None:
             item_id = re.match(".*?(id=.*&).*", url, re.S).group(1).split('&')[0].replace('id=', '')
             item_url = "http:" + url
-            itemUrl = ItemUrl(itemId=item_id, itemUrl=item_url, shopName=shopName)
+            itemUrl = ItemUrl(itemId=item_id, itemUrl=item_url, shopName=shopName, category=category)
             item_urls.append(itemUrl)
     dataReptiledb.insertItemUrl(item_urls)
 
 
 # 干扰函数
-def disturbUrl(header,ip):
-    time.sleep(random.randint(1,5))
+def disturbUrl(header, ip):
+    time.sleep(random.randint(1, 5))
     randint = random.randint(1, 10)
-    if randint % 2 == 0 :
+    if randint % 2 == 0:
         session = HTMLSession()
         session.get(url=random.choice(url), headers=header,
-                                 proxies={'http': ip})
-        logUtils.logger.info("执行一次 其他请求 ")
+                    proxies={'http': ip})
+        logUtils.logger.info("{thread} 执行一次 其他请求 ".format(thread=threading.current_thread().getName()))
 
 
-
-def process_page_list(url, page,category):
+def process_page_list(url, category):
     headers = dataReptiledb.getHeaders()
-    headerIndex = 7
+    headerIndex = 0
     ip_list = dataReptiledb.getIpList()
-    # 暂时弃用
-    getPageNum = page
     # 获取要处理的页数
-    page_pool = dataReptiledb.getPageRecords(shopId=1, isSuccess=0,category=category)
-    if page_pool is None or len(page_pool) <= 0:
-        return
+    page_pool = dataReptiledb.getPageRecords(shopId=1, isSuccess=0, category=category)
     successPagePool = set()
     while True:
+        if page_pool is None or len(page_pool) <= 0:
+            return
         tempPage = random.choice(page_pool)
         # 再成功的 页数记录中存在
         if tempPage is successPagePool:
             continue
         session = HTMLSession()
-        logUtils.logger.info("{thread}线程 开始抓取第 {page}页 {time} ".format(thread=threading.current_thread().getName(), page=tempPage,
-                                                          time=time.strftime("%Y-%m-%d %H:%M:%S", time.localtime())))
+        logUtils.logger.info(
+            "{thread}线程 开始抓取第 {page}页 {time} ".format(thread=threading.current_thread().getName(), page=tempPage,
+                                                      time=time.strftime("%Y-%m-%d %H:%M:%S", time.localtime())))
         try:
             url_format = url.format(pageNo=tempPage)
             listResult = session.get(url=url_format, headers=headers[headerIndex],
@@ -111,21 +106,24 @@ def process_page_list(url, page,category):
             listResult.encoding = "utf-8"
             detailUrl = eval(listResult.text)
             detailUrl = list(set(detailUrl))
-            #干扰函数
+            logUtils.logger.info(
+                "{thread}线程 抓取第 {page}页完成 {time},{size} ".format(thread=threading.current_thread().getName(), page=tempPage,
+                                                          time=time.strftime("%Y-%m-%d %H:%M:%S", time.localtime()),size=len(detailUrl)))
+            # 干扰函数
             try:
-                disturbUrl(headers[headerIndex],random.choice(ip_list))
+                disturbUrl(headers[headerIndex], random.choice(ip_list))
             except:
                 logUtils.logger.error("其他请求发生异常")
-                write_db(detailUrl=detailUrl, page=getPageNum, shopName="新华文轩网络书店")
+                write_db(detailUrl=detailUrl, shopName="新华文轩网络书店", category=category)
         except Exception as e:
             # 干扰函数
             disturbUrl(headers[headerIndex], random.choice(ip_list))
             # 更新库 ，，查询新的
-            dataReptiledb.updatePageRecordsBatch(successPagePool, 1, 1,category)
+            dataReptiledb.updatePageRecordsBatch(successPagePool, 1, 1, category)
             # 清空成功 页数池
             successPagePool.clear()
             # 重新查询
-            page_pool = dataReptiledb.getPageRecords(1, 0,category)
+            page_pool = dataReptiledb.getPageRecords(1, 0, category)
             # record_file.write(getPageNum)
             logUtils.logger.error(" %s 线程 抓取第 %d页 发生了一些异常 ： %s " % (threading.current_thread().getName(), tempPage, e))
             if headerIndex == len(headers) - 1:
@@ -136,28 +134,51 @@ def process_page_list(url, page,category):
                 ip_list = dataReptiledb.getIpList()
                 headerIndex += 1
             # 异常休眠 5秒
-            time.sleep(10)
+            time.sleep(20)
             continue
         else:
-            write_db(detailUrl=detailUrl, page=getPageNum, shopName="新华文轩网络书店")
+            write_db(detailUrl=detailUrl, shopName="新华文轩网络书店", category=category)
             successPagePool.add(tempPage)
-            if len(successPagePool) >= 5:
+            if len(page_pool) != 0:
+                # 移除这个
+                page_pool.remove(tempPage)
+            if len(successPagePool) >= 5 or len(page_pool) < 5:
                 # 更新库 ，，查询新的
-                dataReptiledb.updatePageRecordsBatch(successPagePool, 1, 1,category)
+                dataReptiledb.updatePageRecordsBatch(successPagePool, 1, 1, category)
                 # 清空成功 页数池
                 successPagePool.clear()
                 # 重新查询
-                page_pool = dataReptiledb.getPageRecords(1, 0,category)
+                page_pool = dataReptiledb.getPageRecords(1, 0, category)
             time.sleep(random.randint(10, 20))
-            # time.sleep(random.randint(10, 20))
-            getPageNum += 1
 
 
 if __name__ == '__main__':
-    thread= threading.Thread(target=process_page_list, args=(constants.w_xs, 1,'xs'), name="默认排序url").start()
-    # time.sleep(5)
-    # threading.Thread(target=process_page_list, args=(wenxuan_sale_url, 1,), name="销量排序url").start()
-    # time.sleep(5)
-    # threading.Thread(target=process_page_list, args=(wenxuan_new_url, 1,), name="新品排序url").start()
+    #thread_1 = threading.Thread(target=process_page_list, args=(constants.w_wx, 'wx'), name="文学").start()
+    #thread_2 = threading.Thread(target=process_page_list, args=(constants.w_jf, 'jf'), name="教辅").start()
+    #thread_3 = threading.Thread(target=process_page_list, args=(constants.w_ts, 'ts'), name="童书").start()
+    # thread_4 = threading.Thread(target=process_page_list, args=(constants.w_ts, 'cglz'), name="成功励志").start()
+    # thread_5 = threading.Thread(target=process_page_list, args=(constants.w_ts, 'kj'), name="科技").start()
+    # thread_6 = threading.Thread(target=process_page_list, args=(constants.w_ts, 'jjgl'), name="经济管理").start()
+    # thread_7 = threading.Thread(target=process_page_list, args=(constants.w_ts, 'yssy'), name="艺术与摄影").start()
+    # thread_9 = threading.Thread(target=process_page_list, args=(constants.w_ts, 'rwsk'), name="人文社科 ").start()
+    # thread_10 = threading.Thread(target=process_page_list, args=(constants.w_ts, 'sezj'), name="少儿早教 ").start()
 
-# file_object.close()
+    threading.Thread(target=process_page_list, args=(constants.文学, '文学'), name="文学").start()
+    threading.Thread(target=process_page_list, args=(constants.小说, '小说'), name="小说 ").start()
+    threading.Thread(target=process_page_list, args=(constants.动漫绘本, '动漫绘本'), name="动漫绘本 ").start()
+    threading.Thread(target=process_page_list, args=(constants.超低价区, '超低价区'), name="超低价区 ").start()
+    threading.Thread(target=process_page_list, args=(constants.少儿, '少儿'), name="少儿 ").start()
+    threading.Thread(target=process_page_list, args=(constants.英语与其他外语, '英语与其他外语'), name="英语与其他外语 ").start()
+
+
+    threading.Thread(target=process_page_list, args=(constants.辞典与工具书, '辞典与工具书'), name="辞典与工具书 ").start()
+    threading.Thread(target=process_page_list, args=(constants.医学, '医学'), name="医学 ").start()
+    threading.Thread(target=process_page_list, args=(constants.经济, '经济'), name="经济 ").start()
+    threading.Thread(target=process_page_list, args=(constants.管理, '管理'), name="管理 ").start()
+    threading.Thread(target=process_page_list, args=(constants.励志与成功, '励志与成功'), name="励志与成功 ").start()
+    threading.Thread(target=process_page_list, args=(constants.计算机与互联网, '计算机与互联网'), name="计算机与互联网 ").start()
+    threading.Thread(target=process_page_list, args=(constants.社会科学, '社会科学'), name="社会科学 ").start()
+    threading.Thread(target=process_page_list, args=(constants.科技, '科技'), name="科技 ").start()
+    threading.Thread(target=process_page_list, args=(constants.建筑, '建筑'), name="建筑 ").start()
+    threading.Thread(target=process_page_list, args=(constants.旅游, '旅游'), name="旅游 ").start()
+    threading.Thread(target=process_page_list, args=(constants.哲学, '哲学'), name="哲学 ").start()
