@@ -158,7 +158,7 @@ def getItemUrl(category,page, page_size):
     if page_size is None:
         page_size = 1000
     offset = (page - 1) * page_size
-    sql = "select item_id as itemId,item_url as itemUrl,shop_name as shopName from `item_url` where is_success != 1 and category='%s' order by update_time ASC limit %d,%d"
+    sql = "select item_id as itemId,item_url as itemUrl,shop_name as shopName ,category from `item_url` where is_success != 1 and category='%s' order by update_time ASC limit %d,%d"
     e_sql = sql % (category,offset, page_size)
     execute = cursor.execute(e_sql)
     if execute <= 0:
@@ -264,7 +264,20 @@ def insertPageIndex(page, shopId, isSuccess,category):
     conn.commit()
     cursor.close()
 
-
+def getNotDealCategory():
+    conn = pymysql.connect(host=host, port=3306, user="root", password="123456", database="data-reptile",
+                           charset="utf8")
+    sql = "select DISTINCT category  as category from item_url where is_success !=1 and  category is not NULL"
+    cursor = conn.cursor()
+    cursor.execute(sql)
+    fetchall = cursor.fetchall()
+    categorys = []
+    for category in list(fetchall):
+        try:
+            categorys.append(category[0])
+        except Exception as e:
+            print(e)
+    return categorys
 # s = [10000,10000000,10000]
 # updatePageRecordsBatch(s,1,0)
 # #

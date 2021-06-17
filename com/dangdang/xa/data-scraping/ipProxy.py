@@ -12,7 +12,7 @@ ip_url_3 = "https://ip.jiangxianli.com/?page={page}"
 
 check_url = "https://winshare.tmall.com/i/asynSearch.htm?_ksTS=1621580321867_126&callback=jsonp&mid=w-23389038992-0&wid=23389038992&path=/search.htm&search=y&spm=a1z10.3-b-s.w4011-23389038992.447.274e7652DYiZdX&orderType=defaultSort&pageNo={pageNo}&tsearch=y"
 
-
+dataReptiledb.host = "192.168.47.210"
 def checkip(ip_list):
     for ip in ip_list:
         try:
@@ -117,7 +117,7 @@ def wirteIpToText(availableIps):
         file_object.write(ip + '\n')
     file_object.flush()
 
-getIp()
+#getIp()
 getIp_2()
 
 # ips = getIp()

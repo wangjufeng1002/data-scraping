@@ -34,15 +34,6 @@ url = [
 
 dataReptiledb.host = "192.168.47.210"
 # 促销 url
-# promotionUrl = 'https://mdskip.taobao.com/core/initItemDetail.htm?isUseInventoryCenter=false&cartEnable=true&service3C=false' \
-#                '&isApparel=false&isSecKill=false&tmallBuySupport=true&isAreaSell=false&tryBeforeBuy=false&offlineShop=false' \
-#                '&itemId={itemId}&showShopProm=false&isPurchaseMallPage=false&itemGmtModified=1621464441000&isRegionLevel' \
-#                '=false&household=false&sellerPreview=false&queryMemberRight=true&addressLevel=2&isForbidBuyItem=false&casynSearchallback' \
-#                '=setMdskip&timestamp=1621491544699&isg=eBIE8Mulj-IREMTiBOfZhurza779OIRAguPzaNbMiOCPOefe' \
-#                '--xPW6s7QLTwCnGVh6YBJ3oiiBs_BeYBqgI-nxvOa6Fy_LDmn&isg2=BDo6VN' \
-#                '-xDhCfh4L9DsXP4jDGi2Bc677FZkeY70QzxU2DN9pxLXuv1QAGh8PrpzZd&ref=https%3A%2F%2Fdetail.tmall.com%2Fitem.htm%3Fspm' \
-#                '%3Da1z10.3-b-s.w4011-23389038992.173.483f765292VfDy%26id%3D555824274521%26rn' \
-#                '%3D596ce34d3b21d41a4baf27d1cfaf0828%26abbucket%3D16'
 promotionUrl = 'https://mdskip.taobao.com/core/initItemDetail.htm?isUseInventoryCenter=false&cartEnable=true&service3C=false&isApparel=false&isSecKill=false&tmallBuySupport=true&isAreaSell=false&tryBeforeBuy=false&offlineShop=false&itemId={itemId}&showShopProm=false&isPurchaseMallPage=false&itemGmtModified=1621928176000&isRegionLevel=false&household=false&sellerPreview=false&queryMemberRight=true&addressLevel=2&isForbidBuyItem=false&callback=setMdskip&timestamp=1622029723119&isg=eBIE8Mulj-IREQ65BOfChurza779JIRYjuPzaNbMiOCP_Hf671mVW6sFIY8BCnGVh6AwJ3oiiBs_BeYBq_C-nxvOa6Fy_3Hmn&isg2=BPz8DUnnsCHnEoT3_AthiILwzZqu9aAfdLEeZdZ9POfMoZwr_wX0r_dQgcnZ0th3'
 
 logUtils = Logger(filename='./logs/detail.log', level='info')
@@ -102,14 +93,13 @@ def processPriceData(itemUrlEntity, header, ipList):
 
     ip = random.choice(ipList)
     promotionJsonp = session.get(promotionUrl.format(itemId=itemId), headers=header,
-                                 proxies={'http://': random.choice(ipList)})
+                                 proxies={'http://': ip})
 
     promotionJSON = loads_jsonp(promotionJsonp.text)
     if promotionJSON.get("defaultModel") is None:
         logUtils.logger.info("{itemId} 获取不到促销信息啦，可能cookie失效".format(itemId=itemId))
         time.sleep(random.randint(2, 10))
-        raise Exception("发生异常")
-
+        return
 
     price = promotionJSON['defaultModel']['itemPriceResultDO']['priceInfo'].get('def', {}).get('price')
     # 设置默认价格
@@ -160,11 +150,10 @@ def processPriceData(itemUrlEntity, header, ipList):
     # 写入数据库
     dataReptiledb.insertDetailPrice(book)
     logUtils.logger.info("process book {id}".format(id=itemId))
-    #time.sleep(5)
     time.sleep(random.randint(2, 10))
 
 
-def getUrlDetailUrlFromDB(category):
+def getUrlDetailUrlFromDB(category, header):
     # headers 游标
     headersIndex = 0
     # 获取数据库中的 headers
@@ -187,7 +176,10 @@ def getUrlDetailUrlFromDB(category):
                 if url is None:
                     continue
                 try:
-                    processPriceData(url, headers[headersIndex], ipList=ipList)
+                    if header is not None:
+                        processPriceData(url, header, ipList=ipList)
+                    else:
+                        processPriceData(url, headers[headersIndex], ipList=ipList)
                     i += 1
                 except Exception as e:
                     errorCnt += 1
@@ -210,13 +202,15 @@ def getUrlDetailUrlFromDB(category):
 
 
 if __name__ == '__main__':
-    print("start")
-    #threading.Thread(target=getUrlDetailUrlFromDB, args=('xs',), name="xs").start()
-    threading.Thread(target=getUrlDetailUrlFromDB, args=('文学',), name="文学").start()
-    threading.Thread(target=getUrlDetailUrlFromDB, args=('童书',), name="童书").start()
-    threading.Thread(target=getUrlDetailUrlFromDB, args=('大中专教辅-理科',), name="大中专教辅-理科").start()
-    # threading.Thread(target=getUrlDetailUrlFromDB, args=('历史',), name="历史").start()
-    # threading.Thread(target=getUrlDetailUrlFromDB, args=('法律',), name="法律").start()
-    # threading.Thread(target=getUrlDetailUrlFromDB, args=('家庭教育',), name="家庭教育").start()
-    # threading.Thread(target=getUrlDetailUrlFromDB, args=('社会科学',), name="社会科学").start()
-    # threading.Thread(target=getUrlDetailUrlFromDB, args=('经济管理',), name="经济管理").start()
+    categorys = dataReptiledb.getNotDealCategory()
+    headers = dataReptiledb.getHeaders()
+    if categorys is None or len(categorys):
+        logUtils.logger.info("未找到需要处理的分类")
+    if headers is None or len(headers):
+        logUtils.logger.info("未找到headers")
+    index = 0
+    for header in headers:
+        if index < len(categorys):
+            threading.Thread(target=getUrlDetailUrlFromDB, args=(categorys[index], header), name=categorys[index]).start()
+        else:
+            logUtils.logger.info("线程启动结束")
