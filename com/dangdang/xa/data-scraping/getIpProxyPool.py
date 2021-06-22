@@ -117,6 +117,7 @@ def get_one_proxy_from_redis(build_key_prefix, available_proxy_num):
 def get_proxy_from_redis():
     # 从1~100中随机取出一个数，如果大于50，走青果代理，小于50走代理云代理，可以通过该值调整代理分配的权重
     random_num = random.randint(1, LOADBALANCE_THRESHOLD)
+    #random_num = 1000
     # 目前使用青果 & 代理云两种代理，比例分配为各50%
     if random_num > 50:
         one_proxy = get_one_proxy_from_redis(QINGGUO_PROXY_PREFIX, AVAILABLE_PROXY_NUM)
