@@ -104,9 +104,9 @@ def processPriceData(itemUrlEntity, ip):
     # processPromotion(book, header, ipList)
     # disturbUrl(header, ip)
     # 写入数据库
-    dataReptiledb.insertDetailPrice(book)
-    #file_object.write(book.toString()+"\n")
-    #file_object.flush()
+    #dataReptiledb.insertDetailPrice(book)
+    file_object.write(book.toString()+"\n")
+    file_object.flush()
     logUtils.logger.info("process book {id}".format(id=itemId))
     # time.sleep(5)
     # time.sleep(random.randint(2, 10))
