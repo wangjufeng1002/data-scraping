@@ -7,6 +7,7 @@ from entity import Book, ItemUrl, Logger
 import threading, time
 import getIpProxyPool
 import urllib.request as r
+import requests
 
 
 # 干扰 url ,
@@ -72,11 +73,10 @@ def loads_jsonp(_jsonp):
         raise ValueError('Invalid Input')
 
 
-def processPriceData(itemUrlEntity, ip):
+def processPriceData(itemUrlEntity,header, ip):
     session = HTMLSession()
     proxy ={'http:':"http://"+ip,'https:':"https://"+ip}
     detailResponse = session.get(url=itemUrlEntity.itemUrl, proxies=proxy)
-   #detailResponse = session.get(itemUrlEntity.itemUrl)
     detailHtmlSoup = BeautifulSoup(detailResponse.text, features='html.parser')
     itemId = re.match(".*?(id=.*&).*", itemUrlEntity.itemUrl, re.S).group(1).split('&')[0].replace('id=', '')
     defaultPrice = re.match(".*?(\"defaultItemPrice\":.*&).*", detailResponse.text, re.S).group(1).split(',')[
@@ -101,7 +101,7 @@ def processPriceData(itemUrlEntity, ip):
             book.setFixPrice(con.next.replace("定价: ", "").replace("价格: ", ""))
 
     # 获取促销信息
-    # processPromotion(book, header, ipList)
+    processPromotion(book, header, ip)
     # disturbUrl(header, ip)
     # 写入数据库
     #dataReptiledb.insertDetailPrice(book)
@@ -112,10 +112,11 @@ def processPriceData(itemUrlEntity, ip):
     # time.sleep(random.randint(2, 10))
 
 
-def processPromotion(book, header, ipList):
+def processPromotion(book, header, ip):
+    proxy = {'http:': "http://" + ip, 'https:': "https://" + ip}
     session = HTMLSession()
     promotionJsonp = session.get(promotionUrl.format(itemId=book.getTmId()), headers=header,
-                                 proxies={'http://': random.choice(ipList)})
+                                 proxies=proxy)
     promotionJSON = loads_jsonp(promotionJsonp.text)
     if promotionJSON.get("defaultModel") is None:
         logUtils.logger.info("{itemId} 获取不到促销信息啦，可能cookie失效".format(itemId=book.getTmId()))
@@ -190,10 +191,10 @@ def getUrlDetailUrlFromDB(category):
                 if url is None:
                     continue
                 try:
-                    processPriceData(url, ip=proxyIp)
+                    processPriceData(url,header=headers[headersIndex], ip=proxyIp)
                     i+=1
                 except Exception as e:
-                    print("异常 {itemId}".format(itemId=url.itemId))
+                    print("异常 {itemId},{ip} ".format(itemId=url.itemId,ip=proxyIp))
                     proxyIp = getIpProxyPool.get_proxy_from_redis()['proxy_detail']['ip']
                     errorCnt += 1
                     logUtils.logger.info(e)
@@ -207,12 +208,12 @@ def getUrlDetailUrlFromDB(category):
                         i += 1
                         dataReptiledb.updateSuccessFlag(-1, url.itemId)
 
-                    time.sleep(random.randint(1, 3))
+                    #time.sleep(random.randint(1, 3))
                     # raise e
 
                 else:
                     dataReptiledb.updateSuccessFlag(1, url.itemId)
-                    logUtils.logger.info("{itemId} item_url 更新完成 ".format(itemId=url.itemId))
+                    logUtils.logger.info("{itemId} item_url 更新完成 {ip} ".format(itemId=url.itemId,ip=proxyIp))
 
         page += 1
 
@@ -221,7 +222,7 @@ if __name__ == '__main__':
     print("start")
     # threading.Thread(target=getUrlDetailUrlFromDB, args=('xs',), name="xs").start()
     threading.Thread(target=getUrlDetailUrlFromDB, args=('文学',), name="文学").start()
-    # threading.Thread(target=getUrlDetailUrlFromDB, args=('童书',), name="童书").start()
+    threading.Thread(target=getUrlDetailUrlFromDB, args=('童书',), name="童书").start()
     # threading.Thread(target=getUrlDetailUrlFromDB, args=('大中专教辅-理科',), name="大中专教辅-理科").start()
     # threading.Thread(target=getUrlDetailUrlFromDB, args=('历史',), name="历史").start()
     # threading.Thread(target=getUrlDetailUrlFromDB, args=('法律',), name="法律").start()
