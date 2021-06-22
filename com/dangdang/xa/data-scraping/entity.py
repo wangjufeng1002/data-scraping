@@ -3,6 +3,7 @@ import threading, time
 import logging
 from logging import handlers
 
+
 class Book:
     activeDesc = ''
 
@@ -10,7 +11,7 @@ class Book:
                  activeDesc,
                  activeStartTime,
                  activeEndTime,
-                 shopName,category):
+                 shopName, category, sales):
         self.tmId = tmId
         self.name = name
         self.isbn = isbn
@@ -25,13 +26,22 @@ class Book:
         self.activeEndTime = activeEndTime
         self.shopName = shopName
         self.category = category
+        self.sales = sales
+
+    def setSales(self, sales):
+        self.sales = sales
+
+    def getSales(self):
+        if self.sales is None:
+            return "0"
+        return self.sales
 
     def setFixPrice(self, fixPrice):
         self.fixPrice = fixPrice
 
     def getFixPrice(self):
         if self.fixPrice is None:
-            return "NULL"
+            return "0"
         return self.fixPrice
 
     def setName(self, name):
@@ -39,7 +49,7 @@ class Book:
 
     def getName(self):
         if self.name is None:
-            return "NULL"
+            return "无"
         return self.name
 
     def setIsbn(self, isbn):
@@ -47,7 +57,7 @@ class Book:
 
     def getIsbn(self):
         if self.isbn is None:
-            return "NULL"
+            return "无"
         return self.isbn
 
     def setAuther(self, auther):
@@ -55,7 +65,7 @@ class Book:
 
     def getAuther(self):
         if self.auther is None:
-            return "NULL"
+            return "无"
         return self.auther
 
     def setPrice(self, price):
@@ -63,7 +73,7 @@ class Book:
 
     def getPrice(self):
         if self.price is None:
-            return "NULL"
+            return "无"
         return self.price
 
     def setPromotionPrice(self, promotionPrice):
@@ -74,12 +84,12 @@ class Book:
 
     def getPromotionType(self):
         if self.promotionType is None:
-            return "NULL"
+            return "无"
         return self.promotionType
 
     def getPromotionPrice(self):
         if self.promotionPrice is None:
-            return "NULL"
+            return "0"
         return self.promotionPrice
 
     def setActiveDesc(self, activeDesc):
@@ -92,13 +102,15 @@ class Book:
 
     def getActiveDescStr(self):
         if self.activeDesc is None:
-            return ''
+            return '无'
         return ",".join(self.getActiveDesc())
 
     def getTmId(self):
         return self.tmId
 
     def getPromotionPriceDesc(self):
+        if self.promotionPriceDesc is None:
+            return '无'
         return self.promotionPriceDesc
 
     def setPromotionPriceDesc(self, promotionPriceDesc):
@@ -138,7 +150,7 @@ class Book:
     def setCategory(self, category):
         self.category = category
 
-    def toString(self):
+    def toDESCString(self):
         result = []
         result.append("[天猫ID:" + self.getTmId() + "]")
         result.append("[书名:" + self.getName() + "]")
@@ -149,15 +161,37 @@ class Book:
         result.append("[促销价描述:" + self.getPromotionPriceDesc() + "]")
         result.append("[活动:" + (",".join(self.getActiveDesc())) + "]")
         return ",".join(result)
+
+    def toString(self):
+        result = []
+        result.append(self.getTmId())
+        result.append(self.getName())
+        result.append(self.getIsbn())
+        result.append(self.getAuther())
+        result.append(self.getPrice())
+        result.append(self.getFixPrice())
+        result.append(self.getPromotionPrice())
+        result.append(self.getPromotionPriceDesc())
+        result.append(self.getActiveDescStr())
+        result.append(self.getPromotionType())
+        result.append(self.getShopName())
+        result.append(self.getActiveStartTime())
+        result.append(self.getActiveEndTime())
+        result.append(self.getSales())
+        result.append(self.getCategory())
+        return "\t".join(result)
+
+    def __format__(self, format_spec: str) -> str:
+        return super().__format__(format_spec)
     # return self.getName() + "," + self.getIsbn() + "," +self.getAuther()+ "," +self.getPrice() +"," +self.getPromotionPrice() + self.getActiveDesc()
 
 
 class ItemUrl:
-    def __init__(self, itemId, itemUrl, shopName,category):
+    def __init__(self, itemId, itemUrl, shopName, category):
         self.itemId = itemId
         self.itemUrl = itemUrl
         self.shopName = shopName
-        self.category=category
+        self.category = category
 
     def __setattr__(self, name: str, value: Any) -> None:
         super().__setattr__(name, value)

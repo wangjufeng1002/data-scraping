@@ -3,8 +3,15 @@
 import pymysql
 import pandas as pd
 from entity import Book, ItemUrl
-host=None
-#host="127.0.0.1"
+import threading
+mutex = threading.Lock()
+mutex_2 = threading.Lock()
+
+host = None
+
+conn = pymysql.connect(host="192.168.47.210", port=3306, user="root", password="123456", database="data-reptile",
+                       charset="utf8")
+# host="127.0.0.1"
 
 def dict2obj(obj, dict):
     obj.__dict__.update(dict)
@@ -35,45 +42,52 @@ def getHeaders():
     return headers
 
 
-def insertDetailPrice(book):
-    conn = pymysql.connect(host=host, port=3306, user="root", password="123456", database="data-reptile",
-                           charset="utf8")
-    cursor = conn.cursor()
-    sql = "INSERT INTO `data-reptile`.`book`" \
-          " ( `tm_id`, `book_name`, `book_isbn`, `book_auther`, `book_price`, `book_fix_price`, `book_prom_price`, `book_prom_price_desc`, " \
-          "`book_active_desc`, `shop_name`,`book_prom_type`,`book_active_start_time`,`book_active_end_time`,`category`) " \
-          "VALUES ( '%s', '%s', '%s', '%s', '%s', '%s', '%s', '%s', '%s', '%s', '%s', '%s', '%s','%s') " \
-          "ON DUPLICATE KEY " \
-          "UPDATE " \
-          "book_name= '%s' " \
-          ", book_isbn= '%s' " \
-          ", book_auther = '%s' " \
-          ", book_price = '%s'" \
-          ", book_fix_price = '%s'" \
-          ", book_prom_price = '%s'" \
-          ", book_prom_price_desc = '%s'" \
-          ", book_active_desc = '%s'" \
-          ", shop_name = '%s'" \
-          ", book_prom_type = '%s'" \
-          ", book_active_start_time = '%s'" \
-          ", book_active_end_time = '%s'" \
-          ", category = '%s'" \
-          % (book.getTmId(), book.getName(), book.getIsbn(), book.getAuther(), book.getPrice(), book.getFixPrice(),
-             book.getPromotionPrice(), book.getPromotionPriceDesc(), book.getActiveDescStr(), book.getShopName(),
-             book.getPromotionType(), book.getActiveStartTime(), book.getActiveEndTime(),book.getCategory(),
 
-             book.getName(), book.getIsbn(), book.getAuther(), book.getPrice(), book.getFixPrice(),
-             book.getPromotionPrice(), book.getPromotionPriceDesc(), book.getActiveDescStr(), book.getShopName(),
-             book.getPromotionType(), book.getActiveStartTime(), book.getActiveEndTime(),book.getCategory(),
-             )
-    try:
-        cursor.execute(sql)
-        conn.commit()
-    except Exception as e:
-        print("数据库插入Price发生异常 {}", e)
-        conn.rollback()
-    finally:
-        cursor.close()
+
+
+def insertDetailPrice(book):
+    if mutex.acquire():
+        cursor = conn.cursor()
+        sql = "INSERT INTO `data-reptile`.`book`" \
+              " ( `tm_id`, `book_name`, `book_isbn`, `book_auther`, `book_price`, `book_fix_price`, `book_prom_price`, `book_prom_price_desc`, " \
+              "`book_active_desc`, `shop_name`,`book_prom_type`,`book_active_start_time`,`book_active_end_time`,`category`,`book_sales`) " \
+              "VALUES ( '%s', '%s', '%s', '%s', '%s', '%s', '%s', '%s', '%s', '%s', '%s', '%s', '%s','%s','%s') " \
+              "ON DUPLICATE KEY " \
+              "UPDATE " \
+              "book_name= '%s' " \
+              ", book_isbn= '%s' " \
+              ", book_auther = '%s' " \
+              ", book_price = '%s'" \
+              ", book_fix_price = '%s'" \
+              ", book_prom_price = '%s'" \
+              ", book_prom_price_desc = '%s'" \
+              ", book_active_desc = '%s'" \
+              ", shop_name = '%s'" \
+              ", book_prom_type = '%s'" \
+              ", book_active_start_time = '%s'" \
+              ", book_active_end_time = '%s'" \
+              ", category = '%s'" \
+              ", book_sales = '%s'" \
+              % (book.getTmId(), book.getName(), book.getIsbn(), book.getAuther(), book.getPrice(), book.getFixPrice(),
+                 book.getPromotionPrice(), book.getPromotionPriceDesc(), book.getActiveDescStr(), book.getShopName(),
+                 book.getPromotionType(), book.getActiveStartTime(), book.getActiveEndTime(), book.getCategory(),
+                 book.getSales(),
+
+                 book.getName(), book.getIsbn(), book.getAuther(), book.getPrice(), book.getFixPrice(),
+                 book.getPromotionPrice(), book.getPromotionPriceDesc(), book.getActiveDescStr(), book.getShopName(),
+                 book.getPromotionType(), book.getActiveStartTime(), book.getActiveEndTime(), book.getCategory(),
+                 book.getSales()
+                 )
+        try:
+            cursor.execute(sql)
+            conn.commit()
+        except Exception as e:
+            print("数据库插入Price发生异常 {}", e)
+            conn.rollback()
+        finally:
+            mutex.release()
+            cursor.close()
+
 
 
 def insertIp(ip):
@@ -137,7 +151,8 @@ def insertItemUrl(itemUrls):
 
     for itemUrl in itemUrls:
         exeSql = sql % (
-            itemUrl.itemId, itemUrl.itemUrl, itemUrl.shopName, itemUrl.category, itemUrl.itemId, itemUrl.itemUrl, itemUrl.shopName,
+            itemUrl.itemId, itemUrl.itemUrl, itemUrl.shopName, itemUrl.category, itemUrl.itemId, itemUrl.itemUrl,
+            itemUrl.shopName,
             itemUrl.category
         )
         try:
@@ -149,7 +164,7 @@ def insertItemUrl(itemUrls):
     cursor.close()
 
 
-def getItemUrl(category,page, page_size):
+def getItemUrl(category, page, page_size):
     conn = pymysql.connect(host=host, port=3306, user="root", password="123456", database="data-reptile",
                            charset="utf8")
     cursor = conn.cursor()
@@ -158,8 +173,8 @@ def getItemUrl(category,page, page_size):
     if page_size is None:
         page_size = 1000
     offset = (page - 1) * page_size
-    sql = "select item_id as itemId,item_url as itemUrl,shop_name as shopName ,category from `item_url` where is_success != 1 and category='%s' order by update_time ASC limit %d,%d"
-    e_sql = sql % (category,offset, page_size)
+    sql = "select item_id as itemId,item_url as itemUrl,shop_name as shopName ,category from `item_url` where  category='%s' and is_success !=1 order by update_time ASC limit %d,%d"
+    e_sql = sql % (category, offset, page_size)
     execute = cursor.execute(e_sql)
     if execute <= 0:
         return None
@@ -171,7 +186,7 @@ def getItemUrl(category,page, page_size):
         columns.append(description[i][0])  # 获取字段名，咦列表形式保存
     for i in range(len(result)):
         itemUrl = {}
-        itemUrlObj = ItemUrl(itemId=None, itemUrl=None, shopName=None,category=None)
+        itemUrlObj = ItemUrl(itemId=None, itemUrl=None, shopName=None, category=None)
         # 取出每一行 和 列名组成map
         row = list(result[i])
         for j in range(len(columns)):
@@ -182,22 +197,24 @@ def getItemUrl(category,page, page_size):
 
 
 def updateSuccessFlag(flag, itemId):
-    conn = pymysql.connect(host=host, port=3306, user="root", password="123456", database="data-reptile",
-                           charset="utf8")
-    cursor = conn.cursor()
-    sql = "update  `item_url` set is_success = '%d' where item_id = '%s' " % (flag, itemId)
-    try:
-        execute = cursor.execute(sql)
-        conn.commit()
-    except:
-        conn.close()
-        print("更新 item_url 失败")
-        return False
-    if execute <= 0:
-        return False
-    else:
-        conn.close()
-        return True
+    if mutex_2.acquire():
+        conn.ping(reconnect=True)
+        cursor = conn.cursor()
+        sql = "update  `item_url` set is_success = %d where item_id = '%s' " % (flag, itemId)
+        try:
+            execute = cursor.execute(sql)
+            conn.commit()
+        except Exception as e:
+            cursor.close()
+            print("更新 item_url 失败")
+            raise e
+        finally:
+            mutex_2.release()
+            cursor.close()
+        if execute <= 0:
+            return False
+        else:
+            return True
 
 
 def getPageIndex(page, shopId, isSuccess):
@@ -216,12 +233,12 @@ def getPageIndex(page, shopId, isSuccess):
     return pageIndex
 
 
-def getPageRecords(shopId, isSuccess,category):
+def getPageRecords(shopId, isSuccess, category):
     conn = pymysql.connect(host=host, port=3306, user="root", password="123456", database="data-reptile",
                            charset="utf8")
     cursor = conn.cursor()
     sql = "select page_index  from `page_record` where  shop_id = %d and is_success = %d and category ='%s'"
-    cursor.execute(sql % (shopId, isSuccess,category))
+    cursor.execute(sql % (shopId, isSuccess, category))
     fetchall = cursor.fetchall()
     pageIndex = []
     for page in list(fetchall):
@@ -232,37 +249,38 @@ def getPageRecords(shopId, isSuccess,category):
     return pageIndex
 
 
-def updatePageRecords(page, shopId, isSuccess,category):
+def updatePageRecords(page, shopId, isSuccess, category):
     conn = pymysql.connect(host=host, port=3306, user="root", password="123456", database="data-reptile",
                            charset="utf8")
     cursor = conn.cursor()
     sql = "update `page_record` set is_success = %d  where page_index = %d and shop_id = %d and category='%s'"
-    cursor.execute(sql % (isSuccess, page, shopId,category))
+    cursor.execute(sql % (isSuccess, page, shopId, category))
     conn.commit()
     cursor.close()
 
 
-def updatePageRecordsBatch(page, shopId, isSuccess,category):
+def updatePageRecordsBatch(page, shopId, isSuccess, category):
     conn = pymysql.connect(host=host, port=3306, user="root", password="123456", database="data-reptile",
                            charset="utf8")
     cursor = conn.cursor()
     sql = "update `page_record` set is_success = %d  where page_index = %d and shop_id = %d and category='%s'"
 
     for tempPage in page:
-        cursor.execute(sql % (isSuccess, tempPage, shopId,category))
+        cursor.execute(sql % (isSuccess, tempPage, shopId, category))
 
     conn.commit()
     cursor.close()
 
 
-def insertPageIndex(page, shopId, isSuccess,category):
+def insertPageIndex(page, shopId, isSuccess, category):
     conn = pymysql.connect(host=host, port=3306, user="root", password="123456", database="data-reptile",
                            charset="utf8")
     sql = "insert into `page_record`(page_index,shop_id,is_success,category) values(%d,%d,%d,'%s')"
     cursor = conn.cursor()
-    cursor.execute(sql % (page, shopId, isSuccess,category))
+    cursor.execute(sql % (page, shopId, isSuccess, category))
     conn.commit()
     cursor.close()
+
 
 def getNotDealCategory():
     conn = pymysql.connect(host=host, port=3306, user="root", password="123456", database="data-reptile",
@@ -278,6 +296,8 @@ def getNotDealCategory():
         except Exception as e:
             print(e)
     return categorys
+
+
 # s = [10000,10000000,10000]
 # updatePageRecordsBatch(s,1,0)
 # #
@@ -348,6 +368,5 @@ if __name__ == '__main__':
         insertPageIndex(i, 1, 0, '文科')
     for i in range(1, 301):
         insertPageIndex(i, 1, 0, '理科')
-    #print(getItemUrl(page=100, page_size=1000))
-    #print(getIpList())
-
+    # print(getItemUrl(page=100, page_size=1000))
+    # print(getIpList())

@@ -1,9 +1,10 @@
 import urllib
 from bs4 import BeautifulSoup
-import json, re, demjson
 import time, random
 from requests_html import HTMLSession, AsyncHTMLSession
 import dataReptiledb
+from requests_html import HTMLSession, AsyncHTMLSession
+
 
 ip_url = "https://www.kuaidaili.com/free/inha/{page}/"
 # ip_url_2 = "http://www.66ip.cn/{page}.html"
@@ -13,6 +14,17 @@ ip_url_3 = "https://ip.jiangxianli.com/?page={page}"
 check_url = "https://winshare.tmall.com/i/asynSearch.htm?_ksTS=1621580321867_126&callback=jsonp&mid=w-23389038992-0&wid=23389038992&path=/search.htm&search=y&spm=a1z10.3-b-s.w4011-23389038992.447.274e7652DYiZdX&orderType=defaultSort&pageNo={pageNo}&tsearch=y"
 
 dataReptiledb.host = "192.168.47.210"
+# def checkip(ip_list):
+#     for ip in ip_list:
+#         try:
+#             proxy_host = "https://" + ip
+#             proxy_temp = {"https": proxy_host}
+#             session = HTMLSession()
+#             detailResponse = session.get(check_url, proxies=proxy_temp)
+#         except Exception as e:
+#             ip_list.remove(ip)
+#             continue
+#     return ip_list
 def checkip(ip_list):
     for ip in ip_list:
         try:
@@ -71,8 +83,8 @@ def getIp_2():
     ips = []
     for areaIndex in range(1, 34):
         j = 0
-        while j < 100:
-            print("开始爬取第{page} 页".format(page=i))
+        while j < 10:
+            print("开始爬取第{page} 页".format(page=j))
             contents = []
             try:
                 session = HTMLSession()
