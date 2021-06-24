@@ -5,6 +5,7 @@ from requests_html import HTMLSession, AsyncHTMLSession
 import dataReptiledb
 from entity import Book, ItemUrl, Logger
 import threading, time
+import getIpProxyPool
 
 # 干扰 url ,
 url = [
@@ -36,17 +37,27 @@ dataReptiledb.host = "192.168.47.210"
 # 促销 url
 promotionUrl = 'https://mdskip.taobao.com/core/initItemDetail.htm?isUseInventoryCenter=false&cartEnable=true&service3C=false&isApparel=false&isSecKill=false&tmallBuySupport=true&isAreaSell=false&tryBeforeBuy=false&offlineShop=false&itemId={itemId}&showShopProm=false&isPurchaseMallPage=false&itemGmtModified=1621928176000&isRegionLevel=false&household=false&sellerPreview=false&queryMemberRight=true&addressLevel=2&isForbidBuyItem=false&callback=setMdskip&timestamp=1622029723119&isg=eBIE8Mulj-IREQ65BOfChurza779JIRYjuPzaNbMiOCP_Hf671mVW6sFIY8BCnGVh6AwJ3oiiBs_BeYBq_C-nxvOa6Fy_3Hmn&isg2=BPz8DUnnsCHnEoT3_AthiILwzZqu9aAfdLEeZdZ9POfMoZwr_wX0r_dQgcnZ0th3'
 
-logUtils = Logger(filename='./logs/detail.log', level='info')
+logUtils = Logger(filename='./logs/current-detail.log', level='info')
 
+#file_object = open('D:\\爬虫\\TM\\item-detail-promo.txt', "a", encoding='utf-8')
+file_object = open('./TM/item-detail-promo-01.txt', "a", encoding='utf-8')
 
 # 干扰函数
 def disturbUrl(header, ip):
+    proxy = {'http:': "http://" + ip, 'https:': "https://" + ip}
     time.sleep(random.randint(1, 5))
     randint = random.randint(1, 3)
     if randint % 2 == 0:
         session = HTMLSession()
-        session.get(url=random.choice(url), headers=header,
-                    proxies={'http': ip})
+        try:
+            session.get(url=random.choice(url), headers=header,
+                        proxies=proxy)
+        except:
+            proxyIp = getIpProxyPool.get_proxy_from_redis()['proxy_detail']['ip']
+            proxy = {'http:': "http://" + proxyIp, 'https:': "https://" + proxyIp}
+            session.get(url=random.choice(url), headers=header,
+                        proxies=proxy)
+            pass
         logUtils.logger.info("{thread} 执行一次 其他请求 ".format(thread=threading.current_thread().getName()))
 
 
@@ -68,9 +79,10 @@ def loads_jsonp(_jsonp):
         raise ValueError('Invalid Input')
 
 
-def processDefaultBookData(itemUrlEntity, ipList):
+def processDefaultBookData(itemUrlEntity, header,ip):
+    proxy = {'http:': "http://" + ip, 'https:': "https://" + ip}
     session = HTMLSession()
-    detailResponse = session.get(itemUrlEntity.itemUrl, proxies={'http://': random.choice(ipList)})
+    detailResponse = session.get(itemUrlEntity.itemUrl, proxies=proxy)
     detailHtmlSoup = BeautifulSoup(detailResponse.text, features='html.parser')
     itemId = re.match(".*?(id=.*&).*", itemUrlEntity.itemUrl, re.S).group(1).split('&')[0].replace('id=', '')
     defaultPrice = re.match(".*?(\"defaultItemPrice\":.*&).*", detailResponse.text, re.S).group(1).split(',')[
@@ -81,7 +93,7 @@ def processDefaultBookData(itemUrlEntity, ipList):
         return
     book = Book(tmId=itemId, name=None, isbn=None, auther=None, fixPrice=None, promotionPrice=None,
                 promotionPriceDesc=None, price=defaultPrice, promotionType=None, activeStartTime=None, activeEndTime=None,
-                activeDesc="", shopName=itemUrlEntity.shopName, category=itemUrlEntity.category, sales="0")
+                activeDesc="", shopName=itemUrlEntity.shopName, category=itemUrlEntity.category, sales="0",press=None)
     contents = itmDescUl[0].contents
     for con in contents:
         if "书名" in con.next:
@@ -99,21 +111,28 @@ def processDefaultBookData(itemUrlEntity, ipList):
     # disturbUrl(header, ip)
     # 写入数据库
     dataReptiledb.insertDetailPrice(book)
-
-    logUtils.logger.info("process book {id}".format(id=itemId))
+    logUtils.logger.info("线程{threadName} - process book {id}".format(threadName=threading.current_thread().getName(),id=itemId))
     # time.sleep(5)
     # time.sleep(random.randint(2, 10))
+    return  book
 
 
 def processPromotionBookData(book, header, ip):
+    threadName = threading.current_thread().getName()
+    proxy = {'http:': "http://" + ip, 'https:': "https://" + ip}
     session = HTMLSession()
     promotionJsonp = session.get(promotionUrl.format(itemId=book.getTmId()), headers=header,
-                                 proxies={'http://': ip})
-    promotionJSON = loads_jsonp(promotionJsonp.text)
-    if promotionJSON.get("defaultModel") is None:
-        logUtils.logger.info("{itemId} 获取不到促销信息啦，可能cookie失效".format(itemId=book.getTmId()))
-        # time.sleep(random.randint(2, 10))
-        raise Exception("发生异常")
+                                 proxies=proxy)
+    try:
+        promotionJSON = loads_jsonp(promotionJsonp.text)
+    except Exception as e:
+        logUtils.logger.error("线程{threadName} - {itemId} 解析jsonp 失败，cookie 失效".format(threadName=threadName, itemId=book.getTmId()))
+        raise Exception("线程{threadName} - {itemId} 解析jsonp 失败，cookie 失效".format(threadName=threadName, itemId=book.getTmId()))
+    else:
+        if promotionJSON.get("defaultModel") is None:
+            logUtils.logger.error("线程{threadName} - {itemId} 获取不到促销信息啦，可能cookie失效".format(threadName=threadName,itemId=book.getTmId()))
+            # time.sleep(random.randint(2, 10))
+            raise Exception("线程{threadName} - {itemId} 获取不到促销信息啦，可能cookie失效".format(threadName=threadName,itemId=book.getTmId()))
     # price = promotionJSON['defaultModel']['itemPriceResultDO']['priceInfo'].get('def', {}).get('price')
     # # 设置默认价格
     # book.setPrice(price)
@@ -137,7 +156,9 @@ def processPromotionBookData(book, header, ip):
         book.setPromotionPriceDesc(promotionPriceDesc)
         book.setActiveStartTime(startTime)
         book.setActiveEndTime(endTime)
-    # book.setPromotionPriceDesc(promotionPriceDesc)
+    #获取销量
+    seles = promotionJSON['defaultModel'].get("sellCountDO", {}).get("sellCount", "0")
+    book.setSales(sales=seles)
     # 活动
     tmallShopProm = promotionJSON['defaultModel']['itemPriceResultDO']['tmallShopProm']
     if len(tmallShopProm) != 0:
@@ -145,6 +166,7 @@ def processPromotionBookData(book, header, ip):
         for shopProm in tmallShopProm:
             promPlanMsg.append(",".join(shopProm['promPlanMsg']))
         book.setActiveDesc(promPlanMsg)
+    #
     # 提取相关sku
     relatedAuctionsDO = promotionJSON.get("defaultModel").get("relatedAuctionsDO")
     detailUrl = []
@@ -157,13 +179,88 @@ def processPromotionBookData(book, header, ip):
                 url = "//detail.tmall.com/item.htm?id=" + str(itemId) + "&temp=111"
                 detailUrl.append(url)
             write_db(detailUrl, shopName=book.getShopName(), category=book.getCategory())
-        # 执行干扰函数
-        # 写入数据库
+
+    # 写入文件
+    file_object.write(book.toString() + "\n")
+    file_object.flush()
+    logUtils.logger.info("线程{threadName} process book {id}".format(threadName=threadName,id=book.tmId))
+
     # 保存数据
-    dataReptiledb.insertDetailPrice(book)
+    #dataReptiledb.insertDetailPrice(book)
 
 
-def processPromo():
-    return
+def processBookInfo(category,header):
+    pageSize = 10000
+    page = 1
+    while True:
+        retryCnt = 0
+        index = 0
+        proxyIp = getIpProxyPool.get_proxy_from_redis()['proxy_detail']['ip']
+        itemUrls = dataReptiledb.getItemUrl(category=category, page=page, page_size=pageSize)
+        if itemUrls is None or len(itemUrls) <=0:
+            break
+        while index <= len(itemUrls) - 1:
+            try:
+                book = processDefaultBookData(itemUrls[index], header, proxyIp)
+                proxyIp = getIpProxyPool.get_proxy_from_redis()['proxy_detail']['ip']
+                processPromotionBookData(book,header,proxyIp)
+                index +=1
+                logUtils.logger.error("线程{threadName} - {itemId} 处理完成".format(threadName=threading.current_thread().getName(),itemId=itemUrls[index].itemId))
+                time.sleep(random.randint(1, 5))
+            except Exception as  e:
+                logUtils.logger.error("线程{threadName} - {itemId} 发生异常 {e}".format(threadName=threading.current_thread().getName(),itemId=itemUrls[index].itemId,e=e))
+                proxyIp = getIpProxyPool.get_proxy_from_redis()['proxy_detail']['ip']
+                retryCnt+=1
+                if retryCnt >= 20:
+                    index +=1
+                    retryCnt = 0
+            else:
+                dataReptiledb.updateSuccessFlag(100,itemId=itemUrls[index].itemId)
+            finally:
+                time.sleep(random.randint(1, 10))
+        page+=1
+
+def processBookPromoInfo(category,headerIndex):
+    headers = dataReptiledb.getHeaders()
+    if headers is None or len(headers) <=0:
+        return
+    pageSize = 1000
+    page = 1
+    while True:
+        retryCnt = 0
+        index = 0
+        proxyIp = getIpProxyPool.get_proxy_from_redis()['proxy_detail']['ip']
+        books = dataReptiledb.getBookByNotHavePromo(category=category, page=page, page_size=pageSize)
+        if books is None or len(books) <= 0:
+            break
+        while index <= len(books) - 1:
+            try:
+                processPromotionBookData(books[index], headers[headerIndex], proxyIp)
+                time.sleep(random.randint(10, 20))
+                #执行干扰函数
+                disturbUrl(headers[headerIndex], proxyIp)
+            except Exception as  e:
+                logUtils.logger.error(e)
+                logUtils.logger.error(
+                    "线程{threadName} - {itemId} 发生异常".format(threadName=threading.current_thread().getName(),
+                                                                itemId=books[index].tmId))
+                proxyIp = getIpProxyPool.get_proxy_from_redis()['proxy_detail']['ip']
+                retryCnt += 1
+                if retryCnt >= 20:
+                    index += 1
+                    retryCnt = 0
+                headers = dataReptiledb.getHeaders()
+            else:
+                dataReptiledb.updateBookSuccessFlag(flag=1,itemId=books[index].tmId)
+                logUtils.logger.error(
+                    "线程{threadName} - {itemId} 处理完成".format(threadName=threading.current_thread().getName(),
+                                                            itemId=books[index].tmId))
+                index += 1
+            finally:
+                time.sleep(random.randint(1, 3))
+        page += 1
 
 
+if __name__ == '__main__':
+    for i in range(0,5):
+        print(i)

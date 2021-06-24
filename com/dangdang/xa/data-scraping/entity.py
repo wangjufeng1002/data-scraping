@@ -1,3 +1,4 @@
+from datetime import datetime
 from typing import Any
 import threading, time
 import logging
@@ -11,7 +12,7 @@ class Book:
                  activeDesc,
                  activeStartTime,
                  activeEndTime,
-                 shopName, category, sales):
+                 shopName, category, sales,press):
         self.tmId = tmId
         self.name = name
         self.isbn = isbn
@@ -27,6 +28,7 @@ class Book:
         self.shopName = shopName
         self.category = category
         self.sales = sales
+        self.press= press
 
     def setSales(self, sales):
         self.sales = sales
@@ -128,6 +130,8 @@ class Book:
     def getActiveStartTime(self):
         if self.activeStartTime is None:
             return "1996-10-02"
+        if(isinstance(self.activeStartTime,datetime)):
+            return self.activeStartTime
         activeStartTime = self.activeStartTime / 1000.0
         timearr = time.localtime(activeStartTime)
         return time.strftime("%Y-%m-%d %H:%M:%S", timearr)
@@ -138,6 +142,8 @@ class Book:
     def getActiveEndTime(self):
         if self.activeEndTime is None:
             return "1996-10-02"
+        if (isinstance(self.activeEndTime, datetime)):
+            return self.activeEndTime
         activeEndTime = self.activeEndTime / 1000.0
         timearr = time.localtime(activeEndTime)
         return time.strftime("%Y-%m-%d %H:%M:%S", timearr)
@@ -149,6 +155,14 @@ class Book:
 
     def setCategory(self, category):
         self.category = category
+
+    def setPress(self, press):
+        self.press = press
+
+    def getPress(self):
+        if self.press is None:
+            return '无'
+        return self.press
 
     def toDESCString(self):
         result = []
@@ -165,7 +179,7 @@ class Book:
     def toString(self):
         result = []
         result.append(self.getTmId())
-        result.append(self.getName())
+        result.append(self.getName().replace("\n"," ").replace('"'," "))
         result.append(self.getIsbn())
         result.append(self.getAuther())
         result.append(self.getPrice())
@@ -179,6 +193,7 @@ class Book:
         result.append(self.getActiveEndTime())
         result.append(self.getSales())
         result.append(self.getCategory())
+        result.append(self.getPress())
         return "\t".join(result)
 
     def __format__(self, format_spec: str) -> str:

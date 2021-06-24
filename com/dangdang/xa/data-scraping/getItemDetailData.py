@@ -35,6 +35,11 @@ url = [
     "https://s.taobao.com/search?spm=a21bo.21814703.201867-main.10.5af911d9hgOf6o&q=%E7%94%B7%E8%A3%85",
     "https://detail.tmall.com/item.htm?spm=a230r.1.14.6.5343442buCOyAA&id=623503217270&cm_id=140105335569ed55e27b&abbucket=18"
 ]
+tempHeaders = {
+    "cookie":"t=eb53be7d67df6f36ce97e84acdcf063a; _tb_token_=e0e9e1f1e59b0; cookie2=163904834942580fe15777fa6bfee220",
+    "referer": "https://winshare.tmall.com/search.htm?spm=a1z10.5-b-s.0.0.72fb2491fdaM8a&search=y&orderType=defaultSort",
+    "user-agent": "Mozilla/5.0 (Windows NT 10.0; WOW64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/90.0.4430.212 Safari/537.36"
+}
 
 dataReptiledb.host = "192.168.47.210"
 # 促销 url
@@ -42,8 +47,8 @@ promotionUrl = 'https://mdskip.taobao.com/core/initItemDetail.htm?isUseInventory
 
 logUtils = Logger(filename='./logs/detail.log', level='info')
 
-file_object = open('D:\\爬虫\\TM\\item-detail-base.txt', "a", encoding='utf-8')
-
+#file_object = open('D:\\爬虫\\TM\\item-detail-base.txt', "a", encoding='utf-8')
+file_object = open('./TM/item-detail-base-01.txt', "a", encoding='utf-8')
 # 干扰函数
 def disturbUrl(header, ip):
     time.sleep(random.randint(1, 5))
@@ -74,9 +79,16 @@ def loads_jsonp(_jsonp):
 
 
 def processPriceData(itemUrlEntity,header, ip):
+    # requests.DEFAULT_RETRIES = 5  # 增加重试连接次数
+    # s = requests.session()
+    # s.keep_alive = False  # 关闭多余连接
+    # proxy = {'http:':ip,'https:':ip}
+    # detailResponse = s.get(url=itemUrlEntity.itemUrl.replace("http","https"), headers=tempHeaders, timeout=300,proxies=proxy)
+
     session = HTMLSession()
     proxy ={'http:':"http://"+ip,'https:':"https://"+ip}
-    detailResponse = session.get(url=itemUrlEntity.itemUrl, proxies=proxy)
+    detailResponse = session.get(url=itemUrlEntity.itemUrl.replace("http","https"),proxies=proxy,timeout=(3,4))
+
     detailHtmlSoup = BeautifulSoup(detailResponse.text, features='html.parser')
     itemId = re.match(".*?(id=.*&).*", itemUrlEntity.itemUrl, re.S).group(1).split('&')[0].replace('id=', '')
     defaultPrice = re.match(".*?(\"defaultItemPrice\":.*&).*", detailResponse.text, re.S).group(1).split(',')[
@@ -87,7 +99,7 @@ def processPriceData(itemUrlEntity,header, ip):
         return
     book = Book(tmId=itemId, name=None, isbn=None, auther=None, fixPrice=None, promotionPrice=None,
                 promotionPriceDesc=None, price=defaultPrice, promotionType=None, activeStartTime=None, activeEndTime=None,
-                activeDesc=None, shopName=itemUrlEntity.shopName, category=itemUrlEntity.category, sales="0")
+                activeDesc=None, shopName=itemUrlEntity.shopName, category=itemUrlEntity.category, sales="0",press=None)
     contents = itmDescUl[0].contents
     for con in contents:
         if "书名" in con.next:
@@ -99,9 +111,11 @@ def processPriceData(itemUrlEntity,header, ip):
                 book.setAuther(con.next.replace("作者: ", "").replace("编者: ", ""))
         if ("定价" in con.next) or ("价格" in con.next):
             book.setFixPrice(con.next.replace("定价: ", "").replace("价格: ", ""))
+        if ("出版社" in con.next) or ("出版社" in con.next):
+            book.setPress(con.next.replace("出版社名称:", ""))
 
     # 获取促销信息
-    processPromotion(book, header, ip)
+    #processPromotion(book, header, ip)
     # disturbUrl(header, ip)
     # 写入数据库
     #dataReptiledb.insertDetailPrice(book)
@@ -115,8 +129,8 @@ def processPriceData(itemUrlEntity,header, ip):
 def processPromotion(book, header, ip):
     proxy = {'http:': "http://" + ip, 'https:': "https://" + ip}
     session = HTMLSession()
-    promotionJsonp = session.get(promotionUrl.format(itemId=book.getTmId()), headers=header,
-                                 proxies=proxy)
+    promotionJsonp = session.get(promotionUrl.format(itemId=book.getTmId()), headers=header, proxies=proxy)
+    #promotionJsonp = session.get(promotionUrl.format(itemId=book.getTmId()), headers=header)
     promotionJSON = loads_jsonp(promotionJsonp.text)
     if promotionJSON.get("defaultModel") is None:
         logUtils.logger.info("{itemId} 获取不到促销信息啦，可能cookie失效".format(itemId=book.getTmId()))
@@ -180,6 +194,7 @@ def getUrlDetailUrlFromDB(category):
     errorCnt = 0
     while True:
         logUtils.logger.info("处理第%d页数据" % page)
+        # proxyIp = random.choice(ip_list)
         proxyIp = getIpProxyPool.get_proxy_from_redis()['proxy_detail']['ip']
         item_urls = dataReptiledb.getItemUrl(category, page, pageSize)
         if item_urls is None:
@@ -193,22 +208,25 @@ def getUrlDetailUrlFromDB(category):
                 try:
                     processPriceData(url,header=headers[headersIndex], ip=proxyIp)
                     i+=1
+                    logUtils.logger.error("成功 {itemId},{ip} ".format(itemId=url.itemId, ip=proxyIp))
+                    time.sleep(1)
                 except Exception as e:
-                    print("异常 {itemId},{ip} ".format(itemId=url.itemId,ip=proxyIp))
+                    logUtils.logger.error("异常 {itemId},{ip} ".format(itemId=url.itemId,ip=proxyIp))
                     proxyIp = getIpProxyPool.get_proxy_from_redis()['proxy_detail']['ip']
+                    #proxyIp = random.choice(ip_list)
                     errorCnt += 1
                     logUtils.logger.info(e)
-                    if headersIndex == len(headers) - 1:
-                        headers = dataReptiledb.getHeaders()
-                        headersIndex = 0
-                    else:
-                        headersIndex += 1
+                    # if headersIndex == len(headers) - 1:
+                    #     headers = dataReptiledb.getHeaders()
+                    #     headersIndex = 0
+                    # else:
+                    #     headersIndex += 1
                     if errorCnt >= 20:
                         errorCnt = 0
                         i += 1
                         dataReptiledb.updateSuccessFlag(-1, url.itemId)
 
-                    #time.sleep(random.randint(1, 3))
+                    time.sleep(random.randint(1, 1))
                     # raise e
 
                 else:
@@ -221,18 +239,24 @@ def getUrlDetailUrlFromDB(category):
 if __name__ == '__main__':
     print("start")
     # threading.Thread(target=getUrlDetailUrlFromDB, args=('xs',), name="xs").start()
-    threading.Thread(target=getUrlDetailUrlFromDB, args=('文学',), name="文学").start()
+    #threading.Thread(target=getUrlDetailUrlFromDB, args=('文学',), name="文学").start()
     threading.Thread(target=getUrlDetailUrlFromDB, args=('童书',), name="童书").start()
-    # threading.Thread(target=getUrlDetailUrlFromDB, args=('大中专教辅-理科',), name="大中专教辅-理科").start()
+    threading.Thread(target=getUrlDetailUrlFromDB, args=('大中专教辅-理科',), name="大中专教辅-理科").start()
     # threading.Thread(target=getUrlDetailUrlFromDB, args=('历史',), name="历史").start()
     # threading.Thread(target=getUrlDetailUrlFromDB, args=('法律',), name="法律").start()
     # threading.Thread(target=getUrlDetailUrlFromDB, args=('家庭教育',), name="家庭教育").start()
-    # threading.Thread(target=getUrlDetailUrlFromDB, args=('社会科学',), name="社会科学").start()
+    threading.Thread(target=getUrlDetailUrlFromDB, args=('社会科学',), name="社会科学").start()
     # threading.Thread(target=getUrlDetailUrlFromDB, args=('经济管理',), name="经济管理").start()
     # threading.Thread(target=getUrlDetailUrlFromDB, args=('艺术与摄影',), name="艺术与摄影").start()
     # threading.Thread(target=getUrlDetailUrlFromDB, args=('科技',), name="科技").start()
     # threading.Thread(target=getUrlDetailUrlFromDB, args=('散文随笔',), name="散文随笔").start()
     # threading.Thread(target=getUrlDetailUrlFromDB, args=('小说',), name="小说").start()
     # threading.Thread(target=getUrlDetailUrlFromDB, args=('政治',), name="政治").start()
+    threading.Thread(target=getUrlDetailUrlFromDB, args=('大中专教辅-文科',), name="大中专教辅-文科").start()
+    threading.Thread(target=getUrlDetailUrlFromDB, args=('大中专教辅-高职',), name="大中专教辅-高职").start()
+    threading.Thread(target=getUrlDetailUrlFromDB, args=('医学',), name="医学").start()
+    threading.Thread(target=getUrlDetailUrlFromDB, args=('启蒙与认知',), name="启蒙与认知").start()
+    threading.Thread(target=getUrlDetailUrlFromDB, args=('哲学与宗教',), name="哲学与宗教").start()
+    threading.Thread(target=getUrlDetailUrlFromDB, args=('外语学习与考试',), name="外语学习与考试").start()
 
 

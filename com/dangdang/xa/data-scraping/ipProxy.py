@@ -11,7 +11,7 @@ ip_url = "https://www.kuaidaili.com/free/inha/{page}/"
 ip_url_2 = "http://www.66ip.cn/areaindex_{area}/{page}.html"
 ip_url_3 = "https://ip.jiangxianli.com/?page={page}"
 
-check_url = "https://winshare.tmall.com/i/asynSearch.htm?_ksTS=1621580321867_126&callback=jsonp&mid=w-23389038992-0&wid=23389038992&path=/search.htm&search=y&spm=a1z10.3-b-s.w4011-23389038992.447.274e7652DYiZdX&orderType=defaultSort&pageNo={pageNo}&tsearch=y"
+check_url = "http://detail.tmall.com/item.htm?id=610461213303&rn=57d8107aa9e957b758d137562c93bb63&abbucket=20"
 
 dataReptiledb.host = "192.168.47.210"
 # def checkip(ip_list):
@@ -26,12 +26,14 @@ dataReptiledb.host = "192.168.47.210"
 #             continue
 #     return ip_list
 def checkip(ip_list):
+    session = HTMLSession()
     for ip in ip_list:
         try:
             proxy_host = "https://" + ip
             proxy_temp = {"https": proxy_host}
-            res = urllib.urlopen(check_url, proxies=proxy_temp).read()
+            get = session.get(check_url, proxies=proxy_temp,timeout=10)
         except Exception as e:
+            print("发生异常{ip} ".format(ip=ip))
             ip_list.remove(ip)
             continue
     return ip_list
@@ -83,7 +85,7 @@ def getIp_2():
     ips = []
     for areaIndex in range(1, 34):
         j = 0
-        while j < 10:
+        while j < 1:
             print("开始爬取第{page} 页".format(page=j))
             contents = []
             try:
