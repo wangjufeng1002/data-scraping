@@ -2,18 +2,27 @@
 # -*- coding: UTF-8 -*-
 import pymysql
 import pandas as pd
-from entity import Book, ItemUrl,Logger
+from entity import Book, ItemUrl, Logger, Header
 import threading
-logUtils = Logger(filename='./logs/db.log', level='info')
 
 bookLock = threading.Lock()
 itemUrlLock = threading.Lock()
 headerLock = threading.Lock()
 
-host = None
+host=None
+logUtils=None
+conn=None
+defaultHost="192.168.47.210"
 
-conn = pymysql.connect(host="192.168.47.210", port=3306, user="root", password="123456", database="data-reptile",
-                       charset="utf8")
+def init(host,logFile):
+    global logUtils
+    global conn
+    if host is None :
+        host = defaultHost
+    logUtils = Logger(filename=logFile, level='info')
+    conn = pymysql.connect(host=host, port=3306, user="root", password="123456", database="data-reptile",
+                           charset="utf8")
+
 
 
 # host="127.0.0.1"
@@ -35,7 +44,6 @@ def getHeaders():
             columns = []
             for i in range(len(description)):
                 columns.append(description[i][0])  # 获取字段名，咦列表形式保存
-            df = pd.DataFrame(columns=columns)
             for i in range(len(result)):
                 head = {}
                 # 取出每一行 和 列名组成map
@@ -43,9 +51,11 @@ def getHeaders():
                 for j in range(len(columns)):
                     head[columns[j]] = row[j]
                 headers.append(head)
-
             cursor.close()
+            conn.commit()
             return headers
+        except:
+            conn.rollback()
         finally:
             headerLock.release()
 
@@ -88,7 +98,7 @@ def insertDetailPrice(book):
             cursor.execute(sql)
             conn.commit()
         except Exception as e:
-            logUtils.logger.error("数据库插入Price发生异常 {},{}", book.getTmId(),e)
+            logUtils.logger.error("数据库插入Price发生异常 {},{}", book.getTmId(), e)
             conn.rollback()
         finally:
             bookLock.release()
@@ -220,6 +230,8 @@ def updateBookSuccessFlag(flag, itemId):
             return False
         else:
             return True
+
+
 def updateSuccessFlag(flag, itemId):
     if itemUrlLock.acquire():
         conn.ping(reconnect=True)
@@ -320,6 +332,8 @@ def getNotDealCategory():
         except Exception as e:
             print(e)
     return categorys
+
+
 def getNotDealCategoryByBook():
     conn = pymysql.connect(host=host, port=3306, user="root", password="123456", database="data-reptile",
                            charset="utf8")
@@ -336,15 +350,9 @@ def getNotDealCategoryByBook():
     return categorys
 
 
-def getBookByNotHavePromo(page, page_size, category):
+def getBookByNotHavePromo(category, size):
     conn = pymysql.connect(host=host, port=3306, user="root", password="123456", database="data-reptile",
                            charset="utf8")
-    if page is None or page <= 0:
-        page = 1
-    if page_size is None:
-        page_size = 1000
-    offset = (page - 1) * page_size
-
     sql = '''select tm_id as tmId,
 			 book_name as name,
 			 book_isbn as isbn,
@@ -363,9 +371,10 @@ def getBookByNotHavePromo(page, page_size, category):
 			 book_press as press
              from book where  category = '%s' 
              and is_success != 1
-             limit %d,%d '''
+             order by update_time ASC
+             limit %d '''
     cursor = conn.cursor()
-    cursor.execute(sql%(category,offset,page_size))
+    cursor.execute(sql % (category, size))
     result = cursor.fetchall()
     description = cursor.description
     columns = []
@@ -386,3 +395,121 @@ def getBookByNotHavePromo(page, page_size, category):
         dict2obj(book, bookMap)
         bookObjs.append(book)
     return bookObjs
+
+
+def getItemUrlByShopName(shopName, size):
+    conn = pymysql.connect(host=host, port=3306, user="root", password="123456", database="data-reptile",
+                           charset="utf8")
+    cursor = conn.cursor()
+    sql = "select item_id as itemId,item_url as itemUrl,shop_name as shopName ,category from `item_url` where  shop_name='%s' and is_success !=1 and is_success !=100 order by update_time ASC limit %d"
+    execute = cursor.execute(sql % (shopName, size))
+    if execute <= 0:
+        return None
+    result = cursor.fetchall()
+    description = cursor.description
+    columns = []
+    itemUrlObjs = []
+    for i in range(len(description)):
+        columns.append(description[i][0])  # 获取字段名，咦列表形式保存
+    for i in range(len(result)):
+        itemUrl = {}
+        itemUrlObj = ItemUrl(itemId=None, itemUrl=None, shopName=None, category=None)
+        # 取出每一行 和 列名组成map
+        row = list(result[i])
+        for j in range(len(columns)):
+            itemUrl[columns[j]] = row[j]
+        dict2obj(itemUrlObj, itemUrl)
+        itemUrlObjs.append(itemUrlObj)
+    return itemUrlObjs
+
+
+def updateHeaders(header):
+    sql = "update headers set "
+    if header.account is not None:
+        sql += " `account`= '%s' ," % header.account
+    if header.password is not None:
+        sql += " `password`= '%s' ," % header.password
+    if header.cookie is not None:
+        sql += " `cookie`= '%s' ," % header.cookie
+    if header.referer is not None:
+        sql += " `referer`= '%s' ," % header.referer
+    if header.user_agent is not None:
+        sql += " `user-agent`= '%s' ," % header.user_agent
+    sql = sql[:len(sql) - 1]
+
+    if header.id is not None:
+        sql += " where id = %d" % header.id
+    elif header.account is not None:
+        sql += " where account = %d" % header.account
+    else:
+        return False, " PRIMARY KEY NOT NUll"
+    if headerLock.acquire():
+        conn.ping(reconnect=True)
+        cursor = conn.cursor()
+        try:
+            cursor.execute(sql)
+        except Exception as e:
+            cursor.close()
+            conn.rollback()
+            logUtils.logger.error("updateHeaders exception {}", e)
+        else:
+            logUtils.logger.error("updateHeaders SUCCESS ")
+            conn.commit()
+            cursor.close()
+        finally:
+            headerLock.release()
+
+    return True, "SUCCESS"
+
+
+def insetHeaders(header):
+    sql = "insert into headers(`cookie`,`referer`,`user-agent`,`account`,`password`,`status`) VALUES('%s','%s','%s','%s','%s',%d) "
+    if headerLock.acquire():
+        conn.ping(reconnect=True)
+        cursor = conn.cursor()
+        try:
+            e_sql = sql % (
+            header.cookie, header.referer, header.user_agent, header.account, header.password, header.status)
+            cursor.execute(e_sql)
+        except Exception as e:
+            conn.rollback()
+            cursor.close()
+            logUtils.logger.error("insetHeaders exception {}", e)
+            return False,"ERROR"
+        else:
+            logUtils.logger.info("insetHeaders SUCCESS")
+            cursor.close()
+            conn.commit()
+        finally:
+            headerLock.release()
+    return True,"SUCCESS"
+
+def getHeadersByStatus(status):
+    sql = "select * from headers where status = %d " %status
+    if headerLock.acquire():
+        try:
+            conn.ping(True)
+            cursor = conn.cursor()
+            cursor.execute(sql)
+            result = cursor.fetchall()
+            description = cursor.description
+            columns = []
+            headers = []
+            for i in range(len(description)):
+                columns.append(description[i][0])  # 获取字段名，咦列表形式保存
+            for i in range(len(result)):
+                head = {}
+                # 取出每一行 和 列名组成map
+                row = list(result[i])
+                for j in range(len(columns)):
+                    head[columns[j]] = row[j]
+                headers.append(head)
+        except:
+            cursor.close()
+            conn.commit()
+        else:
+            cursor.close()
+            conn.commit()
+        finally:
+            headerLock.release()
+    return headers

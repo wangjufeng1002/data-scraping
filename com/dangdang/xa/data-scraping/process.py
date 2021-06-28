@@ -133,9 +133,9 @@ def processPromotionBookData(book, header, ip):
             logUtils.logger.error("线程{threadName} - {itemId} 获取不到促销信息啦，可能cookie失效".format(threadName=threadName,itemId=book.getTmId()))
             # time.sleep(random.randint(2, 10))
             raise Exception("线程{threadName} - {itemId} 获取不到促销信息啦，可能cookie失效".format(threadName=threadName,itemId=book.getTmId()))
-    # price = promotionJSON['defaultModel']['itemPriceResultDO']['priceInfo'].get('def', {}).get('price')
-    # # 设置默认价格
-    # book.setPrice(price)
+
+    #如果是店铺vip 登陆状态下，这个价格就是实际的vip价格
+    price = promotionJSON['defaultModel']['itemPriceResultDO']['priceInfo'].get('def', {}).get('price',0)
     # 促销列表
     promotionList = promotionJSON['defaultModel']['itemPriceResultDO']['priceInfo'].get('def', {}).get("promotionList",
                                                                                                        None)
@@ -143,7 +143,8 @@ def processPromotionBookData(book, header, ip):
     promotionPrice = 0
     promotionPriceType = ''
     if promotionList is None or len(promotionList) == 0:
-        promotionPrice = 0
+        promotionPrice = price
+        book.setPromotionPrice(promotionPrice)
     else:
         promotionPrice = promotionList[0].get('price', 0)
         promotionPriceType = promotionList[0].get('type', "")
@@ -224,13 +225,11 @@ def processBookPromoInfo(category,headerIndex):
     headers = dataReptiledb.getHeaders()
     if headers is None or len(headers) <=0:
         return
-    pageSize = 1000
-    page = 1
     while True:
         retryCnt = 0
         index = 0
         proxyIp = getIpProxyPool.get_proxy_from_redis()['proxy_detail']['ip']
-        books = dataReptiledb.getBookByNotHavePromo(category=category, page=page, page_size=pageSize)
+        books = dataReptiledb.getBookByNotHavePromo(category=category, size=1000)
         if books is None or len(books) <= 0:
             break
         while index <= len(books) - 1:
@@ -251,16 +250,19 @@ def processBookPromoInfo(category,headerIndex):
                     retryCnt = 0
                 headers = dataReptiledb.getHeaders()
             else:
-                dataReptiledb.updateBookSuccessFlag(flag=1,itemId=books[index].tmId)
+                #dataReptiledb.updateBookSuccessFlag(flag=1,itemId=books[index].tmId)
                 logUtils.logger.error(
                     "线程{threadName} - {itemId} 处理完成".format(threadName=threading.current_thread().getName(),
                                                             itemId=books[index].tmId))
                 index += 1
             finally:
                 time.sleep(random.randint(1, 3))
-        page += 1
-
 
 if __name__ == '__main__':
-    for i in range(0,5):
-        print(i)
+    # region Description
+    try:
+        i = 1/0
+    except Exception as e:
+        logUtils.logger.info("%s 处理成功 %s", "AA", e)
+    # endregion
+    #logUtils.logger.info("%s 处理成功 %s", "AA", "AAA")

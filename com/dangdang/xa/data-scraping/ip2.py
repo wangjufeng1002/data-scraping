@@ -52,3 +52,15 @@ print(detailResponse.text)
 
 # response=requests.get("http://httpbin.org/ip",proxies={'http://':'DANGDANG:dangdangcmt@140.255.42.246:57114'})
 # print(response.text)
+
+if __name__ == '__main__':
+    file_object = open('D:\\爬虫\\TM\\item-detail-base.txt', "r", encoding='utf-8')
+    writeFile = open('D:\\爬虫\\TM\\item-detail-base-x.txt', "a", encoding='utf-8')
+    lines = file_object.readlines()
+    for lin in lines:
+        if lin[0].isdigit() is False:
+            print(lin[0:10])
+        if len(lin.split("\t"))  > 15:
+            writeFile.write(lin)
+            writeFile.flush()
+

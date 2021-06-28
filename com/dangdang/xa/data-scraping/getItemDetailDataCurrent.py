@@ -11,9 +11,11 @@ import process
 
 
 #根据cookies 数并发执行线程
-
+#nohup python getItemDetailData.py  >nohup.log 2>&1 &
+#nohup python getItemDetailDataCurrent.py  >nohup-current.log 2>&1 &
 def processAll():
     logUtils = Logger(filename='./logs/detail.log', level='info')
+    dataReptiledb.init(None, "./logs/db-all.log")
     categorys = dataReptiledb.getNotDealCategory()
     headers = dataReptiledb.getHeaders()
     if categorys is None or len(categorys)<=0:
@@ -25,12 +27,13 @@ def processAll():
     index = 0
     for header in headers:
         if index < len(categorys):
-            processThread = threading.Thread(target=process.processBookInfo, args=(categorys[index], header),name=categorys[index]).start()
+            threading.Thread(target=process.processBookInfo, args=(categorys[index], header),name=categorys[index]).start()
             index+=1
         else:
             logUtils.logger.info("线程启动结束")
 def processPromo():
     logUtils = Logger(filename='./logs/detail-current.log', level='info')
+    dataReptiledb.init(None,"./logs/db-current.log")
     categorys = dataReptiledb.getNotDealCategoryByBook()
     headers = dataReptiledb.getHeaders()
     if categorys is None or len(categorys) <= 0:

@@ -9,7 +9,7 @@ import getIpProxyPool
 import urllib.request as r
 import requests
 
-
+#nohup python getItemDetailData.py  >nohup.log 2>&1 &
 # 干扰 url ,
 url = [
     "https://s.taobao.com/search?spm=a21bo.21814703.201867-main.7.5af911d93V6rF1&ie=utf8&initiative_id=staobaoz_20210219&stats_click=search_radio_all%3A1&js=1&imgfile=&q=%E6%AF%8D%E5%A9%B4&suggest=history_1&_input_charset=utf-8&wq=%E6%AF%8D%E5%A9%B4&suggest_query=%E6%AF%8D%E5%A9%B4&source=suggest"
@@ -41,12 +41,11 @@ tempHeaders = {
     "user-agent": "Mozilla/5.0 (Windows NT 10.0; WOW64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/90.0.4430.212 Safari/537.36"
 }
 
-dataReptiledb.host = "192.168.47.210"
+#dataReptiledb.host = "192.168.47.210"
 # 促销 url
 promotionUrl = 'https://mdskip.taobao.com/core/initItemDetail.htm?isUseInventoryCenter=false&cartEnable=true&service3C=false&isApparel=false&isSecKill=false&tmallBuySupport=true&isAreaSell=false&tryBeforeBuy=false&offlineShop=false&itemId={itemId}&showShopProm=false&isPurchaseMallPage=false&itemGmtModified=1621928176000&isRegionLevel=false&household=false&sellerPreview=false&queryMemberRight=true&addressLevel=2&isForbidBuyItem=false&callback=setMdskip&timestamp=1622029723119&isg=eBIE8Mulj-IREQ65BOfChurza779JIRYjuPzaNbMiOCP_Hf671mVW6sFIY8BCnGVh6AwJ3oiiBs_BeYBq_C-nxvOa6Fy_3Hmn&isg2=BPz8DUnnsCHnEoT3_AthiILwzZqu9aAfdLEeZdZ9POfMoZwr_wX0r_dQgcnZ0th3'
 
 logUtils = Logger(filename='./logs/detail.log', level='info')
-
 #file_object = open('D:\\爬虫\\TM\\item-detail-base.txt', "a", encoding='utf-8')
 file_object = open('./TM/item-detail-base-01.txt', "a", encoding='utf-8')
 # 干扰函数
@@ -185,6 +184,7 @@ def processPromotion(book, header, ip):
 def getUrlDetailUrlFromDB(category):
     # headers 游标
     headersIndex = 0
+    dataReptiledb.init(None, "./logs/db-getBaseDaata.log")
     # 获取数据库中的 headers
     headers = dataReptiledb.getHeaders()
     ip_list = dataReptiledb.getIpList()
@@ -194,7 +194,6 @@ def getUrlDetailUrlFromDB(category):
     errorCnt = 0
     while True:
         logUtils.logger.info("处理第%d页数据" % page)
-        # proxyIp = random.choice(ip_list)
         proxyIp = getIpProxyPool.get_proxy_from_redis()['proxy_detail']['ip']
         item_urls = dataReptiledb.getItemUrl(category, page, pageSize)
         if item_urls is None:
@@ -213,7 +212,6 @@ def getUrlDetailUrlFromDB(category):
                 except Exception as e:
                     logUtils.logger.error("异常 {itemId},{ip} ".format(itemId=url.itemId,ip=proxyIp))
                     proxyIp = getIpProxyPool.get_proxy_from_redis()['proxy_detail']['ip']
-                    #proxyIp = random.choice(ip_list)
                     errorCnt += 1
                     logUtils.logger.info(e)
                     # if headersIndex == len(headers) - 1:
@@ -239,24 +237,24 @@ def getUrlDetailUrlFromDB(category):
 if __name__ == '__main__':
     print("start")
     # threading.Thread(target=getUrlDetailUrlFromDB, args=('xs',), name="xs").start()
-    #threading.Thread(target=getUrlDetailUrlFromDB, args=('文学',), name="文学").start()
-    threading.Thread(target=getUrlDetailUrlFromDB, args=('童书',), name="童书").start()
-    threading.Thread(target=getUrlDetailUrlFromDB, args=('大中专教辅-理科',), name="大中专教辅-理科").start()
+    #threading.Thread(target=getUrlDetailUrlFromDB, args=('文学',), name="文学").start
     # threading.Thread(target=getUrlDetailUrlFromDB, args=('历史',), name="历史").start()
     # threading.Thread(target=getUrlDetailUrlFromDB, args=('法律',), name="法律").start()
     # threading.Thread(target=getUrlDetailUrlFromDB, args=('家庭教育',), name="家庭教育").start()
-    threading.Thread(target=getUrlDetailUrlFromDB, args=('社会科学',), name="社会科学").start()
     # threading.Thread(target=getUrlDetailUrlFromDB, args=('经济管理',), name="经济管理").start()
     # threading.Thread(target=getUrlDetailUrlFromDB, args=('艺术与摄影',), name="艺术与摄影").start()
     # threading.Thread(target=getUrlDetailUrlFromDB, args=('科技',), name="科技").start()
     # threading.Thread(target=getUrlDetailUrlFromDB, args=('散文随笔',), name="散文随笔").start()
     # threading.Thread(target=getUrlDetailUrlFromDB, args=('小说',), name="小说").start()
     # threading.Thread(target=getUrlDetailUrlFromDB, args=('政治',), name="政治").start()
-    threading.Thread(target=getUrlDetailUrlFromDB, args=('大中专教辅-文科',), name="大中专教辅-文科").start()
-    threading.Thread(target=getUrlDetailUrlFromDB, args=('大中专教辅-高职',), name="大中专教辅-高职").start()
     threading.Thread(target=getUrlDetailUrlFromDB, args=('医学',), name="医学").start()
-    threading.Thread(target=getUrlDetailUrlFromDB, args=('启蒙与认知',), name="启蒙与认知").start()
+    threading.Thread(target=getUrlDetailUrlFromDB, args=('童书',), name="童书").start()
+    threading.Thread(target=getUrlDetailUrlFromDB, args=('经济管理',), name="经济管理").start()
+    threading.Thread(target=getUrlDetailUrlFromDB, args=('小说',), name="小说").start()
+    threading.Thread(target=getUrlDetailUrlFromDB, args=('烹饪与美食',), name="烹饪与美食").start()
     threading.Thread(target=getUrlDetailUrlFromDB, args=('哲学与宗教',), name="哲学与宗教").start()
+    threading.Thread(target=getUrlDetailUrlFromDB, args=('大中专教辅-理科',), name="大中专教辅-理科").start()
+    threading.Thread(target=getUrlDetailUrlFromDB, args=('社会科学',), name="社会科学").start()
     threading.Thread(target=getUrlDetailUrlFromDB, args=('外语学习与考试',), name="外语学习与考试").start()
 
 

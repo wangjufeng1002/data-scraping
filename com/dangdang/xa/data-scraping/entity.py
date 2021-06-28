@@ -131,7 +131,7 @@ class Book:
         if self.activeStartTime is None:
             return "1996-10-02"
         if(isinstance(self.activeStartTime,datetime)):
-            return self.activeStartTime
+            return self.activeStartTime.strftime('%Y-%m-%d %H:%M:%S')
         activeStartTime = self.activeStartTime / 1000.0
         timearr = time.localtime(activeStartTime)
         return time.strftime("%Y-%m-%d %H:%M:%S", timearr)
@@ -143,7 +143,7 @@ class Book:
         if self.activeEndTime is None:
             return "1996-10-02"
         if (isinstance(self.activeEndTime, datetime)):
-            return self.activeEndTime
+            return self.activeEndTime.strftime('%Y-%m-%d %H:%M:%S')
         activeEndTime = self.activeEndTime / 1000.0
         timearr = time.localtime(activeEndTime)
         return time.strftime("%Y-%m-%d %H:%M:%S", timearr)
@@ -179,7 +179,7 @@ class Book:
     def toString(self):
         result = []
         result.append(self.getTmId())
-        result.append(self.getName().replace("\n"," ").replace('"'," "))
+        result.append(self.getName().replace("\n"," ").replace('"'," ").replace("\t","-"))
         result.append(self.getIsbn())
         result.append(self.getAuther())
         result.append(self.getPrice())
@@ -262,6 +262,21 @@ class Logger(object):
         th.setFormatter(format_str)  # 设置文件里写入的格式
         self.logger.addHandler(sh)  # 把对象加到logger里
         self.logger.addHandler(th)
+
+class Header:
+
+    def __init__(self,id,cookie,referer,user_agent,account,password,status):
+        self.id = id
+        self.cookie = cookie
+        self.referer = referer
+        self.user_agent = user_agent
+        self.account = account
+        self.password = password
+        self.status = status
+
+def headerHandler(obj):
+    return Header(obj.get("id",None),obj.get("cookie"),obj.get("referer"),obj.get("user_agent"),obj.get("account"),obj.get("password"),obj.get("status"))
+
 
 
 if __name__ == '__main__':
