@@ -1,5 +1,8 @@
 #!/usr/bin/python
 # -*- coding: UTF-8 -*-
+import datetime
+
+import pymysql
 from bs4 import BeautifulSoup
 import json, re, demjson
 import time, random
@@ -49,7 +52,8 @@ def jsonp(str):
     return detailUrl
 
 
-def write_db(detailUrl, shopName, category):
+def write_db(detailUrl, shopName, category,coon):
+
     item_urls = []
     for url in detailUrl:
         if url is not None:
@@ -57,12 +61,30 @@ def write_db(detailUrl, shopName, category):
             item_url = "http:" + url
             itemUrl = ItemUrl(itemId=item_id, itemUrl=item_url, shopName=shopName, category=category)
             item_urls.append(itemUrl)
-    dataReptiledb.insertItemUrl(item_urls)
+    with open("res.txt",'a+',encoding='utf-8') as files:
+        for item in item_urls:
+            files.write(item.toString()+"\n")
+    #dataReptiledb.insertItemUrl(item_urls,coon)
 
 
+allpath = []
+allname = []
 
+def getallfile(path):
+    allfilelist = os.listdir(path)
+    # 遍历该文件夹下的所有目录或者文件
+    for file in allfilelist:
+        filepath = os.path.join(path, file)
+        # 如果是文件夹，递归调用函数
+        if os.path.isdir(filepath):
+            getallfile(filepath)
+        # 如果不是文件夹，保存文件路径及文件名
+        elif os.path.isfile(filepath):
+            allpath.append(filepath)
+            allname.append(file)
+    return allpath, allname
 
-def processTxtUrl(path,category):
+def processTxtUrl(path,category,coon):
     file = open(path, encoding='utf-8')
     read = file.read().replace("undefined", "")
     soup = BeautifulSoup(read, features='html.parser')
@@ -72,15 +94,15 @@ def processTxtUrl(path,category):
         detail_url = el.attrs['href']
         detailUrl.append(detail_url)
     detailUrl = list(set(detailUrl))
-    write_db(detailUrl=detailUrl, shopName="新华文轩网络书店", category=category)
+    write_db(detailUrl=detailUrl, shopName="新华文轩网络书店", category=category,coon=coon)
 
 
 if __name__ == '__main__':
-    parent = "D:\\爬虫\\TM\\文轩\\"
-    listdir = os.listdir(parent)
-    for dir in listdir:
-        fileList = os.listdir(parent + dir)
-        for fileName in fileList:
-            filePath = parent + dir + "\\" + fileName
-            processTxtUrl(filePath,dir)
-            print("{filePath} 处理完成".format(filePath=filePath))
+    coon=pymysql.connect(host='192.168.47.210', port=3306, user="root", password="123456", database="data-reptile",
+                    charset="utf8")
+
+    rootdir='D:\\1'
+    files,names=getallfile(rootdir)
+    for file in files:
+        print(file)
+        processTxtUrl(file,"null",coon)

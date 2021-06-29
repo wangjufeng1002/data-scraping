@@ -18,7 +18,7 @@ def drag():
         for i in range(random.randint(0, 3)):
             pag.moveTo(random.randint(0, 1000), random.randint(0, 1000), duration=random.uniform(0.1, 0.2),
                        tween=pyautogui.easeOutQuad)
-    pag.moveTo(895 + random.randint(-5, 5), 733 + random.randint(-5, 5), duration=random.uniform(0.1, 0.2),
+    pag.moveTo(900 + random.randint(-5, 5), 836 + random.randint(-5, 5), duration=random.uniform(0.1, 0.2),
                tween=pyautogui.easeOutQuad)
     timed = random.uniform(0.2, 0.3)
 
@@ -53,31 +53,25 @@ def scroll():
 
 
 def get_drag_pos():
-    box = pag.locateOnScreen("2.png", confidence=0.9)
+    box = pag.locateOnScreen("3.png", confidence=0.9)
     print(box)
     return box
 
-
-# 1017,662
-# 895,733
-noneIndex = 0
-if __name__ == '__main__':
+# 900, 836
+def get_pos():
     while True:
-        if noneIndex > 20:
-            pag.press('f5')
-
-            noneIndex = 0
-        if get_drag_pos() is not None:
-            noneIndex = 0
-            time.sleep(random.uniform(0.5, 1.5))
-            scroll()
-            drag()
-            time.sleep(random.uniform(0.5, 1.5))
-            pag.press('f5')
-        else:
-            noneIndex = noneIndex + 1
+        x,y =pag.position()
+        print(x,y)
         time.sleep(1)
 
-        if random.randint(0, 1) == 1:
-            pag.moveTo(random.randint(0, 1000), random.randint(0, 1000), duration=random.uniform(0.1, 0.2),
-                       tween=pyautogui.easeOutQuad)
+
+def process():
+    pag.press('f5')
+    time.sleep(1)
+    while get_drag_pos() is not None:
+        drag()
+        time.sleep(1)
+        pag.press('f5')
+        time.sleep(1)
+# 1017,662
+# 895,733

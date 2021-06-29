@@ -440,7 +440,7 @@ def updateHeaders(header):
     if header.id is not None:
         sql += " where id = %d" % header.id
     elif header.account is not None:
-        sql += " where account = %d" % header.account
+        sql += " where account = %s" % header.account
     else:
         return False, " PRIMARY KEY NOT NUll"
     if headerLock.acquire():

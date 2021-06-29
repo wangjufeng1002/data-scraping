@@ -3,6 +3,7 @@ from entity import Header, Book
 import json
 import entity
 import dataReptiledb
+import drag
 
 app = Flask(__name__)
 
@@ -46,6 +47,7 @@ def updateHeaders():
     # 获取传入的参数
     get_Data = request.get_data()
     jsonObj = json.loads(get_Data)
+    print(jsonObj)
     if (jsonObj.get("account") is None and  jsonObj.get("id") is None ) or jsonObj.get("cookie") is None:
         return "更新条件 账号或id 必须存在一个 ， cookie 不能为空"
     jsonObj.setdefault("referer", "https://detail.tmall.com/")
@@ -60,6 +62,11 @@ def updateHeaders():
 def getInvalidHeaders():
     headers = dataReptiledb.getHeadersByStatus(0)
     return json.dumps(headers)
+
+
+@app.route("/refresh",methods=["GET"])
+def refreshCookie():
+    drag.process()
 
 if __name__ == '__main__':
     dataReptiledb.init(None,"./logs/db-http-service.log")
