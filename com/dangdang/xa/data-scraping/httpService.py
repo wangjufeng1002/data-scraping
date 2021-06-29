@@ -1,4 +1,5 @@
 from flask import Flask, request
+from flask_cors import *
 from entity import Header, Book
 import json
 import entity
@@ -6,7 +7,7 @@ import dataReptiledb
 import drag
 
 app = Flask(__name__)
-
+CORS(app, supports_credentials=True)
 
 @app.route("/", methods=["GET"])
 def hello_world():
