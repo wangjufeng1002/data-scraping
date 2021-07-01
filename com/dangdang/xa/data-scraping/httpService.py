@@ -65,9 +65,6 @@ def getInvalidHeaders():
     return json.dumps(headers)
 
 
-@app.route("/refresh",methods=["GET"])
-def refreshCookie():
-    drag.process()
 
 if __name__ == '__main__':
     dataReptiledb.init(None,"./logs/db-http-service.log")
