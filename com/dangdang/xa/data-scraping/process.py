@@ -257,7 +257,7 @@ def processBookPromoInfo(category,headerIndex):
                 headers = dataReptiledb.getHeaders()
                 time.sleep(random.randint(10, 20))
             else:
-                dataReptiledb.updateBookSuccessFlag(flag=1,itemId=books[index].tmId)
+                #dataReptiledb.updateBookSuccessFlag(flag=1,itemId=books[index].tmId)
                 logUtils.logger.error(
                     "线程{threadName} - {itemId} 处理完成".format(threadName=threading.current_thread().getName(),
                                                             itemId=books[index].tmId))
