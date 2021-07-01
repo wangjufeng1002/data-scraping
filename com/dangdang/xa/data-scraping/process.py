@@ -226,6 +226,7 @@ def processBookPromoInfo(category,headerIndex):
     if headers is None or len(headers) <=0:
         return
     while True:
+        sucCnt = 0
         retryCnt = 0
         index = 0
         proxyIp = getIpProxyPool.get_proxy_from_redis()['proxy_detail']['ip']
@@ -235,10 +236,15 @@ def processBookPromoInfo(category,headerIndex):
         while index <= len(books) - 1:
             try:
                 processPromotionBookData(books[index], headers[headerIndex], proxyIp)
-                time.sleep(random.randint(10, 20))
+                sucCnt += 1
+                #time.sleep(random.randint(10, 20))
                 #执行干扰函数
-                disturbUrl(headers[headerIndex], proxyIp)
+                #disturbUrl(headers[headerIndex], proxyIp)
             except Exception as  e:
+                logUtils.logger.info(
+                    "成功统计-线程{threadName} 本次执行 {sucCnt}成功后 发生异常".format(threadName=threading.current_thread().getName(),
+                                                            sucCnt=sucCnt))
+                sucCnt = 0
                 logUtils.logger.error(e)
                 logUtils.logger.error(
                     "线程{threadName} - {itemId} 发生异常".format(threadName=threading.current_thread().getName(),
@@ -249,8 +255,9 @@ def processBookPromoInfo(category,headerIndex):
                     index += 1
                     retryCnt = 0
                 headers = dataReptiledb.getHeaders()
+                time.sleep(random.randint(10, 20))
             else:
-                #dataReptiledb.updateBookSuccessFlag(flag=1,itemId=books[index].tmId)
+                dataReptiledb.updateBookSuccessFlag(flag=1,itemId=books[index].tmId)
                 logUtils.logger.error(
                     "线程{threadName} - {itemId} 处理完成".format(threadName=threading.current_thread().getName(),
                                                             itemId=books[index].tmId))

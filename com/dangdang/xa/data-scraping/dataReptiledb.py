@@ -337,7 +337,8 @@ def getNotDealCategory():
 def getNotDealCategoryByBook():
     conn = pymysql.connect(host=host, port=3306, user="root", password="123456", database="data-reptile",
                            charset="utf8")
-    sql = "select DISTINCT category  as category from book where (book_prom_type is null or book_prom_type = '无' or book_prom_type = 'NULL') and   category is not NULL"
+    #sql = "select DISTINCT category  as category from book where (book_prom_type is null or book_prom_type = '无' or book_prom_type = 'NULL') and   category is not NULL"
+    sql = "select DISTINCT category  as category from book where is_success =0  and   category is not NULL"
     cursor = conn.cursor()
     cursor.execute(sql)
     fetchall = cursor.fetchall()

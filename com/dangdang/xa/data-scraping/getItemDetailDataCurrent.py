@@ -12,7 +12,7 @@ import process
 
 #根据cookies 数并发执行线程
 #nohup python getItemDetailData.py  >nohup.log 2>&1 &
-#nohup python getItemDetailDataCurrent.py  >nohup-current.log 2>&1 &
+#nohup python getItemDetailDataCurrent.py  > logs/nohup-current.log 2>&1 &
 def processAll():
     logUtils = Logger(filename='./logs/detail.log', level='info')
     dataReptiledb.init(None, "./logs/db-all.log")

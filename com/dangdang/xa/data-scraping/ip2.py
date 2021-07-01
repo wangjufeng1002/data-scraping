@@ -29,22 +29,22 @@ headers = {"Proxy-Tunnel": str(tunnel)}
 url = "http://httpbin.org/ip"
 
 
-itemUrl = 'https://detail.tmall.com/item.htm?id=620523822174&rn=6e9c59d750b2592eef375d7c778ce71d&abbucket=11'
-proxy ={'http':'http://106.14.198.6:8080','https':'https://106.14.198.6:8080'}
-session = HTMLSession()
-detailResponse = session.get(url,headers=headers, proxies=proxy,timeout=10)
-print(detailResponse.text)
-print(detailResponse.status_code)
+# itemUrl = 'https://detail.tmall.com/item.htm?id=620523822174&rn=6e9c59d750b2592eef375d7c778ce71d&abbucket=11'
+# proxy ={'http':'http://106.14.198.6:8080','https':'https://106.14.198.6:8080'}
+# session = HTMLSession()
+# detailResponse = session.get(url,headers=headers, proxies=proxy,timeout=10)
+# print(detailResponse.text)
+# print(detailResponse.status_code)
 
 
-requests.DEFAULT_RETRIES = 5  # 增加重试连接次数
-s = requests.session()
-
-s.keep_alive = False  # 关闭多余连接
-proxy = {'http:': 'http://8B44078D0103044E:7FD3CE9AC11E@27.152.192.18:60221', 'https:': 'https://8B44078D0103044E:7FD3CE9AC11E@27.152.192.18:60221'}
-s.proxies=proxy
-detailResponse = s.get(url=url)
-print(detailResponse.text)
+# requests.DEFAULT_RETRIES = 5  # 增加重试连接次数
+# s = requests.session()
+#
+# s.keep_alive = False  # 关闭多余连接
+# proxy = {'http:': 'http://8B44078D0103044E:7FD3CE9AC11E@27.152.192.18:60221', 'https:': 'https://8B44078D0103044E:7FD3CE9AC11E@27.152.192.18:60221'}
+# s.proxies=proxy
+# detailResponse = s.get(url=url)
+# print(detailResponse.text)
 
 
 
@@ -54,13 +54,13 @@ print(detailResponse.text)
 # print(response.text)
 
 if __name__ == '__main__':
-    file_object = open('D:\\爬虫\\TM\\item-detail-base.txt', "r", encoding='utf-8')
-    writeFile = open('D:\\爬虫\\TM\\item-detail-base-x.txt', "a", encoding='utf-8')
+    file_object = open('D:\\爬虫\\TM\\remote\\TM\\item-detail-base.txt', "r", encoding='utf-8')
     lines = file_object.readlines()
     for lin in lines:
         if lin[0].isdigit() is False:
             print(lin[0:10])
-        if len(lin.split("\t"))  > 15:
-            writeFile.write(lin)
-            writeFile.flush()
+
+        if len(lin.split("\t"))>16:
+            print(lin)
+
 
