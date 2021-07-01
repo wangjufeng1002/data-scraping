@@ -85,7 +85,7 @@ class Book:
         self.promotionType = promotionPriceType
 
     def getPromotionType(self):
-        if self.promotionType is None:
+        if self.promotionType is None or self.promotionType == 'None' or self.promotionType == 'NULL':
             return "无"
         return self.promotionType
 
@@ -103,7 +103,7 @@ class Book:
         return self.activeDesc
 
     def getActiveDescStr(self):
-        if self.activeDesc is None:
+        if self.activeDesc is None or self.activeDesc == 'None' or self.activeDesc == 'NULL':
             return '无'
         return ",".join(self.getActiveDesc())
 
@@ -111,7 +111,7 @@ class Book:
         return self.tmId
 
     def getPromotionPriceDesc(self):
-        if self.promotionPriceDesc is None:
+        if self.promotionPriceDesc is None or self.promotionPriceDesc == 'None' or self.promotionPriceDesc == 'NULL':
             return '无'
         return self.promotionPriceDesc
 
@@ -149,8 +149,8 @@ class Book:
         return time.strftime("%Y-%m-%d %H:%M:%S", timearr)
 
     def getCategory(self):
-        if self.category is None:
-            return ""
+        if self.category is None or self.category == 'None' or self.category == 'NULL':
+            return "无"
         return self.category
 
     def setCategory(self, category):
@@ -160,7 +160,7 @@ class Book:
         self.press = press
 
     def getPress(self):
-        if self.press is None:
+        if self.press is None or self.press == 'None' or self.press == 'NULL':
             return '无'
         return self.press
 

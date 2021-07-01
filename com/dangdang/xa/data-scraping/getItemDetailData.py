@@ -186,7 +186,7 @@ def getUrlDetailUrlFromDB(category):
     headersIndex = 0
     dataReptiledb.init(None, "./logs/db-getBaseDaata.log")
     # 获取数据库中的 headers
-    headers = dataReptiledb.getHeaders()
+    headers = dataReptiledb.getHeaders(None)
     ip_list = dataReptiledb.getIpList()
     # 获取url
     page = 1

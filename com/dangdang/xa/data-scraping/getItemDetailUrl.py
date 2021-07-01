@@ -82,7 +82,7 @@ def disturbUrl(header, ip):
 
 
 def process_page_list(url, category):
-    headers = dataReptiledb.getHeaders()
+    headers = dataReptiledb.getHeaders(None)
     headerIndex = 0
     ip_list = dataReptiledb.getIpList()
     # 获取要处理的页数
@@ -128,7 +128,7 @@ def process_page_list(url, category):
             logUtils.logger.error(" %s 线程 抓取第 %d页 发生了一些异常 ： %s " % (threading.current_thread().getName(), tempPage, e))
             if headerIndex == len(headers) - 1:
                 ip_list = dataReptiledb.getIpList()
-                headers = dataReptiledb.getHeaders()
+                headers = dataReptiledb.getHeaders(None)
                 headerIndex = 0
             else:
                 ip_list = dataReptiledb.getIpList()

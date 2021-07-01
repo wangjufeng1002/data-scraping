@@ -32,13 +32,16 @@ def dict2obj(obj, dict):
     return obj
 
 
-def getHeaders():
+def getHeaders(account):
     if headerLock.acquire():
         try:
             conn.ping(reconnect=True)
             headers = []
             cursor = conn.cursor()
-            execute = cursor.execute("select `cookie`,`referer`,`user-agent` from headers")
+            if account is not None:
+                execute = cursor.execute("select `cookie`,`referer`,`user-agent`,`account` from headers where account='%s' "% account )
+            else:
+                execute = cursor.execute("select `cookie`,`referer`,`user-agent`,`account` from headers ")
             result = cursor.fetchall()
             description = cursor.description
             columns = []
@@ -62,6 +65,7 @@ def getHeaders():
 
 def insertDetailPrice(book):
     if bookLock.acquire():
+        conn.ping(reconnect=True)
         cursor = conn.cursor()
         sql = "INSERT INTO `data-reptile`.`book`" \
               " ( `tm_id`, `book_name`, `book_isbn`, `book_auther`, `book_price`, `book_fix_price`, `book_prom_price`, `book_prom_price_desc`, " \
@@ -98,7 +102,8 @@ def insertDetailPrice(book):
             cursor.execute(sql)
             conn.commit()
         except Exception as e:
-            logUtils.logger.error("数据库插入Price发生异常 {},{}", book.getTmId(), e)
+            logUtils.logger.error("数据库插入Price发生异常{itemId}".format(itemId=book.getTmId()))
+            logUtils.logger.error("数据库插入Price发生异常 {}", e)
             conn.rollback()
         finally:
             bookLock.release()

@@ -52,9 +52,11 @@ url = "http://httpbin.org/ip"
 
 # response=requests.get("http://httpbin.org/ip",proxies={'http://':'DANGDANG:dangdangcmt@140.255.42.246:57114'})
 # print(response.text)
-
+#item-detail-base.txt ok
+#item-detail-base-01.txt
+#
 if __name__ == '__main__':
-    file_object = open('D:\\爬虫\\TM\\remote\\TM\\item-detail-base.txt', "r", encoding='utf-8')
+    file_object = open('D:\\爬虫\\TM\\remote\\TM\\item-detail-base-01.txt', "r", encoding='utf-8')
     lines = file_object.readlines()
     for lin in lines:
         if lin[0].isdigit() is False:

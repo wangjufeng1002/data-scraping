@@ -182,12 +182,13 @@ def processPromotionBookData(book, header, ip):
             write_db(detailUrl, shopName=book.getShopName(), category=book.getCategory())
 
     # 写入文件
-    file_object.write(book.toString() + "\n")
-    file_object.flush()
-    logUtils.logger.info("线程{threadName} process book {id}".format(threadName=threadName,id=book.tmId))
+    # file_object.write(book.toString() + "\n")
+    # file_object.flush()
+    # logUtils.logger.info("线程{threadName} process book {id}".format(threadName=threadName,id=book.tmId))
 
     # 保存数据
-    #dataReptiledb.insertDetailPrice(book)
+    dataReptiledb.insertDetailPrice(book)
+    logUtils.logger.info("线程{threadName} process book {id}".format(threadName=threadName, id=book.tmId))
 
 
 def processBookInfo(category,header):
@@ -221,9 +222,8 @@ def processBookInfo(category,header):
                 time.sleep(random.randint(1, 10))
         page+=1
 
-def processBookPromoInfo(category,headerIndex):
-    headers = dataReptiledb.getHeaders()
-    if headers is None or len(headers) <=0:
+def processBookPromoInfo(category,header):
+    if header is None :
         return
     while True:
         sucCnt = 0
@@ -235,7 +235,9 @@ def processBookPromoInfo(category,headerIndex):
             break
         while index <= len(books) - 1:
             try:
-                processPromotionBookData(books[index], headers[headerIndex], proxyIp)
+                if header is None:
+                    return
+                processPromotionBookData(books[index], header, proxyIp)
                 sucCnt += 1
                 #time.sleep(random.randint(10, 20))
                 #执行干扰函数
@@ -254,17 +256,24 @@ def processBookPromoInfo(category,headerIndex):
                 if retryCnt >= 20:
                     index += 1
                     retryCnt = 0
-                headers = dataReptiledb.getHeaders()
+                headers = dataReptiledb.getHeaders(header['account'])
+                if headers is None or len(headers == 0):
+                    time.sleep(random.randint(10, 20))
+                else:
+                    header = headers[0]
                 time.sleep(random.randint(10, 20))
             else:
-                #dataReptiledb.updateBookSuccessFlag(flag=1,itemId=books[index].tmId)
-                logUtils.logger.error(
+                dataReptiledb.updateBookSuccessFlag(flag=1,itemId=books[index].tmId)
+                logUtils.logger.info(
                     "线程{threadName} - {itemId} 处理完成".format(threadName=threading.current_thread().getName(),
                                                             itemId=books[index].tmId))
                 index += 1
-            finally:
-                time.sleep(random.randint(1, 3))
-
+            # finally:
+            #     time.sleep(random.randint(1, 3))
+def processBookPromoInfoTest(category,headerIndex):
+    while True:
+        time.sleep(2)
+        print(category,headerIndex)
 if __name__ == '__main__':
     # region Description
     try:
