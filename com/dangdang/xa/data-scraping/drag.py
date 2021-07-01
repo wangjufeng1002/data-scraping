@@ -18,7 +18,7 @@ def drag():
         for i in range(random.randint(0, 3)):
             pag.moveTo(random.randint(0, 1000), random.randint(0, 1000), duration=random.uniform(0.1, 0.2),
                        tween=pyautogui.easeOutQuad)
-    pag.moveTo(900 + random.randint(-5, 5), 836 + random.randint(-5, 5), duration=random.uniform(0.1, 0.2),
+    pag.moveTo(903 + random.randint(-5, 5), 813 + random.randint(-5, 5), duration=random.uniform(0.1, 0.2),
                tween=pyautogui.easeOutQuad)
     timed = random.uniform(0.2, 0.3)
 
@@ -28,9 +28,9 @@ def drag():
     ]
     chose = random.randint(0, 1)
     if chose == 1:
-        dragTo(900 + random.randint(-5, 500))
+        dragTo(1100 + random.randint(-5, 500))
     else:
-        pyautogui.dragRel(xOffset=900 + random.randint(-5, 500), yOffset=random.randint(-5, 5), duration=timed,
+        pyautogui.dragRel(xOffset=1100 + random.randint(-5, 500), yOffset=random.randint(-5, 5), duration=timed,
                           button='left',
                           tween=eases[0])
 
@@ -66,7 +66,6 @@ def get_pos():
 
 
 def process():
-    pag.press('f5')
     time.sleep(1)
     while get_drag_pos() is not None:
         drag()
@@ -75,3 +74,12 @@ def process():
         time.sleep(1)
 # 1017,662
 # 895,733
+
+if __name__ == '__main__':
+    while True:
+        if get_drag_pos() is not None:
+            scroll()
+            drag()
+            time.sleep(1)
+            pag.press('f5')
+        time.sleep(1)
