@@ -1,6 +1,7 @@
 import urllib.request as res
 import time, random
-
+from bs4 import BeautifulSoup
+import json, re, demjson
 import requests
 
 from requests_html import HTMLSession, AsyncHTMLSession
@@ -29,11 +30,14 @@ headers = {"Proxy-Tunnel": str(tunnel)}
 url = "http://httpbin.org/ip"
 
 
-# itemUrl = 'https://detail.tmall.com/item.htm?id=620523822174&rn=6e9c59d750b2592eef375d7c778ce71d&abbucket=11'
-# proxy ={'http':'http://106.14.198.6:8080','https':'https://106.14.198.6:8080'}
+# itemUrl = 'http://detail.tmall.com/item.htm?id=588569116664&rn=539f1b779c9667c2b87e12ef76b860c2&abbucket=4'
 # session = HTMLSession()
-# detailResponse = session.get(url,headers=headers, proxies=proxy,timeout=10)
-# print(detailResponse.text)
+# proxy = {'http:': "http://" + "8B44078D0103044E:7FD3CE9AC11E@110.86.139.188:38845", 'https:': "https://" + "8B44078D0103044E:7FD3CE9AC11E@110.86.139.188:38845"}
+# detailResponse = session.get(itemUrl,headers=headers,timeout=10)
+# detailHtmlSoup = BeautifulSoup(detailResponse.text, features='html.parser')
+# itmDescUl = detailHtmlSoup.find_all(name="ul", attrs={"id": "J_AttrUL"})
+# contents = itmDescUl[0].contents
+# print(contents)
 # print(detailResponse.status_code)
 
 
@@ -53,10 +57,10 @@ url = "http://httpbin.org/ip"
 # response=requests.get("http://httpbin.org/ip",proxies={'http://':'DANGDANG:dangdangcmt@140.255.42.246:57114'})
 # print(response.text)
 #item-detail-base.txt ok
-#item-detail-base-01.txt
-#
+#item-detail-base-01.txt now
+#item-detail-base-bowen.txt
 if __name__ == '__main__':
-    file_object = open('D:\\爬虫\\TM\\remote\\TM\\item-detail-base-01.txt', "r", encoding='utf-8')
+    file_object = open('D:\\爬虫\\TM\\remote\\TM\\item-detail-base-bowen.txt', "r", encoding='utf-8')
     lines = file_object.readlines()
     for lin in lines:
         if lin[0].isdigit() is False:

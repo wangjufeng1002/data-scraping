@@ -71,28 +71,34 @@ if __name__ == '__main__':
     processPromo(headers, categorys)
 
     while True:
-        threadParamMap ={}
-        time.sleep(3)
-        custThreadCnt = 0
-        threads = threading.enumerate()
-        for thread in threads:
-            if "自定义" in thread.name:
-                custThreadCnt += 1
-                split = thread.name.split("<->")
-                threadParamMap[split[2]]=split[1]
-        # 当前正在执行的线程数 与 绑定的线程数相等，没有线程结束
-        headers = dataReptiledb.getHeaders(None)
-        freeHeaders = []
-        for tempHeader in headers:
-            acc = tempHeader.get("account")
-            # 当前cookie 不在运行的 线程中绑定
-            if threadParamMap.get(acc) is None:
-                freeHeaders.append(tempHeader)
-        # 排除正在运行的分类
-        categorys = dataReptiledb.getNotDealCategoryByBook()
-        runCategorys = threadParamMap.values()
-        #得到未执行的分类
-        freeCategorys = list(set(categorys).difference(set(runCategorys)))
-        if freeHeaders is not None and len(freeHeaders) != 0 and freeCategorys is not None and len(freeCategorys) !=0:
-            logUtils.logger.info("准备新启线程{size}".format(size=len(freeHeaders)))
-            processPromo(freeHeaders, freeCategorys)
+        try:
+            threadParamMap ={}
+            time.sleep(10)
+            custThreadCnt = 0
+            threads = threading.enumerate()
+            for thread in threads:
+                if "自定义" in thread.name:
+                    custThreadCnt += 1
+                    split = thread.name.split("<->")
+                    threadParamMap[split[2]]=split[1]
+            # 当前正在执行的线程数 与 绑定的线程数相等，没有线程结束
+            headers = dataReptiledb.getHeaders(None)
+            freeHeaders = []
+            for tempHeader in headers:
+                acc = tempHeader.get("account")
+                # 当前cookie 不在运行的 线程中绑定
+                if threadParamMap.get(acc) is None:
+                    freeHeaders.append(tempHeader)
+            if len(freeHeaders) == 0 :
+                 continue
+            # 排除正在运行的分类
+            categorys = dataReptiledb.getNotDealCategoryByBook()
+            runCategorys = threadParamMap.values()
+            #得到未执行的分类
+            freeCategorys = list(set(categorys).difference(set(runCategorys)))
+            if freeHeaders is not None and len(freeHeaders) != 0 and freeCategorys is not None and len(freeCategorys) !=0:
+                logUtils.logger.info("准备新启线程{size}".format(size=len(freeHeaders)))
+                processPromo(freeHeaders, freeCategorys)
+        except Exception as e:
+            logUtils.logger.error("线程检测出现异常")
+            logUtils.logger.error(u"线程检测出现异常",e,exc_info=True,stack_info=True)

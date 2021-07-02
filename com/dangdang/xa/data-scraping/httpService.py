@@ -4,8 +4,7 @@ from entity import Header, Book
 import json
 import entity
 import dataReptiledb
-import drag
-
+# nohup python  httpService.py > ./logs/nohup-service.log 2>&1 &
 app = Flask(__name__)
 CORS(app, supports_credentials=True)
 
@@ -59,11 +58,21 @@ def updateHeaders():
     header = json.loads(json.dumps(jsonObj), object_hook=entity.headerHandler)
     result = dataReptiledb.updateHeaders(header)
     return result[1]
+
 @app.route("/getInvalidHeaders", methods=["GET"])
 def getInvalidHeaders():
     headers = dataReptiledb.getHeadersByStatus(0)
     return json.dumps(headers)
 
+#根据更新时间倒排，每次只返回一个
+@app.route("/getInvalidHeader", methods=["GET"])
+def getInvalidHeader():
+    headers = dataReptiledb.getOneHeadersByStatus(0)
+    #没有失效的，那就获取
+    if headers is not None and len(headers) >0:
+        return json.dumps(headers[0])
+    else:
+        return json.dumps({})
 
 
 if __name__ == '__main__':

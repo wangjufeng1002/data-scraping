@@ -126,6 +126,8 @@ def processPromotionBookData(book, header, ip):
     try:
         promotionJSON = loads_jsonp(promotionJsonp.text)
     except Exception as e:
+        #cookie 解析失败更新账号
+        dataReptiledb.updateHeaderStatus(header['account'],0)
         logUtils.logger.error("线程{threadName} - {itemId} 解析jsonp 失败，cookie 失效".format(threadName=threadName, itemId=book.getTmId()))
         raise Exception("线程{threadName} - {itemId} 解析jsonp 失败，cookie 失效".format(threadName=threadName, itemId=book.getTmId()))
     else:
@@ -257,16 +259,20 @@ def processBookPromoInfo(category,header):
                     index += 1
                     retryCnt = 0
                 headers = dataReptiledb.getHeaders(header['account'])
-                if headers is None or len(headers == 0):
+                if headers is None or len(headers) ==0:
                     time.sleep(random.randint(10, 20))
                 else:
                     header = headers[0]
                 time.sleep(random.randint(10, 20))
             else:
-                dataReptiledb.updateBookSuccessFlag(flag=1,itemId=books[index].tmId)
-                logUtils.logger.info(
-                    "线程{threadName} - {itemId} 处理完成".format(threadName=threading.current_thread().getName(),
-                                                            itemId=books[index].tmId))
+                try:
+                    dataReptiledb.updateBookSuccessFlag(flag=1,itemId=books[index].tmId)
+                except:
+                    logUtils.logger.info("线程{threadName} - {itemId} 更新is_sucess标志失败".format(threadName=threading.current_thread().getName(),itemId=books[index].tmId))
+                else:
+                    logUtils.logger.info(
+                        "线程{threadName} - {itemId} 处理完成".format(threadName=threading.current_thread().getName(),
+                                                                itemId=books[index].tmId))
                 index += 1
             # finally:
             #     time.sleep(random.randint(1, 3))

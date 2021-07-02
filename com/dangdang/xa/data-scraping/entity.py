@@ -275,7 +275,7 @@ class Header:
         self.status = status
 
 def headerHandler(obj):
-    return Header(obj.get("id",None),obj.get("cookie"),obj.get("referer"),obj.get("user_agent"),obj.get("account"),obj.get("password"),obj.get("status"))
+    return Header(obj.get("id",None),obj.get("cookie"),obj.get("referer"),obj.get("user-agent"),obj.get("account"),obj.get("password"),obj.get("status"))
 
 
 
