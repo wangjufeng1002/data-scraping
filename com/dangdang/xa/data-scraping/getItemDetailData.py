@@ -108,7 +108,7 @@ def processPriceData(itemUrlEntity,header, ip):
         if ("作者" in con.next) or ("编者" in con.next):
             if "作者地区" not in con.next:
                 book.setAuther(con.next.replace("作者: ", "").replace("编者: ", ""))
-        if ("定价" in con.next) or ("价格" in con.next):
+        if ("定价:" in con.next) or ("定价：" in con.next):
             book.setFixPrice(con.next.replace("定价: ", "").replace("价格: ", ""))
         if ("出版社" in con.next) or ("出版社" in con.next):
             book.setPress(con.next.replace("出版社名称:", ""))
