@@ -77,4 +77,4 @@ def getInvalidHeader():
 
 if __name__ == '__main__':
     dataReptiledb.init(None,"./logs/db-http-service.log")
-    app.run(debug=True,port=10001,host="0.0.0.0")
+    app.run(debug=True,port=10001,host="0.0.0.0",ssl_context='adhoc')

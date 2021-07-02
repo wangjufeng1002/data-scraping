@@ -459,7 +459,7 @@ def updateHeaders(header):
         conn.rollback()
         logUtils.logger.error("updateHeaders exception {}", e)
     else:
-        logUtils.logger.error("updateHeaders SUCCESS ")
+        logUtils.logger.info("updateHeaders SUCCESS ")
         conn.commit()
         cursor.close()
     finally:
