@@ -129,7 +129,7 @@ def processPromotionBookData(book, header, ip):
         promotionJSON = loads_jsonp(promotionJsonp.text)
     except Exception as e:
         #cookie 解析失败更新账号
-        dataReptiledb.updateHeaderStatus(header['account'],0)
+        dataReptiledb.updateHeaderStatus(0,header['account'])
         logUtils.logger.error("线程{threadName} - {itemId} 解析jsonp 失败，cookie 失效".format(threadName=threadName, itemId=book.getTmId()))
         raise Exception("线程{threadName} - {itemId} 解析jsonp 失败，cookie 失效".format(threadName=threadName, itemId=book.getTmId()))
     else:
