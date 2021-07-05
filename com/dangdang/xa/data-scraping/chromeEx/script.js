@@ -74,11 +74,23 @@ const getUser = () => {
         }
     })
 }
-const login = (user) => {
+const randUrl=()=>{
+    return new Promise((resolve,reject)=>{
+        const xhr = new XMLHttpRequest();
+        xhr.open("GET", "http://localhost:10001/getRandomItemUrl", true)
+        xhr.send()
+        xhr.onload = (e) => {
+            resolve(e.target.response)
+        }
+    })
+}
+const login = async (user) => {
     //登录之后跳转
     let menu = document.getElementsByClassName("mt-menu-item")
     if (menu.length > 0) {
-        window.location.href = 'https://chaoshi.detail.tmall.com/item.htm?id=620005546339'
+        let url= await randUrl();
+        console.log("url",url.item_url)
+        window.location.href = (JSON.parse(url)).item_url
     }
     //登录
     let username = document.getElementsByName("fm-login-id")
