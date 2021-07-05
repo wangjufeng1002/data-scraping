@@ -224,8 +224,7 @@ def updateBookSuccessFlag(flag, itemId):
         execute = cursor.execute(sql)
         conn.commit()
     except Exception as e:
-        cursor.close()
-        print("更新 book.is_success 失败")
+        logUtils.logger.error("更新 book.is_success {itemId}失败".format(itemId=itemId))
         raise e
     finally:
         cursor.close()
@@ -459,7 +458,7 @@ def updateHeaders(header):
         conn.rollback()
         logUtils.logger.error("updateHeaders exception {}", e)
     else:
-        logUtils.logger.error("updateHeaders SUCCESS ")
+        logUtils.logger.info("updateHeaders SUCCESS ")
         conn.commit()
         cursor.close()
     finally:
@@ -559,5 +558,30 @@ def getOneHeadersByStatus(status):
     finally:
         conn.close()
 
+
+def getAllHeaders():
+    sql = "select id,cookie,referer,`user-agent`,account,password from headers "
+    conn = POOL.connection()
+    try:
+        cursor = conn.cursor()
+        cursor.execute(sql)
+        result = cursor.fetchall()
+        description = cursor.description
+        columns = []
+        headers = []
+        for i in range(len(description)):
+            columns.append(description[i][0])  # 获取字段名，咦列表形式保存
+        for i in range(len(result)):
+            head = {}
+            # 取出每一行 和 列名组成map
+            row = list(result[i])
+            for j in range(len(columns)):
+                head[columns[j]] = row[j]
+            headers.append(head)
+        return headers
+    except Exception as e:
+        conn.rollback()
+    finally:
+        conn.close()
 
 

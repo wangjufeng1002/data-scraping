@@ -4,6 +4,7 @@ from entity import Header, Book
 import json
 import entity
 import dataReptiledb
+import cacheContants
 # nohup python  httpService.py > ./logs/nohup-service.log 2>&1 &
 app = Flask(__name__)
 CORS(app, supports_credentials=True)
@@ -42,13 +43,14 @@ def insertHeaders():
     result = dataReptiledb.insetHeaders(header)
     return result[1]
 
+
 @app.route("/updateHeaders", methods=["POST"])
 def updateHeaders():
     # 获取传入的参数
     get_Data = request.get_data()
     jsonObj = json.loads(get_Data)
     print(jsonObj)
-    if (jsonObj.get("account") is None and  jsonObj.get("id") is None ) or jsonObj.get("cookie") is None:
+    if (jsonObj.get("account") is None and jsonObj.get("id") is None) or jsonObj.get("cookie") is None:
         return "更新条件 账号或id 必须存在一个 ， cookie 不能为空"
     jsonObj.setdefault("referer", "https://detail.tmall.com/")
     jsonObj.setdefault("user-agent",
@@ -59,22 +61,39 @@ def updateHeaders():
     result = dataReptiledb.updateHeaders(header)
     return result[1]
 
+
 @app.route("/getInvalidHeaders", methods=["GET"])
 def getInvalidHeaders():
     headers = dataReptiledb.getHeadersByStatus(0)
     return json.dumps(headers)
 
-#根据更新时间倒排，每次只返回一个
+
+# 根据更新时间倒排，每次只返回一个
 @app.route("/getInvalidHeader", methods=["GET"])
 def getInvalidHeader():
     headers = dataReptiledb.getOneHeadersByStatus(0)
-    #没有失效的，那就获取
-    if headers is not None and len(headers) >0:
+    # 没有失效的，那就获取
+    if headers is not None and len(headers) > 0:
         return json.dumps(headers[0])
     else:
         return json.dumps({})
 
 
+
+
+
+@app.route("/getLoopInvalidHeader", methods=["GET"])
+def getLoopInvalidHeader():
+    if len(cacheContants.headers) == 0 or cacheContants.headerIndex == cacheContants.headerMaxIndex :
+        cacheContants.headers = dataReptiledb.getAllHeaders()
+        cacheContants.headerIndex =0
+        cacheContants.headerMaxIndex = len(cacheContants.headers)-1
+
+    header=cacheContants.headers[cacheContants.headerIndex]
+    cacheContants.headerIndex+=1
+    return header
+
+
 if __name__ == '__main__':
-    dataReptiledb.init(None,"./logs/db-http-service.log")
-    app.run(debug=True,port=10001,host="0.0.0.0")
+    dataReptiledb.init(None, "./logs/db-http-service.log")
+    app.run(debug=True, port=10001, host="0.0.0.0", ssl_context='adhoc')
