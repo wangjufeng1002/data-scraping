@@ -88,6 +88,11 @@ def processDefaultBookData(itemUrlEntity, header, ip, logUtils):
     session = HTMLSession()
     detailResponse = session.get(itemUrlEntity.itemUrl, proxies=proxy)
     detailHtmlSoup = BeautifulSoup(detailResponse.text, features='html.parser')
+    if "很抱歉，您查看的商品找不到了" in detailResponse.text:
+        logUtils.logger.error(
+            "线程{threadName} - 商品已经下架 {id}".format(threadName=threading.current_thread().getName(), id=itemUrlEntity.itemId))
+        return None,2
+
     itemId = re.match(".*?(id=.*&).*", itemUrlEntity.itemUrl, re.S).group(1).split('&')[0].replace('id=', '')
     defaultPrice = re.match(".*?(\"defaultItemPrice\":.*&).*", detailResponse.text, re.S).group(1).split(',')[
         0].replace("defaultItemPrice", "").replace('\"', "").replace(":", "").replace(",", "")
@@ -122,7 +127,7 @@ def processDefaultBookData(itemUrlEntity, header, ip, logUtils):
         "线程{threadName} - 基础信息抓取完成 {id}".format(threadName=threading.current_thread().getName(), id=itemId))
     # time.sleep(5)
     # time.sleep(random.randint(2, 10))
-    return book
+    return book,1
 
 
 # 实际解析促销价方法
@@ -226,22 +231,25 @@ def processBookInfo(category, header, logUtils):
             break
         while index <= len(itemUrls) - 1:
             try:
-                book = processDefaultBookData(itemUrls[index], header, proxyIp, logUtils)
+                book,status = processDefaultBookData(itemUrls[index], header, proxyIp, logUtils)
                 proxyIp = getIpProxyPool.get_proxy_from_redis()['proxy_detail']['ip']
-                status = processPromotionBookData(book, header, proxyIp, logUtils)
-                logUtils.logger.info("线程{threadName} - {itemId} 获取书籍信息成功 - 代理IP:{proxyIp}".format(
-                        threadName=threading.current_thread().getName(),
-                        itemId=itemUrls[index].itemId, proxyIp=proxyIp))
-                time.sleep(random.randint(1, 5))
+                #如果status = 2 说明已经下架，
+                if status != 2:
+                    status = processPromotionBookData(book, header, proxyIp, logUtils)
+                    logUtils.logger.info("线程{threadName} - {itemId} 获取书籍信息成功 - 代理IP:{proxyIp}".format(
+                            threadName=threading.current_thread().getName(),
+                            itemId=itemUrls[index].itemId, proxyIp=proxyIp))
+                    time.sleep(random.randint(5, 10))
             except Exception as  e:
                 logUtils.logger.error("线程{threadName} - {itemId} 发生异常 - 代理IP:{proxyIp} - {e}".format(
                     threadName=threading.current_thread().getName(), itemId=itemUrls[index].itemId, proxyIp=proxyIp,
                     e=e))
                 proxyIp = getIpProxyPool.get_proxy_from_redis()['proxy_detail']['ip']
                 retryCnt += 1
-                if retryCnt >= 20:
+                if retryCnt >= 5:
                     index += 1
                     retryCnt = 0
+                time.sleep(random.randint(10,20))
             else:
                 try:
                     dataReptiledb.updateBookSuccessFlag(flag=status, itemId=itemUrls[index].itemId)
@@ -287,7 +295,7 @@ def processBookPromoInfo(category, header, logUtils):
                                                             itemId=books[index].tmId))
                 proxyIp = getIpProxyPool.get_proxy_from_redis()['proxy_detail']['ip']
                 retryCnt += 1
-                if retryCnt >= 20:
+                if retryCnt >= 5:
                     index += 1
                     retryCnt = 0
                 headers = dataReptiledb.getHeaders(header['account'])
