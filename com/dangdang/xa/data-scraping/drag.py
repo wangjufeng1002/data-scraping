@@ -4,47 +4,69 @@ import time
 import random
 import pyautogui
 import pyautogui as pag
+import requests
+import tween
+import numpy as np
+import logging
+
+logging.basicConfig(filename="./logs/draglog.log")
 
 
-def dragTo(x):
-    pag.mouseDown()
-    for i in range(5):
-        pag.moveRel(x - random.randint(300, 500), random.randint(-5, 5))
-    pag.mouseUp()
+# 噪音随机移动
+def noise_remove():
+    x = random.uniform(0, 1024)
+    y = random.uniform(0,1024)
+    timed = random.uniform(0, 1)
+    tweenname, mytween = tween.get_tween()
+    print(tweenname)
+    pag.moveTo(x, y, duration=timed, tween=mytween)
 
 
-def myEaseOutQuad(n):
-    res =-n * (n - 2)
-    noise=random.randint(-5,5)
-    return res +noise
+# 移动到起始点
+def move_to_start():
+    random.uniform(0, 1025)
+    box = get_start_pos()
+    timed = random.uniform(0, 1)
+    x = box.left + 10 + random.randint(0, 20)
+    y = box.top + 10 + random.randint(0, 20)
+    tweenname, mytween = tween.get_tween()
+    pag.moveTo(x + random.randint(-5, 5), y + random.randint(-5, 5), duration=timed,
+               tween=mytween)
 
-def myeaseInOutQuad(n):
-    noise = random.randint(-5, 5)
-    if n < 0.5:
-        return 2 * n**2+noise
-    else:
-        n = n * 2 - 1
-        return -0.5 * (n*(n-2) - 1)+noise
+
+def my_drag(x):
+    pag.mouseDown(button='left')
+
+    pyautogui.PAUSE = 0.01
+    step =random.randint(4,10)
+    num=[]
+    for i in range(0,step):
+        limit =x-np.sum(num)
+        start=10
+        if(limit<start):
+            start =0
+        r= random.randint(start,limit)
+        num.append(r)
+    num.sort(reverse=True)
+
+    for i in num:
+        if i>0:
+            mytweenname,mytween = tween.get_tween()
+            print(i,mytweenname)
+            pag.moveRel(xOffset=i, yOffset=random.randint(-20, 20), duration=random.uniform(0.02, 0.03), tween=mytween)
+
+    pag.mouseUp(button='left')
+    pyautogui.PAUSE = 0.1
 def drag():
-    if random.randint(0, 1) == 1:
-        for i in range(random.randint(0, 3)):
-            pag.moveTo(random.randint(0, 1000), random.randint(0, 1000), duration=random.uniform(0.1, 0.2),
-                       tween=pyautogui.easeOutQuad)
-    pag.moveTo(903 + random.randint(-5, 5), 813 + random.randint(-5, 5), duration=random.uniform(0.1, 0.2),
-               tween=pyautogui.easeOutQuad)
-    timed = random.uniform(0.2, 0.3)
+    timed = random.uniform(0.20, 0.35)
+    user = get_user()
 
-    eases = [
-        myEaseOutQuad,  # 0.2-0.3
-        myeaseInOutQuad,
-    ]
-    chose = random.randint(0, 1)
-    if chose == 1:
-        dragTo(1100 + random.randint(-5, 500))
-    else:
-        pyautogui.dragRel(xOffset=1100 + random.randint(-5, 500), yOffset=random.randint(-5, 5), duration=timed,
-                          button='left',
-                          tween=eases[0])
+    tweenname, mytween = tween.get_tween()
+    logging.info("user:" + user + "tween:" + tweenname + "timed:" + timed)
+    print("user:" + user + "tween:" + tweenname + "timed:" + timed)
+    pyautogui.dragRel(xOffset=1100 + random.randint(-100, 500), yOffset=random.randint(-20, 20), duration=timed,
+                      button='left',
+                      tween=mytween)
 
 
 def scroll():
@@ -64,16 +86,26 @@ def scroll():
     pyautogui.scroll(-400 + random.randint(100, 200))
 
 
+def get_start_pos():
+    return pag.locateOnScreen("start.png", confidence=0.9)
+
+
 def get_drag_pos():
     box = pag.locateOnScreen("3.png", confidence=0.9)
     print(box)
     return box
 
+
+def get_user():
+    res = requests.get("http://localhost:10001/getInvalidHeader")
+    return res.json()
+
+
 # 900, 836
 def get_pos():
     while True:
-        x,y =pag.position()
-        print(x,y)
+        x, y = pag.position()
+        print(x, y)
         time.sleep(1)
 
 
@@ -84,14 +116,19 @@ def process():
         time.sleep(1)
         pag.press('f5')
         time.sleep(1)
+
+
 # 1017,662
 # 895,733
 
 if __name__ == '__main__':
-    while True:
-        if get_drag_pos() is not None:
-            scroll()
-            drag()
-            time.sleep(1)
-            pag.press('f5')
-        time.sleep(1)
+    my_drag(700)
+    # time.sleep(0.1)
+    # time.sleep(2)
+    # drag()
+    # if get_drag_pos() is not None:
+    #     #scroll()
+    #     time.sleep(2)
+    #     drag()
+    #     time.sleep(1)
+    #     pag.press('f5')
