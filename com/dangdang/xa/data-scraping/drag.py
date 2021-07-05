@@ -15,7 +15,7 @@ logging.basicConfig(filename="./logs/draglog.log")
 # 噪音随机移动
 def noise_remove():
     x = random.uniform(0, 1024)
-    y = random.uniform(0,1024)
+    y = random.uniform(0, 1024)
     timed = random.uniform(0, 1)
     tweenname, mytween = tween.get_tween()
     print(tweenname)
@@ -38,25 +38,27 @@ def my_drag(x):
     pag.mouseDown(button='left')
 
     pyautogui.PAUSE = 0.01
-    step =random.randint(4,10)
-    num=[]
-    for i in range(0,step):
-        limit =x-np.sum(num)
-        start=10
-        if(limit<start):
-            start =0
-        r= random.randint(start,limit)
+    step = random.randint(4, 10)
+    num = []
+    for i in range(0, step):
+        limit = x - np.sum(num)
+        start = 10
+        if limit < start:
+            start = 0
+        r = random.randint(start, limit)
         num.append(r)
     num.sort(reverse=True)
 
     for i in num:
-        if i>0:
-            mytweenname,mytween = tween.get_tween()
-            print(i,mytweenname)
-            pag.moveRel(xOffset=i, yOffset=random.randint(-20, 20), duration=random.uniform(0.02, 0.03), tween=mytween)
+        if i > 0:
+            mytweenname, mytween = tween.get_tween()
+            print(i, mytweenname)
+            pag.moveRel(xOffset=i, yOffset=random.randint(-20, 20), duration=random.uniform(0.07, 0.1), tween=mytween)
 
     pag.mouseUp(button='left')
     pyautogui.PAUSE = 0.1
+
+
 def drag():
     timed = random.uniform(0.20, 0.35)
     user = get_user()
