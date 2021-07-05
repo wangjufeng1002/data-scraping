@@ -92,7 +92,11 @@ def getLoopInvalidHeader():
     header=cacheContants.headers[cacheContants.headerIndex]
     cacheContants.headerIndex+=1
     return header
-
+@app.route("/getRandomItemUrl", methods=["GET"])
+def getRandomItemUrl():
+    url = dataReptiledb.getRandItemUrl()
+    return url[0]
+    #return header
 
 if __name__ == '__main__':
     dataReptiledb.init(None, "./logs/db-http-service.log")

@@ -16,11 +16,14 @@ conn = None
 defaultHost = "192.168.47.210"
 
 
-def init(host, logFile):
+def init(hostParam, logFile):
     global logUtils
     global conn
-    if host is None:
+    global host
+    if hostParam is None:
         host = defaultHost
+    else:
+        host=hostParam
     logUtils = Logger(filename=logFile, level='info')
     conn = pymysql.connect(host=host, port=3306, user="root", password="123456", database="data-reptile",
                            charset="utf8")
@@ -184,36 +187,36 @@ def insertItemUrl(itemUrls):
     cursor.close()
 
 
-def getItemUrl(category, page, page_size):
-    conn = pymysql.connect(host=host, port=3306, user="root", password="123456", database="data-reptile",
-                           charset="utf8")
+def getItemUrl(category ,page_size):
+    conn = POOL.connection()
     cursor = conn.cursor()
-    if page is None or page <= 0:
-        page = 1
-    if page_size is None:
-        page_size = 1000
-    offset = (page - 1) * page_size
-    sql = "select item_id as itemId,item_url as itemUrl,shop_name as shopName ,category from `item_url` where  category='%s' and is_success !=1 and is_success !=100 order by update_time ASC limit %d,%d"
-    e_sql = sql % (category, offset, page_size)
-    execute = cursor.execute(e_sql)
-    if execute <= 0:
-        return None
-    result = cursor.fetchall()
-    description = cursor.description
-    columns = []
-    itemUrlObjs = []
-    for i in range(len(description)):
-        columns.append(description[i][0])  # 获取字段名，咦列表形式保存
-    for i in range(len(result)):
-        itemUrl = {}
-        itemUrlObj = ItemUrl(itemId=None, itemUrl=None, shopName=None, category=None)
-        # 取出每一行 和 列名组成map
-        row = list(result[i])
-        for j in range(len(columns)):
-            itemUrl[columns[j]] = row[j]
-        dict2obj(itemUrlObj, itemUrl)
-        itemUrlObjs.append(itemUrlObj)
-    return itemUrlObjs
+    try:
+        if page_size is None:
+            page_size = 1000
+        sql = "select item_id as itemId,item_url as itemUrl,shop_name as shopName ,category from `item_url` where  category='%s' and is_success !=1 and is_success !=100 order by update_time ASC limit %d"
+        e_sql = sql % (category, page_size)
+        execute = cursor.execute(e_sql)
+        if execute <= 0:
+            return None
+        result = cursor.fetchall()
+        description = cursor.description
+        columns = []
+        itemUrlObjs = []
+        for i in range(len(description)):
+            columns.append(description[i][0])  # 获取字段名，咦列表形式保存
+        for i in range(len(result)):
+            itemUrl = {}
+            itemUrlObj = ItemUrl(itemId=None, itemUrl=None, shopName=None, category=None)
+            # 取出每一行 和 列名组成map
+            row = list(result[i])
+            for j in range(len(columns)):
+                itemUrl[columns[j]] = row[j]
+            dict2obj(itemUrlObj, itemUrl)
+            itemUrlObjs.append(itemUrlObj)
+        return itemUrlObjs
+    finally:
+        cursor.close()
+        conn.close()
 
 
 def updateBookSuccessFlag(flag, itemId):
@@ -579,6 +582,30 @@ def getAllHeaders():
                 head[columns[j]] = row[j]
             headers.append(head)
         return headers
+    except Exception as e:
+        conn.rollback()
+    finally:
+        conn.close()
+def getRandItemUrl():
+    sql = "select item_url from item_url order by rand() LIMIT 1 "
+    conn = POOL.connection()
+    try:
+        cursor = conn.cursor()
+        cursor.execute(sql)
+        result = cursor.fetchall()
+        description = cursor.description
+        columns = []
+        urls = []
+        for i in range(len(description)):
+            columns.append(description[i][0])  # 获取字段名，咦列表形式保存
+        for i in range(len(result)):
+            head = {}
+            # 取出每一行 和 列名组成map
+            row = list(result[i])
+            for j in range(len(columns)):
+                head[columns[j]] = row[j]
+            urls.append(head)
+        return urls
     except Exception as e:
         conn.rollback()
     finally:

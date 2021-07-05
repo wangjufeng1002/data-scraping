@@ -30,27 +30,27 @@ headers = {"Proxy-Tunnel": str(tunnel)}
 
 url = "http://httpbin.org/ip"
 
-proxyIp = getIpProxyPool.get_proxy_from_redis()['proxy_detail']['ip']
-itemUrl = 'http://detail.tmall.com/item.htm?id=37209444242&rn=766e540483b8762c2181754e0fb2fab6&abbucket=10'
-session = HTMLSession()
-proxy = {'http:': "http://" + proxyIp, 'https:': "https://" + proxyIp}
-detailResponse = session.get(itemUrl,headers=headers,timeout=10)
-detailHtmlSoup = BeautifulSoup(detailResponse.text, features='html.parser')
-itmDescUl = detailHtmlSoup.find_all(name="ul", attrs={"id": "J_AttrUL"})
-contents = itmDescUl[0].contents
-for con in contents:
-    if "书名" in con.next:
-        print(con.next.replace("书名: ", ""))
-    if "ISBN" in con.next:
-        print(con.next.replace("ISBN编号: ", ""))
-    if ("作者" in con.next) or ("编者" in con.next):
-        if "作者地区" not in con.next:
-            print(con.next.replace("作者: ", "").replace("编者: ", ""))
-    if ("定价:" in con.next) or ("定价：" in con.next):
-        print(con.next.replace("定价: ", "").replace("价格: ", "").replace("定价：", ""))
-    if ("出版社" in con.next) or ("出版社" in con.next):
-        print(con.next.replace("出版社名称:", ""))
-print(detailResponse.status_code)
+# proxyIp = getIpProxyPool.get_proxy_from_redis()['proxy_detail']['ip']
+# itemUrl = 'http://detail.tmall.com/item.htm?id=37209444242&rn=766e540483b8762c2181754e0fb2fab6&abbucket=10'
+# session = HTMLSession()
+# proxy = {'http:': "http://" + proxyIp, 'https:': "https://" + proxyIp}
+# detailResponse = session.get(itemUrl,headers=headers,timeout=10)
+# detailHtmlSoup = BeautifulSoup(detailResponse.text, features='html.parser')
+# itmDescUl = detailHtmlSoup.find_all(name="ul", attrs={"id": "J_AttrUL"})
+# contents = itmDescUl[0].contents
+# for con in contents:
+#     if "书名" in con.next:
+#         print(con.next.replace("书名: ", ""))
+#     if "ISBN" in con.next:
+#         print(con.next.replace("ISBN编号: ", ""))
+#     if ("作者" in con.next) or ("编者" in con.next):
+#         if "作者地区" not in con.next:
+#             print(con.next.replace("作者: ", "").replace("编者: ", ""))
+#     if ("定价:" in con.next) or ("定价：" in con.next):
+#         print(con.next.replace("定价: ", "").replace("价格: ", "").replace("定价：", ""))
+#     if ("出版社" in con.next) or ("出版社" in con.next):
+#         print(con.next.replace("出版社名称:", ""))
+# print(detailResponse.status_code)
 
 
 # requests.DEFAULT_RETRIES = 5  # 增加重试连接次数
@@ -73,14 +73,14 @@ print(detailResponse.status_code)
 #item-detail-base-bowen.txt
 
 
-# if __name__ == '__main__':
-#     file_object = open('D:\\爬虫\\TM\\remote\\TM\\item-detail-base-bowen.txt', "r", encoding='utf-8')
-#     lines = file_object.readlines()
-#     for lin in lines:
-#         if lin[0].isdigit() is False:
-#             print(lin[0:10])
-#
-#         if len(lin.split("\t"))>16:
-#             print(lin)
+if __name__ == '__main__':
+    file_object = open('D:\\爬虫\\TM\\remote\\TM\\item-detail-base-bowen.txt', "r", encoding='utf-8')
+    lines = file_object.readlines()
+    for lin in lines:
+        if lin[0].isdigit() is False or lin.split("\t")[5][0].isdigit() is False :
+            print(lin[0:20])
+
+        if len(lin.split("\t"))>16:
+            print(lin)
 
 
