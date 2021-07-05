@@ -6,11 +6,13 @@ import dataReptiledb
 from entity import Book, ItemUrl, Logger
 import threading, time
 import process
+import sys, getopt
+
 
 
 # 根据cookies 数并发执行线程
-# nohup python getItemDetailData.py  >nohup.log 2>&1 &
-# nohup python getItemDetailDataCurrent.py  >> logs/nohup-current.log 2>&1 &
+# nohup python getItemDetailData.py  -a 1  >nohup.log 2>&1 &
+# nohup python getItemDetailDataCurrent.py -a 2  >> logs/nohup-current.log 2>&1 &
 def processAll(headers, categorys,logUtils):
     dataReptiledb.init(None, "./logs/db-current.log")
     if categorys is None or len(categorys) <= 0:
@@ -108,8 +110,14 @@ def auto_process(flag):
 
 
 if __name__ == '__main__':
+    active = 1
+    opts, args = getopt.getopt(sys.argv[1:], "a:")
+    for opt, arg in opts:
+        if opt == "-a":
+            active = arg
+
     # 1. 只从book表中查出信息，更新促销信息
-    auto_process(1)
+    #auto_process(1)
     # 2. 从item_url 查出未处理的Url,更新促销信息
-    #auto_process(2)
+    auto_process(int(active))
     # 自动

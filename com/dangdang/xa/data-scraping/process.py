@@ -8,7 +8,7 @@ import threading, time
 import getIpProxyPool
 
 # 干扰 url ,
-url = [
+urls = [
     "https://s.taobao.com/search?spm=a21bo.21814703.201867-main.7.5af911d93V6rF1&ie=utf8&initiative_id=staobaoz_20210219&stats_click=search_radio_all%3A1&js=1&imgfile=&q=%E6%AF%8D%E5%A9%B4&suggest=history_1&_input_charset=utf-8&wq=%E6%AF%8D%E5%A9%B4&suggest_query=%E6%AF%8D%E5%A9%B4&source=suggest"
     "https://detail.tmall.hk/hk/item.htm?tbpm=1&spm=a230r.1.14.13.6ebb4793sgX8vA&id=599058260846&cm_id=140105335569ed55e27b&abbucket=17",
     "https://s.taobao.com/search?spm=a21bo.21814703.201867-main.27.5af911d93V6rF1&q=%E5%AE%B6%E9%A5%B0",
@@ -49,18 +49,19 @@ def disturbUrl(header, ip, logUtils):
     proxy = {'http:': "http://" + ip, 'https:': "https://" + ip}
     time.sleep(random.randint(1, 5))
     randint = random.randint(1, 3)
+    url = random.choice(urls)
     if randint % 2 == 0:
         session = HTMLSession()
         try:
-            session.get(url=random.choice(url), headers=header,
+            session.get(url=url, headers=header,
                         proxies=proxy)
         except:
             proxyIp = getIpProxyPool.get_proxy_from_redis()['proxy_detail']['ip']
             proxy = {'http:': "http://" + proxyIp, 'https:': "https://" + proxyIp}
-            session.get(url=random.choice(url), headers=header,
+            session.get(url=url, headers=header,
                         proxies=proxy)
             pass
-        logUtils.logger.info("{thread} 执行一次 其他请求 ".format(thread=threading.current_thread().getName()))
+        logUtils.logger.info("{thread} 执行一次 其他请求 url:{url} ".format(thread=threading.current_thread().getName(),url=url))
 
 
 def write_db(detailUrl, shopName, category):
@@ -108,7 +109,7 @@ def processDefaultBookData(itemUrlEntity, header, ip, logUtils):
             if "作者地区" not in con.next:
                 book.setAuther(con.next.replace("作者: ", ""))
         if ("定价:" in con.next) or ("定价：" in con.next):
-            print(con.next.replace("定价: ", "").replace("价格: ", "").replace("定价：", ""))
+            book.setFixPrice(con.next.replace("定价: ", "").replace("价格: ", "").replace("定价：", ""))
         if ("出版社" in con.next) or ("出版社" in con.next):
             book.setPress(con.next.replace("出版社名称:", ""))
 
@@ -118,7 +119,7 @@ def processDefaultBookData(itemUrlEntity, header, ip, logUtils):
     # 写入数据库
     dataReptiledb.insertDetailPrice(book)
     logUtils.logger.info(
-        "线程{threadName} - process book {id}".format(threadName=threading.current_thread().getName(), id=itemId))
+        "线程{threadName} - 基础信息抓取完成 {id}".format(threadName=threading.current_thread().getName(), id=itemId))
     # time.sleep(5)
     # time.sleep(random.randint(2, 10))
     return book
@@ -137,10 +138,16 @@ def processPromotionBookData(book, header, ip, logUtils):
         # cookie 解析失败更新账号
         dataReptiledb.updateHeaderStatus(0, header['account'])
         logUtils.logger.error(
-            "线程{threadName} - {itemId} 解析jsonp 失败，cookie 失效".format(threadName=threadName, itemId=book.getTmId()))
+            "线程{threadName} - {itemId} 解析jsonp 失败,cookie 失效,代理IP:{ip}".format(threadName=threadName, itemId=book.getTmId(),ip=ip))
         raise Exception(
-            "线程{threadName} - {itemId} 解析jsonp 失败，cookie 失效".format(threadName=threadName, itemId=book.getTmId()))
+            "线程{threadName} - {itemId} 解析jsonp 失败,cookie 失效,代理IP:{ip}".format(threadName=threadName, itemId=book.getTmId(),ip=ip))
     else:
+        #商品已经下架，
+        if promotionJSON.get("success") is False:
+            logUtils.logger.error(
+                "线程{threadName} - {itemId} 商品已经下载 ,代理IP:{ip}".format(threadName=threadName, itemId=book.getTmId(),ip=ip))
+            #商品已经下架
+            return 2
         if promotionJSON.get("defaultModel") is None:
             dataReptiledb.updateHeaderStatus(0, header['account'])
             logUtils.logger.error(
@@ -203,7 +210,8 @@ def processPromotionBookData(book, header, ip, logUtils):
 
     # 保存数据
     dataReptiledb.insertDetailPrice(book)
-    logUtils.logger.info("线程{threadName} process book {id}".format(threadName=threadName, id=book.tmId))
+    logUtils.logger.info("线程{threadName} 促销信息抓取完成 {id}".format(threadName=threadName, id=book.tmId))
+    return  1
 
 
 # 多线程调度方法
@@ -220,12 +228,10 @@ def processBookInfo(category, header, logUtils):
             try:
                 book = processDefaultBookData(itemUrls[index], header, proxyIp, logUtils)
                 proxyIp = getIpProxyPool.get_proxy_from_redis()['proxy_detail']['ip']
-                processPromotionBookData(book, header, proxyIp, logUtils)
-                index += 1
-                logUtils.logger.error(
-                    "线程{threadName} - {itemId} 获取书籍信息成功 - 代理IP:{proxyIp}".format(
+                status = processPromotionBookData(book, header, proxyIp, logUtils)
+                logUtils.logger.info("线程{threadName} - {itemId} 获取书籍信息成功 - 代理IP:{proxyIp}".format(
                         threadName=threading.current_thread().getName(),
-                        itemId=itemUrls[index].itemId), proxyIp=proxyIp)
+                        itemId=itemUrls[index].itemId, proxyIp=proxyIp))
                 time.sleep(random.randint(1, 5))
             except Exception as  e:
                 logUtils.logger.error("线程{threadName} - {itemId} 发生异常 - 代理IP:{proxyIp} - {e}".format(
@@ -237,7 +243,14 @@ def processBookInfo(category, header, logUtils):
                     index += 1
                     retryCnt = 0
             else:
-                dataReptiledb.updateSuccessFlag(1, itemId=itemUrls[index].itemId)
+                try:
+                    dataReptiledb.updateBookSuccessFlag(flag=status, itemId=itemUrls[index].itemId)
+                except:
+                    logUtils.logger.info("线程{threadName} - {itemId} 更新is_sucess标志失败".format(
+                        threadName=threading.current_thread().getName(), itemId=itemUrls[index].itemId))
+                else:
+                    logUtils.logger.info("线程{threadName} - {itemId} 处理完成,代理IP:{ip}".format(threadName=threading.current_thread().getName(), itemId=itemUrls[index].itemId, ip=proxyIp))
+                index += 1
             finally:
                 time.sleep(random.randint(1, 10))
 
@@ -258,7 +271,7 @@ def processBookPromoInfo(category, header, logUtils):
             try:
                 if header is None:
                     return
-                processPromotionBookData(books[index], header, proxyIp, logUtils)
+                status = processPromotionBookData(books[index], header, proxyIp, logUtils)
                 sucCnt += 1
                 time.sleep(random.randint(10, 20))
                 # 执行干扰函数
@@ -285,14 +298,14 @@ def processBookPromoInfo(category, header, logUtils):
                 time.sleep(random.randint(10, 20))
             else:
                 try:
-                    dataReptiledb.updateBookSuccessFlag(flag=1, itemId=books[index].tmId)
+                    dataReptiledb.updateBookSuccessFlag(flag=status, itemId=books[index].tmId)
                 except:
                     logUtils.logger.info("线程{threadName} - {itemId} 更新is_sucess标志失败".format(
                         threadName=threading.current_thread().getName(), itemId=books[index].tmId))
                 else:
                     logUtils.logger.info(
-                        "线程{threadName} - {itemId} 处理完成".format(threadName=threading.current_thread().getName(),
-                                                                itemId=books[index].tmId))
+                        "线程{threadName} - {itemId} 处理完成,代理IP:{ip}".format(threadName=threading.current_thread().getName(),
+                                                                itemId=books[index].tmId,ip=proxyIp))
                 index += 1
             finally:
                 time.sleep(random.randint(3, 10))

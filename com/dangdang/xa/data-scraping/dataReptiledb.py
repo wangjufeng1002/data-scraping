@@ -377,7 +377,7 @@ def getBookByNotHavePromo(category, size):
 			 book_sales as sales,
 			 book_press as press
              from book where  category = '%s' 
-             and is_success != 1
+             and is_success != 1 and is_success != 2
              order by update_time ASC
              limit %d '''
     cursor = conn.cursor()

@@ -5,7 +5,8 @@ import json
 import entity
 import dataReptiledb
 import cacheContants
-# nohup python  httpService.py > ./logs/nohup-service.log 2>&1 &
+import getIpProxyPool
+# nohup python  httpService.py >> ./logs/nohup-service.log 2>&1 &
 app = Flask(__name__)
 CORS(app, supports_credentials=True)
 
@@ -96,7 +97,10 @@ def getLoopInvalidHeader():
 def getRandomItemUrl():
     url = dataReptiledb.getRandItemUrl()
     return url[0]
-    #return header
+@app.route("/getProxyIp", methods=["GET"])
+def getProxyIp():
+    proxyIp = getIpProxyPool.get_proxy_from_redis()['proxy_detail']['ip']
+    return proxyIp
 
 if __name__ == '__main__':
     dataReptiledb.init(None, "./logs/db-http-service.log")
