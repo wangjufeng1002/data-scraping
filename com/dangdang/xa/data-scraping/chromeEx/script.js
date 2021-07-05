@@ -3,14 +3,22 @@ setTimeout(async () => {
 
     const user = await getUser()
     const userjson = JSON.parse(user)
-    console.log(userjson)
+    if(userjson.account===undefined){
+        console.log("无需刷新")
+
+    setTimeout(() => {
+        window.location.href = 'https://www.baidu.com'
+    }, 60000)
+        return
+    }
+    console.log("user:",userjson)
     cleanCookie()
     isLogin(userjson)
     login(userjson)
     //1分钟之后再次执行
     setTimeout(() => {
         window.location.href = 'https://www.baidu.com'
-    }, 30000)
+    }, 60000)
 }, 2000)
 
 

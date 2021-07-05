@@ -13,6 +13,18 @@ def dragTo(x):
     pag.mouseUp()
 
 
+def myEaseOutQuad(n):
+    res =-n * (n - 2)
+    noise=random.randint(-5,5)
+    return res +noise
+
+def myeaseInOutQuad(n):
+    noise = random.randint(-5, 5)
+    if n < 0.5:
+        return 2 * n**2+noise
+    else:
+        n = n * 2 - 1
+        return -0.5 * (n*(n-2) - 1)+noise
 def drag():
     if random.randint(0, 1) == 1:
         for i in range(random.randint(0, 3)):
@@ -23,8 +35,8 @@ def drag():
     timed = random.uniform(0.2, 0.3)
 
     eases = [
-        pyautogui.easeOutQuad,  # 0.2-0.3
-        pyautogui.easeInOutQuad,
+        myEaseOutQuad,  # 0.2-0.3
+        myeaseInOutQuad,
     ]
     chose = random.randint(0, 1)
     if chose == 1:
