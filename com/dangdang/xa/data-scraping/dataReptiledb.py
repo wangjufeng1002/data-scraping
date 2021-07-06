@@ -43,9 +43,9 @@ def getHeaders(account):
         cursor = conn.cursor()
         if account is not None:
             execute = cursor.execute(
-                "select `cookie`,`referer`,`user-agent`,`account` from headers where account='%s' " % account)
+                "select `cookie`,`referer`,`user-agent`,`account`,`status` from headers where account='%s' " % account)
         else:
-            execute = cursor.execute("select `cookie`,`referer`,`user-agent`,`account` from headers ")
+            execute = cursor.execute("select `cookie`,`referer`,`user-agent`,`account`,`status` from headers ")
         result = cursor.fetchall()
         description = cursor.description
         columns = []
@@ -356,6 +356,22 @@ def getNotDealCategoryByBook():
             print(e)
     return categorys
 
+def getNotDealCategoryByItemUrl():
+    conn = pymysql.connect(host=host, port=3306, user="root", password="123456", database="data-reptile",
+                           charset="utf8")
+    # sql = "select DISTINCT category  as category from book where (book_prom_type is null or book_prom_type = '无' or book_prom_type = 'NULL') and   category is not NULL"
+    sql = "select DISTINCT category  as category from item_url where is_success <=0 and  category is not NULL"
+    cursor = conn.cursor()
+    cursor.execute(sql)
+    fetchall = cursor.fetchall()
+    categorys = []
+    for category in list(fetchall):
+        try:
+            categorys.append(category[0])
+        except Exception as e:
+            print(e)
+    return categorys
+
 
 def getBookByNotHavePromo(category, size):
     conn = pymysql.connect(host=host, port=3306, user="root", password="123456", database="data-reptile",
@@ -605,6 +621,30 @@ def getRandItemUrl():
             for j in range(len(columns)):
                 head[columns[j]] = row[j]
             urls.append(head)
+        return urls
+    except Exception as e:
+        conn.rollback()
+    finally:
+        conn.close()
+def getRandDisturbUrl():
+    sql = "select * from disturb_url order by rand() LIMIT 1 "
+    conn = POOL.connection()
+    try:
+        cursor = conn.cursor()
+        cursor.execute(sql)
+        result = cursor.fetchall()
+        description = cursor.description
+        columns = []
+        urls = []
+        for i in range(len(description)):
+            columns.append(description[i][0])  # 获取字段名，咦列表形式保存
+        for i in range(len(result)):
+            url = {}
+            # 取出每一行 和 列名组成map
+            row = list(result[i])
+            for j in range(len(columns)):
+                url[columns[j]] = row[j]
+            urls.append(url)
         return urls
     except Exception as e:
         conn.rollback()

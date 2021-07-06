@@ -51,12 +51,12 @@ def updateHeaders():
     get_Data = request.get_data()
     jsonObj = json.loads(get_Data)
     print(jsonObj)
-    if (jsonObj.get("account") is None and jsonObj.get("id") is None) or jsonObj.get("cookie") is None:
+    if jsonObj.get("account") is None and jsonObj.get("id") is None:
         return "更新条件 账号或id 必须存在一个 ， cookie 不能为空"
     jsonObj.setdefault("referer", "https://detail.tmall.com/")
     jsonObj.setdefault("user-agent",
                        "Mozilla/5.0 (Windows NT 10.0; WOW64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.106 Safari/537.36")
-    jsonObj.setdefault("status", 1)
+    #jsonObj.setdefault("status", 1)
     # 传入的参数为bytes类型，需要转化成json
     header = json.loads(json.dumps(jsonObj), object_hook=entity.headerHandler)
     result = dataReptiledb.updateHeaders(header)
@@ -93,6 +93,7 @@ def getLoopInvalidHeader():
     header=cacheContants.headers[cacheContants.headerIndex]
     cacheContants.headerIndex+=1
     return header
+
 @app.route("/getRandomItemUrl", methods=["GET"])
 def getRandomItemUrl():
     url = dataReptiledb.getRandItemUrl()
@@ -116,6 +117,15 @@ def getProxyIp():
         "iporot":iporot
     }
     return json.dumps(res)
+
+@app.route("/getDisturbUrl", methods=["GET"])
+def getDisturbUrl():
+    disturb_url = dataReptiledb.getRandDisturbUrl()
+    urls = []
+    for (key,value) in disturb_url[0].items():
+        if value is not None:
+            urls.append(value)
+    return json.dumps(urls)
 
 if __name__ == '__main__':
     dataReptiledb.init(None, "./logs/db-http-service.log")

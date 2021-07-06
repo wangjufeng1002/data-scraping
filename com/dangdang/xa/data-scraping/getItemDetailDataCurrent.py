@@ -60,7 +60,13 @@ def processPromo(headers, categorys, logUtils):
 def auto_process(flag):
     logUtils = Logger(filename='./logs/detail-current.log', level='info')
     dataReptiledb.init(None, "./logs/db-current.log")
-    categorys = dataReptiledb.getNotDealCategoryByBook()
+    categorys = []
+    if flag == 1:
+        # 从book 表中查
+        categorys = dataReptiledb.getNotDealCategoryByBook()
+    if flag == 2:
+        # 从item_url 中查
+        categorys = dataReptiledb.getNotDealCategoryByItemUrl()
     # 查询 cookies
     headers = dataReptiledb.getHeaders(None)
     if categorys is None or headers is None:
@@ -74,7 +80,7 @@ def auto_process(flag):
     while True:
         try:
             threadParamMap = {}
-            time.sleep(10)
+            time.sleep(20)
             custThreadCnt = 0
             threads = threading.enumerate()
             for thread in threads:
@@ -93,7 +99,12 @@ def auto_process(flag):
             if len(freeHeaders) == 0:
                 continue
             # 排除正在运行的分类
-            categorys = dataReptiledb.getNotDealCategoryByBook()
+            if flag == 1:
+                #从book 表中查
+                categorys = dataReptiledb.getNotDealCategoryByBook()
+            if flag == 2:
+                #从item_url 中查
+                categorys = dataReptiledb.getNotDealCategoryByItemUrl()
             runCategorys = threadParamMap.values()
             # 得到未执行的分类
             freeCategorys = list(set(categorys).difference(set(runCategorys)))
