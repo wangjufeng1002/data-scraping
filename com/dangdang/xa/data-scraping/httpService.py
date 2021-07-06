@@ -97,10 +97,25 @@ def getLoopInvalidHeader():
 def getRandomItemUrl():
     url = dataReptiledb.getRandItemUrl()
     return url[0]
+
 @app.route("/getProxyIp", methods=["GET"])
 def getProxyIp():
     proxyIp = getIpProxyPool.get_proxy_from_redis()['proxy_detail']['ip']
-    return proxyIp
+    print(proxyIp)
+    userinfo=proxyIp.split('@')[0]
+    username=userinfo.split(':')[0]
+    userpawd=userinfo.split(':')[1]
+    ipinfo=proxyIp.split('@')[1]
+    ipadd=ipinfo.split(':')[0]
+    iporot=ipinfo.split(':')[1]
+
+    res={
+        "username":username,
+        "userpawd":userpawd,
+        "ipadd":ipadd,
+        "iporot":iporot
+    }
+    return json.dumps(res)
 
 if __name__ == '__main__':
     dataReptiledb.init(None, "./logs/db-http-service.log")

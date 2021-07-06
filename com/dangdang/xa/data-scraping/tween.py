@@ -46,5 +46,5 @@ move_tactics = [
 ]
 
 def get_tween():
-    tween = move_tactics[random.randint(0, len(move_tactics))]
+    tween = move_tactics[random.randint(0, len(move_tactics)-1)]
     return tween.__name__,tween

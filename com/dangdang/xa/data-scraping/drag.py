@@ -64,8 +64,8 @@ def drag():
     user = get_user()
 
     tweenname, mytween = tween.get_tween()
-    logging.info("user:" + user + "tween:" + tweenname + "timed:" + timed)
-    print("user:" + user + "tween:" + tweenname + "timed:" + timed)
+    logging.info("user:" + str(user) + "tween:" + str(tweenname) + "timed:" + str(timed))
+    print("user:" + str(user) + "tween:" + str(tweenname) + "timed:" + str(timed))
     pyautogui.dragRel(xOffset=1100 + random.randint(-100, 500), yOffset=random.randint(-20, 20), duration=timed,
                       button='left',
                       tween=mytween)
@@ -124,13 +124,16 @@ def process():
 # 895,733
 
 if __name__ == '__main__':
-    my_drag(700)
-    # time.sleep(0.1)
-    # time.sleep(2)
-    # drag()
-    # if get_drag_pos() is not None:
-    #     #scroll()
-    #     time.sleep(2)
-    #     drag()
-    #     time.sleep(1)
-    #     pag.press('f5')
+    while True:
+        if get_drag_pos() is not None:
+            # scroll()
+            time.sleep(2)
+            noise_remove()
+            time.sleep(0.1)
+            move_to_start()
+            if random.randint(0, 1) == 1:
+                drag()
+            else:
+                my_drag(800)
+            time.sleep(1)
+            pag.press('f5')
