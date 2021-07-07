@@ -661,8 +661,8 @@ def getFailTimes(account):
         description = cursor.description
         columns = []
         fail_times = []
-        # for i in range(len(description)):
-        #     columns.append(description[i][0])  # 获取字段名，咦列表形式保存
+        for i in range(len(description)):
+            columns.append(description[i][0])  # 获取字段名，咦列表形式保存
         for i in range(len(result)):
             # 取出每一行 和 列名组成map
             row = list(result[i])
