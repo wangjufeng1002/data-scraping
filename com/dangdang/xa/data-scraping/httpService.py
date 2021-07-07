@@ -127,6 +127,20 @@ def getDisturbUrl():
             urls.append(value)
     return json.dumps(urls)
 
+@app.route("/getFailtimes", methods=["GET"])
+def getFailtimes():
+    arg = request.args.get("account")
+    fail_times = dataReptiledb.getFailTimes(account=str(arg))
+    return json.dumps(fail_times)
+
+@app.route("/updateFailTimes", methods=["POST"])
+def updateFailTimes():
+    account = request.form.get("account")
+    failTimes = request.form.get("failTimes")
+    dataReptiledb.updateFailTimes(account=str(account),failTimes=failTimes)
+    return "SUCCESS"
+
+
 if __name__ == '__main__':
     dataReptiledb.init(None, "./logs/db-http-service.log")
     app.run(debug=True, port=10001, host="0.0.0.0")

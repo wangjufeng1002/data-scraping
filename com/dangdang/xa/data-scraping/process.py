@@ -38,7 +38,7 @@ def disturbUrl(header, ip, logUtils):
                 logUtils.logger.info("{thread} 执行一次 其他请求 url:{url} ".format(thread=threading.current_thread().getName(),
                                                                             url=value))
     except Exception as e:
-        logUtils.logger.info("{thread} 执行其他请求发生异常".format(thread=threading.current_thread().getName()))
+        logUtils.logger.info("线程{thread} 执行其他请求发生异常".format(thread=threading.current_thread().getName()))
         proxyIp = getIpProxyPool.get_proxy_from_redis()['proxy_detail']['ip']
         proxy = {'http:': "http://" + proxyIp, 'https:': "https://" + proxyIp}
         try:
@@ -255,6 +255,7 @@ def processBookInfo(category, header, logUtils):
                     return
                 else:
                     header = headers[0]
+                    header.pop("status")
             else:
                 try:
                     dataReptiledb.updateBookSuccessFlag(flag=status, itemId=itemUrls[index].itemId)
@@ -312,6 +313,7 @@ def processBookPromoInfo(category, header, logUtils):
                     return
                 else:
                     header = headers[0]
+                    header.pop("status")
                 time.sleep(random.randint(10, 20))
             else:
                 try:
@@ -338,7 +340,10 @@ if __name__ == '__main__':
     # except Exception as e:
     #     print("%s 处理成功 %s", "AA", e)
 
-    disturb_urls = dataReptiledb.getRandDisturbUrl()
-    print(disturb_urls)
+    # disturb_urls = dataReptiledb.getRandDisturbUrl()
+    # print(disturb_urls)
+
     # endregion
     # logUtils.logger.info("%s 处理成功 %s", "AA", "AAA")
+    dict_test={"k":"1","s":1}
+    print(dict_test.pop("k"))

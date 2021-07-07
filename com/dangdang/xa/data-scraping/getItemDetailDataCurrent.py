@@ -25,8 +25,9 @@ def processAll(headers, categorys,logUtils):
     index = 0
     for headerIndex in range(0, len(headers)):
         if index < len(categorys):
+            headers[headerIndex].pop("status")
             threading.Thread(target=process.processBookInfo, args=(categorys[index], headers[headerIndex],logUtils),
-                             name="自定义<->" + categorys[index] + "<->" + headers[headerIndex].get("account")).start()
+                             name="$自定义<->" + categorys[index] + "<->" + headers[headerIndex].get("account")+"<->"+time.strftime('%Y-%m-%d %H:%M:%S',time.localtime())+"$").start()
             # 每个账号绑定一个分类
             threadParamMap[headers[headerIndex].get("account")] = categorys[index]
             index += 1
@@ -48,7 +49,7 @@ def processPromo(headers, categorys, logUtils):
     for headerIndex in range(0, len(headers)):
         if index < len(categorys):
             threading.Thread(target=process.processBookPromoInfo, args=(categorys[index], headers[headerIndex],logUtils),
-                             name="自定义<->" + categorys[index] + "<->" + headers[headerIndex].get("account")).start()
+                             name="$自定义<->" + categorys[index] + "<->" + headers[headerIndex].get("account")+"<->"+time.strftime('%Y-%m-%d %H:%M:%S',time.localtime())+"$").start()
             # 每个账号绑定一个分类
             threadParamMap[headers[headerIndex].get("account")] = categorys[index]
             index += 1

@@ -523,7 +523,7 @@ def updateHeaderStatus(status,account):
 
 
 def getHeadersByStatus(status):
-    sql = "select select id,cookie,referer,`user-agent`,account,password  from headers where status = %d " % status
+    sql = "select select id,cookie,referer,`user-agent`,account,password,status,fail_times  from headers where status = %d " % status
     if headerLock.acquire():
         try:
             conn.ping(True)
@@ -553,7 +553,7 @@ def getHeadersByStatus(status):
     return headers
 
 def getOneHeadersByStatus(status):
-    sql = "select id,cookie,referer,`user-agent`,account,password from headers where status = %d order by update_time ASC limit 1" % status
+    sql = "select id,cookie,referer,`user-agent`,account,password,status,fail_times from headers where status = %d order by update_time ASC limit 1" % status
     conn = POOL.connection()
     try:
         cursor = conn.cursor()
@@ -648,6 +648,47 @@ def getRandDisturbUrl():
         return urls
     except Exception as e:
         conn.rollback()
+    finally:
+        conn.close()
+
+def getFailTimes(account):
+    sql = "select fail_times from headers where account='%s' "
+    conn = POOL.connection()
+    try:
+        cursor = conn.cursor()
+        cursor.execute(sql%account)
+        result = cursor.fetchall()
+        description = cursor.description
+        columns = []
+        fail_times = []
+        # for i in range(len(description)):
+        #     columns.append(description[i][0])  # 获取字段名，咦列表形式保存
+        for i in range(len(result)):
+            # 取出每一行 和 列名组成map
+            row = list(result[i])
+            for j in range(len(columns)):
+                fail_times.append(row[j])
+        return fail_times
+    except Exception as e:
+        conn.rollback()
+    finally:
+        conn.close()
+
+
+
+def updateFailTimes(failTimes,account):
+    if failTimes is not None:
+        sql = "update headers set fail_times = %d  where account='%s' "%(int(failTimes),str(account))
+    else:
+        sql = "update headers set fail_times = fail_times+1  where account='%s' "%(str(account))
+    conn = POOL.connection()
+    try:
+        cursor = conn.cursor()
+        cursor.execute(sql)
+    except Exception as e:
+        conn.rollback()
+        conn.close()
+        raise  Exception("更新失败次数发生异常")
     finally:
         conn.close()
 
