@@ -18,26 +18,35 @@ def noise_remove():
     y = random.uniform(0, 1024)
     timed = random.uniform(0, 1)
     tweenname, mytween = tween.get_tween()
-    print(tweenname)
     pag.moveTo(x, y, duration=timed, tween=mytween)
 
 
 # 移动到起始点
 def move_to_start():
     random.uniform(0, 1025)
-    box = get_start_pos()
+    box_start = get_start_pos()
+    box = get_drag_pos()
+    if box_start is None:
+        x = box.left + 200
+        y = box.top + 10
+    else:
+        x = box_start.left + 10 + random.randint(0, 20)
+        y = box_start.top + 10 + random.randint(0, 20)
     timed = random.uniform(0, 1)
-    x = box.left + 10 + random.randint(0, 20)
-    y = box.top + 10 + random.randint(0, 20)
+
     tweenname, mytween = tween.get_tween()
     pag.moveTo(x + random.randint(-5, 5), y + random.randint(-5, 5), duration=timed,
                tween=mytween)
 
 
-def my_drag(x):
+def my_drag_slow(x, ratio):
+    my_drag(x, ratio, 10)
+
+
+def my_drag(x, ratio, timed_ratio=1):
     pag.mouseDown(button='left')
 
-    pyautogui.PAUSE = 0.01
+    pyautogui.PAUSE = 0.01 * timed_ratio * ratio
     step = random.randint(4, 10)
     num = []
     for i in range(0, step):
@@ -49,11 +58,12 @@ def my_drag(x):
         num.append(r)
     num.sort(reverse=True)
 
+    duration = random.uniform(0.07, 0.1) * timed_ratio
     for i in num:
         if i > 0:
             mytweenname, mytween = tween.get_tween()
             print(i, mytweenname)
-            pag.moveRel(xOffset=i, yOffset=random.randint(-20, 20), duration=random.uniform(0.07, 0.1), tween=mytween)
+            pag.moveRel(xOffset=i, yOffset=random.randint(-20, 20), duration=duration, tween=mytween)
 
     pag.mouseUp(button='left')
     pyautogui.PAUSE = 0.1
@@ -94,7 +104,6 @@ def get_start_pos():
 
 def get_drag_pos():
     box = pag.locateOnScreen("3.png", confidence=0.9)
-    print(box)
     return box
 
 
@@ -112,28 +121,27 @@ def get_pos():
 
 
 def process():
-    time.sleep(1)
+    account = get_user()['account']
+    res = requests.get("http://localhost:10001/getFailtimes?account=" + account)
+    count=res.json()[0]
     while get_drag_pos() is not None:
-        drag()
-        time.sleep(1)
-        pag.press('f5')
-        time.sleep(1)
+        account = 'superamayamay'
+        res = requests.get("http://localhost:10001/getFailtimes?account=" + account)
+        noise_remove()
+        time.sleep(0.1 * count)
+        move_to_start()
+        if count % 3 == 0:
+            drag()
+        else:
+            if count % 3 == 1:
+                my_drag(800, account)
+            else:
+                my_drag_slow(800, account)
+
 
 
 # 1017,662
 # 895,733
 
 if __name__ == '__main__':
-    while True:
-        if get_drag_pos() is not None:
-            # scroll()
-            time.sleep(2)
-            noise_remove()
-            time.sleep(0.1)
-            move_to_start()
-            if random.randint(0, 1) == 1:
-                drag()
-            else:
-                my_drag(800)
-            time.sleep(1)
-            pag.press('f5')
+    process()
