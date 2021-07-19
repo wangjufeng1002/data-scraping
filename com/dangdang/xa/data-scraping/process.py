@@ -77,7 +77,12 @@ def processDefaultBookData(itemUrlEntity, header, ip, logUtils):
     session = HTMLSession()
     detailResponse = session.get(itemUrlEntity.itemUrl, proxies=proxy)
     detailHtmlSoup = BeautifulSoup(detailResponse.text, features='html.parser')
+    book = Book(tmId=itemUrlEntity.itemId, name=None, isbn=None, auther=None, fixPrice=None, promotionPrice=None,
+                promotionPriceDesc=None, price=None, promotionType=None, activeStartTime=None,
+                activeEndTime=None,
+                activeDesc="", shopName=itemUrlEntity.shopName, category=itemUrlEntity.category, sales="0", press=None)
     if "很抱歉，您查看的商品找不到了" in detailResponse.text:
+        dataReptiledb.insertDetailPrice(book)
         logUtils.logger.error(
             "线程{threadName} - 商品已经下架 {id}".format(threadName=threading.current_thread().getName(), id=itemUrlEntity.itemId))
         return None,2
@@ -86,13 +91,10 @@ def processDefaultBookData(itemUrlEntity, header, ip, logUtils):
     defaultPrice = re.match(".*?(\"defaultItemPrice\":.*&).*", detailResponse.text, re.S).group(1).split(',')[
         0].replace("defaultItemPrice", "").replace('\"', "").replace(":", "").replace(",", "")
 
+    book.setPrice(defaultPrice)
     itmDescUl = detailHtmlSoup.find_all(name="ul", attrs={"id": "J_AttrUL"})
     if itmDescUl is None or len(itmDescUl) == 0:
         return
-    book = Book(tmId=itemId, name=None, isbn=None, auther=None, fixPrice=None, promotionPrice=None,
-                promotionPriceDesc=None, price=defaultPrice, promotionType=None, activeStartTime=None,
-                activeEndTime=None,
-                activeDesc="", shopName=itemUrlEntity.shopName, category=itemUrlEntity.category, sales="0", press=None)
     contents = itmDescUl[0].contents
     for con in contents:
         if "书名" in con.next:
@@ -139,6 +141,7 @@ def processPromotionBookData(book, header, ip, logUtils):
         if promotionJSON.get("success") is False:
             logUtils.logger.error(
                 "线程{threadName} - {itemId} 商品已经下载 ,代理IP:{ip}".format(threadName=threadName, itemId=book.getTmId(),ip=ip))
+            dataReptiledb.insertDetailPrice(book)
             #商品已经下架
             return 2
         if promotionJSON.get("defaultModel") is None:
@@ -184,17 +187,17 @@ def processPromotionBookData(book, header, ip, logUtils):
         book.setActiveDesc(promPlanMsg)
     #
     # 提取相关sku
-    relatedAuctionsDO = promotionJSON.get("defaultModel").get("relatedAuctionsDO")
-    detailUrl = []
-    if relatedAuctionsDO is not None and relatedAuctionsDO.get("relatedAuctions", None) is not None:
-        # 开始遍历提取
-        relatedAuctions = relatedAuctionsDO.get("relatedAuctions")
-        if len(relatedAuctions) > 0:
-            for related in relatedAuctions:
-                itemId = related.get("itemId")
-                url = "//detail.tmall.com/item.htm?id=" + str(itemId) + "&temp=111"
-                detailUrl.append(url)
-            write_db(detailUrl, shopName=book.getShopName(), category=book.getCategory())
+    # relatedAuctionsDO = promotionJSON.get("defaultModel").get("relatedAuctionsDO")
+    # detailUrl = []
+    # if relatedAuctionsDO is not None and relatedAuctionsDO.get("relatedAuctions", None) is not None:
+    #     # 开始遍历提取
+    #     relatedAuctions = relatedAuctionsDO.get("relatedAuctions")
+    #     if len(relatedAuctions) > 0:
+    #         for related in relatedAuctions:
+    #             itemId = related.get("itemId")
+    #             url = "//detail.tmall.com/item.htm?id=" + str(itemId) + "&temp=111"
+    #             detailUrl.append(url)
+    #         write_db(detailUrl, shopName=book.getShopName(), category=book.getCategory())
 
     # 写入文件
     # file_object.write(book.toString() + "\n")
