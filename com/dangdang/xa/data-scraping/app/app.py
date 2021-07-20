@@ -7,6 +7,7 @@ import multiprocessing
 import  re
 import os
 import cv2
+import entity
 
 
 def get_item(devices):
@@ -79,60 +80,59 @@ def list_split(items, n):
     return [items[i:i + n] for i in range(0, len(items), n)]
 
 def parseAppText(text):
-    constants=[]
-    # 价格
-    match = re.search("￥(.+?)[\d.]+", text)
+    info = entity.AppBookInfo(itemId=None,defaultPrice= None,activePrice= None,coupons= None,free= None)
+    coupons = []
+    text = text[3:]
+    # 活动价格
+    match = re.search("^(.+?)[\d.]+", text)
     if match != None:
         # 领券内容
         groups = match.group(0)
-        # print(groups)
-        constants.append(groups)
+        #都赋值，后面价格定位替换
+        info.activePrice = groups
+        info.defaultPrice = groups
     # 券后价
     match = re.search("券后(.+?)[\d.]+", text)
     if match != None:
         groups = match.group(0)
-        # print(groups)
-        constants.append(groups)
+        info.activePrice = groups
     match = re.search("价格(.+?)[\d.]+", text)
     if match != None:
         groups = match.group(0)
-        # print(groups)
-        constants.append(groups)
+        info.defaultPrice = groups
     #提取 “领券...领取” 中的内容
     match = re.search("领券(.+?)领取", text)
     if match != None:
         groups = match.group(0)
-        constants.append(groups)
+        coupons.append(groups)
     # 提取 “查看...领取” 中的内容
     match = re.search("查看(.+?)领取", text)
     if match != None:
         # 领券内容
         groups = match.group(0)
-        #print(groups)
-        constants.append(groups)
-
-    #包邮
-    match = re.search("满(\d+?)享包邮", text)
-    if match != None:
-        groups = match.group(0)
-        #print(groups)
-        constants.append(groups)
-        # 包邮
+        coupons.append(groups)
     #满减
     match = re.search("满(.+?)减(.+?)\d+", text)
     if match != None:
         groups = match.group(0)
-        constants.append(groups)
+        coupons.append(groups)
         #print(groups)
-    #销量
-    match = re.search(u"月销(.+?)(\+|\d+)", text)
+        # 包邮
+    match = re.search("满(\d+?)享包邮", text)
     if match != None:
         groups = match.group(0)
-        constants.append(groups)
+        # print(groups)
+        info.free=groups
+    if len(coupons) >0:
+        info.coupons = (",".join(coupons))
+    print(info.toString())
+        # 包邮
+    #销量
+    # match = re.search(u"月销(.+?)(\+|\d+)", text)
+    # if match != None:
+    #     groups = match.group(0)
+    #     constants.append(groups)
         #print(groups)
-   # splits = text.split("큚")
-   # splits = text.split("큚")
-    print(constants)
 
     #print(splits)
 # com.taobao.taobao
