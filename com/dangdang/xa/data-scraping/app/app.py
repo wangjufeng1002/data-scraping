@@ -27,12 +27,17 @@ def get_search_view(devices):
     return devices.xpath('@com.taobao.taobao:id/sv_search_view').child('/android.widget.FrameLayout')
 
 
+def get_search_button(devices):
+    return devices.xpath('@com.taobao.taobao:id/searchbtn')
+
+
 def click_search(devices, name):
     devices.set_fastinput_ime(True)
     get_search_view(devices).click()
-    time.sleep(1)
+    time.sleep(0.5)
     devices.send_keys(name)
-    devices.send_action("search")
+    time.sleep(0.5)
+    get_search_button(devices).click()
 
 
 def get_item_detail(item_id, devices):
