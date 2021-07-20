@@ -1,19 +1,33 @@
 import uiautomator2 as u2
 import time
+import subprocess
 import cv2
 
 
 def get_item(devices):
     items = devices(className="android.support.v7.widget.RecyclerView",
-                    resourceId="com.taobao.taobao:id/libsf_srp_header_list_recycler").child(className="android.widget.LinearLayout")
-    index=0
-    while index<items.count:
+                    resourceId="com.taobao.taobao:id/libsf_srp_header_list_recycler").child(
+        className="android.widget.LinearLayout")
+    index = 0
+    while index < items.count:
         items[index].click()
         time.sleep(0.5)
         get_item_detail(devices)
         devices.press("back")
-        index+=3
+        index += 3
 
+
+
+def get_phone_list():  # 获取手机设备
+    cmd = r'adb devices'  # % apk_file
+    pr = subprocess.Popen(cmd, stdout=subprocess.PIPE, shell=True)
+    pr.wait()  # 不会马上返回输出的命令，需要等待
+    out = pr.stdout.readlines()  # out = pr.stdout.read().decode("UTF-8")
+    devices = []
+    for i in (out)[1:-1]:
+        device = str(i).split("\\")[0].split("'")[-1]
+        devices.append(device)
+    return devices  # 手机设备列表
 
 
 def get_buy_content(devices):
@@ -23,7 +37,7 @@ def get_buy_content(devices):
         print(item.info)
 
 
-def click_search(devices,name):
+def click_search(devices, name):
     d.set_fastinput_ime(True)
     devices.click(300, 150)
     time.sleep(1)
@@ -33,21 +47,19 @@ def click_search(devices,name):
 
 def get_item_detail(devices):
     content = ''
-    page_item = devices(className="android.widget.ListView",
-                        resourceId="com.taobao.taobao:id/mainpage").child(className="android.widget.TextView")
+    page_item=devices.xpath('@com.taobao.taobao:id/mainpage').child('//android.widget.TextView').all()
     for item in page_item:
-        if item.get_text() != '':
-            content += item.get_text()
+        if item.text != '':
+            content += item.text
     print(content)
     return content
-
 
 
 # com.taobao.taobao
 if __name__ == '__main__':
     d = u2.connect()
 
-    book=[
+    book = [
         "http://detail.tmall.com/item.htm?id=39223646642&rn=bf83a14e4dcf60aafb7fdf279450a057&abbucket=4",
         "http://detail.tmall.com/item.htm?id=626388285508&rn=bf83a14e4dcf60aafb7fdf279450a057&abbucket=4",
         "http://detail.tmall.com/item.htm?id=16726196775&rn=bf83a14e4dcf60aafb7fdf279450a057&abbucket=4",
@@ -91,13 +103,14 @@ if __name__ == '__main__':
         "http://detail.tmall.com/item.htm?id=625467713659&rn=bf83a14e4dcf60aafb7fdf279450a057&abbucket=4",
     ]
     for b in book:
-        click_search(d,b)
+        click_search(d, b)
         time.sleep(1)
         get_item_detail(devices=d)
         time.sleep(1)
         d.press("back")
-        time.sleep(1)
+        time.sleep(0.3)
         d.press("back")
-        time.sleep(1)
+        time.sleep(0.3)
         d.press("back")
+        time.sleep(0.3)
 
