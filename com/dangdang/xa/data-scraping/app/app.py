@@ -81,7 +81,8 @@ def list_split(items, n):
     return [items[i:i + n] for i in range(0, len(items), n)]
 
 def parseAppText(item_id,text):
-    info = entity.AppBookInfo(itemId=item_id,defaultPrice= None,activePrice= None,coupons= None,free= None)
+    text = text.replace("||", " ")
+    info = entity.AppBookInfo(itemId=item_id,defaultPrice= None,activePrice= None,coupons= None,free= None,originalText=text)
     coupons = []
     text = text[3:]
     # 活动价格
