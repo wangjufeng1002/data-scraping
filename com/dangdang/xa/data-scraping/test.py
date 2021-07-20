@@ -81,6 +81,63 @@ def statistical_data_single_account():
            elif '发生异常' in lin:
                 error +=1
     print(success,error)
+def parseAppText(text):
+    constants=[]
+    # 价格
+    match = re.search("￥(.+?)\d+", text)
+    if match != None:
+        # 领券内容
+        groups = match.group(0)
+        # print(groups)
+        constants.append(groups)
+    # 券后价
+    match = re.search("券后(.+?)\d+", text)
+    if match != None:
+        groups = match.group(0)
+        # print(groups)
+        constants.append(groups)
+    match = re.search("价格(.+?)\d+", text)
+    if match != None:
+        groups = match.group(0)
+        # print(groups)
+        constants.append(groups)
+    #提取 “领券...领取” 中的内容
+    match = re.search("领券(.+?)领取", text)
+    if match != None:
+        groups = match.group(0)
+        constants.append(groups)
+    # 提取 “查看...领取” 中的内容
+    match = re.search("查看(.+?)领取", text)
+    if match != None:
+        # 领券内容
+        groups = match.group(0)
+        #print(groups)
+        constants.append(groups)
 
+    #包邮
+    match = re.search("满(\d+?)享包邮", text)
+    if match != None:
+        groups = match.group(0)
+        #print(groups)
+        constants.append(groups)
+        # 包邮
+    #满减
+    match = re.search("满(.+?)减(.+?)\d+", text)
+    if match != None:
+        groups = match.group(0)
+        constants.append(groups)
+        #print(groups)
+    #销量
+    match = re.search(u"月销(.+?)(\+|\d+)", text)
+    if match != None:
+        groups = match.group(0)
+        constants.append(groups)
+        #print(groups)
+   # splits = text.split("큚")
+   # splits = text.split("큚")
+    print(constants)
+
+    #print(splits)
 if __name__ == '__main__':
-    statistical_data_single_account()
+    text="1/6专属优惠￥27.2券后￥22.2满88享包邮购买得积分查看큚￥5官方补贴红包实物商品，满5.01元通用已领取  窗边的小豆豆 正版书 黑柳彻子小学生三年级五年级四年级阅读课外书非注音版故事书 图书名著新华书店旗舰店官网 窗边的小豆豆ꄪ分享爱心树优质童书小学五年级适用学龄段推荐帮我选"
+    parseAppText(text=text)
