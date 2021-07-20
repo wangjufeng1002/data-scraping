@@ -84,19 +84,19 @@ def statistical_data_single_account():
 def parseAppText(text):
     constants=[]
     # 价格
-    match = re.search("￥(.+?)\d+", text)
+    match = re.search("￥(.+?)[\d.]+", text)
     if match != None:
         # 领券内容
         groups = match.group(0)
         # print(groups)
         constants.append(groups)
     # 券后价
-    match = re.search("券后(.+?)\d+", text)
+    match = re.search("券后(.+?)[\d.]+", text)
     if match != None:
         groups = match.group(0)
         # print(groups)
         constants.append(groups)
-    match = re.search("价格(.+?)\d+", text)
+    match = re.search("价格(.+?)[\d.]+", text)
     if match != None:
         groups = match.group(0)
         # print(groups)
