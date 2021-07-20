@@ -8,4 +8,4 @@ class AppBookInfo:
         self.free = free
 
     def toString(self):
-        return self.itemId + "||" + self.defaultPrice + "||" + self.activePrice + "||" + self.coupons + "||" + self.free
+        return str(self.itemId) + "||" + str(self.defaultPrice) + "||" + str(self.activePrice) + "||" + str(self.coupons) + "||" + str(self.free)

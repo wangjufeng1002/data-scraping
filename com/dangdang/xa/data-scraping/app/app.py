@@ -8,6 +8,7 @@ import  re
 import os
 import cv2
 import entity
+file_object = open('../TM/result.txt', "a", encoding='utf-8')
 
 
 def get_item(devices):
@@ -51,13 +52,13 @@ def click_search(devices, name):
     devices.send_action("search")
 
 
-def get_item_detail(devices):
+def get_item_detail(item_id,devices):
     content = ''
     page_item = devices.xpath('@com.taobao.taobao:id/mainpage').child('//android.widget.TextView').all()
     for item in page_item:
         if item.text != '':
             content += item.text
-    parseAppText(content)
+    parseAppText(item_id,content)
     return content
 
 
@@ -66,7 +67,7 @@ def process(deivce, list):
     for data in list:
         click_search(d, data['item_url'])
         time.sleep(1)
-        get_item_detail(devices=d)
+        get_item_detail(devices=d,item_id=data['item_id'])
         time.sleep(1)
         d.press("back")
         time.sleep(0.3)
@@ -79,8 +80,8 @@ def process(deivce, list):
 def list_split(items, n):
     return [items[i:i + n] for i in range(0, len(items), n)]
 
-def parseAppText(text):
-    info = entity.AppBookInfo(itemId=None,defaultPrice= None,activePrice= None,coupons= None,free= None)
+def parseAppText(item_id,text):
+    info = entity.AppBookInfo(itemId=item_id,defaultPrice= None,activePrice= None,coupons= None,free= None)
     coupons = []
     text = text[3:]
     # 活动价格
@@ -126,6 +127,8 @@ def parseAppText(text):
     if len(coupons) >0:
         info.coupons = (",".join(coupons))
     print(info.toString())
+    file_object.write(info.toString()+"\n")
+    file_object.flush()
         # 包邮
     #销量
     # match = re.search(u"月销(.+?)(\+|\d+)", text)
@@ -139,6 +142,7 @@ def parseAppText(text):
 if __name__ == '__main__':
     devices_list = get_phone_list()
     data = db.get_need_process()
+    db.update_status(data)
     lists = list_split(data, math.ceil(len(data)/len(devices_list)))
     for index, device in enumerate(devices_list):
         p = multiprocessing.Process(target=process, args=(device, lists[index]))
