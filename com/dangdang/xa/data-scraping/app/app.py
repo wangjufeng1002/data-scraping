@@ -42,8 +42,8 @@ def click_search(devices, name):
 
 def get_item_detail(item_id, devices):
     content = ''
-    page_item = devices.xpath('@com.taobao.taobao:id/mainpage').child('//android.widget.TextView')
-    for item in page_item.wait(timeout=10):
+    page_item = devices.xpath('@com.taobao.taobao:id/mainpage').child('//android.widget.TextView').all()
+    for item in page_item:
         if item.text != '':
             content += item.text
     parseAppText(item_id, content)
