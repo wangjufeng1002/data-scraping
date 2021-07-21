@@ -8,6 +8,31 @@ import re
 import entity
 
 file_object = open('../TM/result.txt', "a", encoding='utf-8')
+last_date = ''
+
+
+def run_cmd(cmd):
+    pr = subprocess.Popen(cmd, stdout=subprocess.PIPE, shell=True)
+    pr.wait()
+    out = pr.stdout.readlines()
+    return out
+
+
+def kill_adb_connect():
+    cmd = r'adb kill-server'
+    run_cmd(cmd)
+    print("断开所有连接")
+
+
+def restart_memu(i):
+    cmd = r'memuc isvmrunning -i ' + str(i)
+    out = run_cmd(cmd)[0]
+    if "Not" in str(out):
+        cmd = r'memuc start -i ' + str(i)
+    else:
+        cmd = r'memuc reboot -i ' + str(i)
+    out = run_cmd(cmd)[0]
+    print('模拟器' + str(i) + str(out))
 
 
 def get_phone_list():  # 获取手机设备
@@ -32,7 +57,6 @@ def get_search_button(devices):
 
 
 def click_search(devices, name):
-    devices.set_fastinput_ime(True)
     get_search_view(devices).click_exists(timeout=10)
     time.sleep(0.5)
     devices.send_keys(name)
@@ -41,6 +65,7 @@ def click_search(devices, name):
 
 
 def get_item_detail(item_id, devices):
+    devices.xpath('@com.taobao.taobao:id/uik_public_menu_action_icon').wait()
     content = ''
     page_item = devices.xpath('@com.taobao.taobao:id/mainpage').child('//android.widget.TextView').all()
     for item in page_item:
@@ -56,9 +81,15 @@ def process(deivce, list):
     time.sleep(1)
     d.app_start("com.taobao.taobao")
     time.sleep(1)
+    d.xpath('@com.taobao.taobao:id/searchbtn').wait()
+    d.set_fastinput_ime(True)
     for data in list:
         click_search(d, data['item_url'])
         time.sleep(1)
+        valid_button=valid(d)
+        if valid_button is not None:
+            #跳转换号登录
+            print("账号暂时失效")
         get_item_detail(devices=d, item_id=data['item_id'])
         time.sleep(1)
         d.press("back")
@@ -75,7 +106,7 @@ def list_split(items, n):
 
 def parseAppText(item_id, text):
     text = text.replace("||", " ")
-    info = entity.AppBookInfo(itemId=item_id, defaultPrice=None, activePrice=None, coupons=None, free=None,sales=None,
+    info = entity.AppBookInfo(itemId=item_id, defaultPrice=None, activePrice=None, coupons=None, free=None, sales=None,
                               originalText=text)
     coupons = []
     text = text[3:]
@@ -123,9 +154,9 @@ def parseAppText(item_id, text):
     match = re.search(u"月销(.+?)\+", text)
     if match != None:
         groups = match.group(0)
-        info.sales=groups
+        info.sales = groups
     match = re.search(u"月销(.+?)\d+", text)
-    if match != None:
+    if match is not None:
         groups = match.group(0)
         info.sales = groups
 
@@ -145,10 +176,23 @@ def parseAppText(item_id, text):
     # print(splits)
 
 
+def init_memu():
+    restart_memu(0)
+    restart_memu(1)
+    restart_memu(2)
+
+
+def valid(device):
+    return device.xpath('@android:id/decor_content_parent').wait(timeout=1)
+
+
 # com.taobao.taobao
 if __name__ == '__main__':
-    devices_list = get_phone_list()
+    d = u2.connect()
     while True:
+        init_memu()
+        time.sleep(5)
+        devices_list = get_phone_list()
         data = db.get_need_process()
         if len(data) == 0:
             break
@@ -161,3 +205,4 @@ if __name__ == '__main__':
             p.start()
         for t in threads:
             t.join()
+        kill_adb_connect()
