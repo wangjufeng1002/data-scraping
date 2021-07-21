@@ -75,7 +75,7 @@ def list_split(items, n):
 
 def parseAppText(item_id, text):
     text = text.replace("||", " ")
-    info = entity.AppBookInfo(itemId=item_id, defaultPrice=None, activePrice=None, coupons=None, free=None,
+    info = entity.AppBookInfo(itemId=item_id, defaultPrice=None, activePrice=None, coupons=None, free=None,sales=None,
                               originalText=text)
     coupons = []
     text = text[3:]
@@ -119,6 +119,16 @@ def parseAppText(item_id, text):
         groups = match.group(0)
         # print(groups)
         info.free = groups
+
+    match = re.search(u"月销(.+?)\+", text)
+    if match != None:
+        groups = match.group(0)
+        info.sales=groups
+    match = re.search(u"月销(.+?)\d+", text)
+    if match != None:
+        groups = match.group(0)
+        info.sales = groups
+
     if len(coupons) > 0:
         info.coupons = (",".join(coupons))
     print(info.toString())
