@@ -188,7 +188,6 @@ def valid(device):
 
 # com.taobao.taobao
 if __name__ == '__main__':
-    d = u2.connect()
     while True:
         init_memu()
         time.sleep(5)
