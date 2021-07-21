@@ -52,7 +52,10 @@ def get_item_detail(item_id, devices):
 
 def process(deivce, list):
     d = u2.connect(deivce)
+    d.app_stop("com.taobao.taobao")
+    time.sleep(1)
     d.app_start("com.taobao.taobao")
+    time.sleep(1)
     for data in list:
         click_search(d, data['item_url'])
         time.sleep(1)
@@ -63,7 +66,7 @@ def process(deivce, list):
         d.press("back")
         time.sleep(0.3)
         d.press("back")
-        time.sleep(0.3)
+        time.sleep(1)
 
 
 def list_split(items, n):
