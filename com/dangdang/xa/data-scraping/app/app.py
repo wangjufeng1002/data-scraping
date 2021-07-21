@@ -33,17 +33,17 @@ def get_search_button(devices):
 
 def click_search(devices, name):
     devices.set_fastinput_ime(True)
-    get_search_view(devices).click()
+    get_search_view(devices).click_exists(timeout=10)
     time.sleep(0.5)
     devices.send_keys(name)
     time.sleep(0.5)
-    get_search_button(devices).click()
+    get_search_button(devices).click_exists(timeout=10)
 
 
 def get_item_detail(item_id, devices):
     content = ''
-    page_item = devices.xpath('@com.taobao.taobao:id/mainpage').child('//android.widget.TextView').all()
-    for item in page_item:
+    page_item = devices.xpath('@com.taobao.taobao:id/mainpage').child('//android.widget.TextView')
+    for item in page_item.wait(timeout=10):
         if item.text != '':
             content += item.text
     parseAppText(item_id, content)
