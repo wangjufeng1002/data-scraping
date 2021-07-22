@@ -75,22 +75,52 @@ def get_item_detail(item_id, devices):
     return content
 
 
+def login(devices):
+    devices.xpath("我的淘宝").click()
+    devices.xpath("设置").click_exists(timeout=30)
+    time.sleep(1)
+    devices.xpath("退出登录").click()
+    time.sleep(1)
+    devices.xpath("退出当前账户").click()
+    time.sleep(1)
+    devices.xpath("更多").click()
+    time.sleep(1)
+    devices.xpath("换个账户登录").click()
+    time.sleep(1)
+    devices.xpath("@com.taobao.taobao:id/aliuser_recommend_login_account_et").set_text("superamayamay")
+    time.sleep(1)
+    devices.xpath("@com.taobao.taobao:id/aliuser_recommend_login_next_btn").click()
+    time.sleep(1)
+    devices.xpath("@com.taobao.taobao:id/aliuser_recommend_login_password_et").set_text("ztv963852_QWE")
+    time.sleep(1)
+    devices.xpath("@com.taobao.taobao:id/aliuser_recommend_login_next_btn").click()
+    time.sleep(1)
+    d.set_fastinput_ime(False)
+
+
 def process(deivce, list):
     d = u2.connect(deivce)
     d.app_stop("com.taobao.taobao")
     time.sleep(1)
     d.app_start("com.taobao.taobao")
     time.sleep(1)
+    skip_positive(d)
+    time.sleep(1)
+    skip_hongbao(d)
     d.xpath('@com.taobao.taobao:id/searchbtn').wait()
+    get_search_view(d).click_exists(timeout=10)
+    time.sleep(1)
+    d.press("back")
     d.set_fastinput_ime(True)
     for data in list:
         click_search(d, data['item_url'])
         time.sleep(1)
-        valid_button=valid(d)
+        valid_button = valid(d)
         if valid_button is not None:
-            #跳转换号登录
+            # 跳转换号登录
             print("账号暂时失效")
         get_item_detail(devices=d, item_id=data['item_id'])
+        db.update_status([data], 2)
         time.sleep(1)
         d.press("back")
         time.sleep(0.3)
@@ -102,6 +132,12 @@ def process(deivce, list):
 
 def list_split(items, n):
     return [items[i:i + n] for i in range(0, len(items), n)]
+
+
+def skip_positive(devices):
+    button = devices.xpath('@com.taobao.taobao:id/provision_positive_button').wait(3)
+    if button is not None:
+        button.click()
 
 
 def parseAppText(item_id, text):
@@ -186,6 +222,13 @@ def valid(device):
     return device.xpath('@android:id/decor_content_parent').wait(timeout=1)
 
 
+def skip_hongbao(devices):
+    hongbao = devices.xpath("@com.taobao.taobao:id/layermanager_penetrate_webview_container_id").child(
+        "//android.widget.ImageView").all()
+    if len(hongbao)>0:
+        hongbao[1].click()
+
+
 # com.taobao.taobao
 if __name__ == '__main__':
     while True:
@@ -195,7 +238,7 @@ if __name__ == '__main__':
         data = db.get_need_process()
         if len(data) == 0:
             break
-        db.update_status(data)
+        db.update_status(data, 1)
         lists = list_split(data, math.ceil(len(data) / len(devices_list)))
         threads = []
         for index, device in enumerate(devices_list):

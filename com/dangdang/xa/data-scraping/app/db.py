@@ -7,8 +7,8 @@ def get_need_process():
         data = um.cursor.fetchall()
         return data
 
-def update_status(lists):
+def update_status(lists,status):
     with UsingMysql() as um:
         for item in lists:
-            um.cursor.execute("update  book_info set is_success=1  where id="+str(item['id']))
+            um.cursor.execute("update  book_info set is_success="+str(status)+"  where id="+str(item['id']))
         um._conn.commit()
