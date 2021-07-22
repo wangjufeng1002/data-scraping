@@ -59,6 +59,8 @@ def get_search_button(devices):
 def click_search(devices, name):
     get_search_view(devices).click_exists(timeout=10)
     time.sleep(0.5)
+    devices.set_fastinput_ime(True)
+    time.sleep(0.5)
     devices.send_keys(name)
     time.sleep(0.5)
     get_search_button(devices).click_exists(timeout=10)
@@ -95,11 +97,11 @@ def login(devices):
     time.sleep(1)
     devices.xpath("@com.taobao.taobao:id/aliuser_recommend_login_next_btn").click()
     time.sleep(1)
-    d.set_fastinput_ime(False)
+    devices.set_fastinput_ime(False)
 
 
-def process(deivce, list):
-    d = u2.connect(deivce)
+def process(device, list):
+    d = u2.connect(device)
     d.app_stop("com.taobao.taobao")
     time.sleep(1)
     d.app_start("com.taobao.taobao")
@@ -111,7 +113,6 @@ def process(deivce, list):
     get_search_view(d).click_exists(timeout=10)
     time.sleep(1)
     d.press("back")
-    d.set_fastinput_ime(True)
     for data in list:
         click_search(d, data['item_url'])
         time.sleep(1)
@@ -119,8 +120,16 @@ def process(deivce, list):
         if valid_button is not None:
             # 跳转换号登录
             print("账号暂时失效")
+            time.sleep(1)
+            d.press("back")
+            time.sleep(0.3)
+            d.press("back")
+            time.sleep(0.3)
+            d.press("back")
+            time.sleep(0.3)
+            d.press("back")
+            login(d)
         get_item_detail(devices=d, item_id=data['item_id'])
-        db.update_status([data], 2)
         time.sleep(1)
         d.press("back")
         time.sleep(0.3)
@@ -198,6 +207,7 @@ def parseAppText(item_id, text):
 
     if len(coupons) > 0:
         info.coupons = (",".join(coupons))
+    db.update_info(info)
     print(info.toString())
     file_object.write(info.toString() + "\n")
     file_object.flush()
@@ -212,10 +222,9 @@ def parseAppText(item_id, text):
     # print(splits)
 
 
-def init_memu():
-    restart_memu(0)
-    restart_memu(1)
-    restart_memu(2)
+def init_memu(n):
+    for i in range(n):
+        restart_memu(i)
 
 
 def valid(device):
@@ -232,13 +241,12 @@ def skip_hongbao(devices):
 # com.taobao.taobao
 if __name__ == '__main__':
     while True:
-        init_memu()
+        init_memu(2)
         time.sleep(5)
         devices_list = get_phone_list()
         data = db.get_need_process()
         if len(data) == 0:
             break
-        db.update_status(data, 1)
         lists = list_split(data, math.ceil(len(data) / len(devices_list)))
         threads = []
         for index, device in enumerate(devices_list):
