@@ -4,6 +4,7 @@ import subprocess
 import db
 import math
 import multiprocessing
+import threading
 import re
 import entity
 
@@ -100,18 +101,23 @@ def login(devices):
     devices.set_fastinput_ime(False)
 
 
+def skip(devices):
+    while True:
+        skip_update(devices)
+        skip_hongbao(devices)
+        skip_positive(devices)
+        time.sleep(1)
+
+
 def process(device, list):
     d = u2.connect(device)
     d.app_stop("com.taobao.taobao")
     time.sleep(1)
     d.app_start("com.taobao.taobao")
+    threading.Thread(target=skip, args=(d,)).start()
     time.sleep(1)
-    skip_positive(d)
-    time.sleep(1)
-    skip_hongbao(d)
     d.xpath('@com.taobao.taobao:id/searchbtn').wait()
     get_search_view(d).click_exists(timeout=10)
-    time.sleep(1)
     d.press("back")
     for data in list:
         click_search(d, data['item_url'])
@@ -121,22 +127,17 @@ def process(device, list):
             # 跳转换号登录
             print("账号暂时失效")
             time.sleep(1)
-            d.press("back")
-            time.sleep(0.3)
-            d.press("back")
-            time.sleep(0.3)
-            d.press("back")
-            time.sleep(0.3)
-            d.press("back")
+            go_back(d, 4)
             login(d)
         get_item_detail(devices=d, item_id=data['item_id'])
         time.sleep(1)
-        d.press("back")
+        go_back(d, 3)
+
+
+def go_back(devices, times):
+    for i in range(times):
+        devices.press("back")
         time.sleep(0.3)
-        d.press("back")
-        time.sleep(0.3)
-        d.press("back")
-        time.sleep(1)
 
 
 def list_split(items, n):
@@ -218,7 +219,6 @@ def parseAppText(item_id, text):
     #     groups = match.group(0)
     #     constants.append(groups)
     # print(groups)
-
     # print(splits)
 
 
@@ -234,14 +234,20 @@ def valid(device):
 def skip_hongbao(devices):
     hongbao = devices.xpath("@com.taobao.taobao:id/layermanager_penetrate_webview_container_id").child(
         "//android.widget.ImageView").all()
-    if len(hongbao)>0:
+    if len(hongbao) > 0:
         hongbao[1].click()
+
+
+def skip_update(devices):
+    update = devices.xpath("立即下载").wait(1)
+    if update is not None:
+        devices.xpath("取消").click()
 
 
 # com.taobao.taobao
 if __name__ == '__main__':
     while True:
-        init_memu(2)
+        init_memu(1)
         time.sleep(5)
         devices_list = get_phone_list()
         data = db.get_need_process()
