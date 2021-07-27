@@ -270,20 +270,38 @@ def parseAppText(item_id, text):
     # 活动价格
     match = re.search("^(.+?)[\d.]+", text)
     if match != None:
-        # 领券内容
         groups = match.group(0)
-        # 都赋值，后面价格定位替换
-        info.activePrice = groups
-        info.defaultPrice = groups
+        if groups is not None:
+            search = re.search("\d(\d.?)[\d.]+", groups)
+            if search is not None:
+                price = search.group(0)
+                # 都赋值，后面价格定位替换
+                info.activePrice = price
+                info.defaultPrice = price
+            else:
+                info.activePrice = groups
+                info.defaultPrice = groups
     # 券后价
     match = re.search("券后(.+?)[\d.]+", text)
     if match != None:
         groups = match.group(0)
-        info.activePrice = groups
+        if groups is not None:
+            search = re.search("\d(\d.?)[\d.]+", groups)
+            if search is not None:
+                price = search.group(0)
+                info.activePrice = price
+            else:
+                info.activePrice = groups
     match = re.search("价格(.+?)[\d.]+", text)
     if match != None:
         groups = match.group(0)
-        info.defaultPrice = groups
+        if groups is not None:
+            search = re.search("\d(\d.?)[\d.]+", groups)
+            if search is not None:
+                price = search.group(0)
+                info.defaultPrice = price
+            else:
+                info.defaultPrice = groups
     # 提取 “领券...领取” 中的内容
     match = re.search("领券(.+?)领取", text)
     if match != None:
