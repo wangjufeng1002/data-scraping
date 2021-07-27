@@ -135,7 +135,6 @@ def random_switch_tabs(devices):
     tabs = devices.xpath("//android.widget.HorizontalScrollView").child("//android.widget.TextView").all()
     if do == 1:
         index = random.randint(0, 3)
-        log.info("随机切换tabs 到 %s", tabs[index].text)
         tabs[index].click()
         time.sleep(1)
 
