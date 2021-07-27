@@ -1,5 +1,5 @@
 from pymysql_comm import UsingMysql
-
+import datetime
 
 def get_need_process():
     with UsingMysql() as um:
@@ -25,7 +25,10 @@ def update_info(data):
 
 def get_user():
     with UsingMysql()as um:
-        sql = "select * from headers   order by update_time asc limit 1"
+        #账号切成2份  一天用一半
+        now=datetime.datetime.now()
+        mod=now.day%2
+        sql = "select * from headers  where id%2={} order by update_time asc limit 1".format(mod)
         um.cursor.execute(sql)
         data = um.cursor.fetchone()
         sql ="update headers set update_time=now() where id={}".format(data['id'])
