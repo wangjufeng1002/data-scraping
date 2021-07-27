@@ -62,8 +62,19 @@ def get_search_button(devices):
     return devices.xpath('@com.taobao.taobao:id/searchbtn')
 
 
+# 查看评论
+def random_comment(devices):
+    devices.swipe_ext("up", scale=1)
+    time.sleep(0.5)
+    devices.xpath("查看全部").click()
+    time.sleep(1)
+    devices.swipe_ext("up", scale=0.7)
+    go_back(devices, 1)
+
+
 def random_search(devices):
-    keys = ['卫生纸', '电脑', '华为', '联想', '洗衣液','苹果','显卡','人间失格','宇宙的琴弦','圈量子理论','usb','零食','杯子','袜子','球衣','嘉然','七海']
+    keys = ['卫生纸', '电脑', '华为', '联想', '洗衣液', '苹果', '显卡', '人间失格', '宇宙的琴弦', '圈量子理论', 'usb', '零食', '杯子', '袜子', '球衣', '嘉然',
+            '七海','康师傅','辣条','小熊饼干','灯泡','墙纸','python教学']
     get_search_view(devices).click_exists(timeout=10)
     time.sleep(0.5)
     devices.set_fastinput_ime(True)
@@ -104,10 +115,11 @@ def random_swipe(devices, back):
 
 
 def random_refresh(devices):
-    time = random.randint(0, 3)
-    for i in range(0, time):
-        devices.swipe_ext("down", scale=0.7)
-
+    times = random.randint(0, 3)
+    for i in range(0, times):
+        time.sleep(0.2)
+        devices.swipe_ext("down", scale=0.3)
+    time.sleep(1)
 
 # 随机行为 浏览购物车
 def random_shop_cart(devices):
@@ -149,12 +161,17 @@ def get_item_detail(item_id, devices, account, index):
     parseAppText(item_id, content)
     log.info("进程%s账号%s,获取商品%s数据:%s", str(index), account, item_id, content)
     time.sleep(0.3)
-    random_swipe(devices, False)
+    select = random.randint(0, 1)
+    if select == 0:
+        random_comment(devices)
+    else:
+        random_swipe(devices, False)
     time.sleep(1)
     return content
 
 
 def login(devices):
+    restart_app(devices)
     user = db.get_user()
     devices.xpath("我的淘宝").click()
     devices.xpath("设置").click_exists(timeout=30)
@@ -220,9 +237,9 @@ def process(device, list, index):
             n = random.randint(0, 8)
             if n == 4:
                 random_search(d)
-            sleep=random.randint(3, 20)
+            sleep = random.randint(3, 20)
             time.sleep(sleep)
-            log.info("进程%s,账号%s,休息%s秒",index,logged_account,sleep)
+            log.info("进程%s,账号%s,休息%s秒", index, logged_account, sleep)
             click_search(d, data['item_url'])
             time.sleep(1)
             valid_button = valid(d)
@@ -268,7 +285,7 @@ def parseAppText(item_id, text):
     text = text[3:]
     # 活动价格
     match = re.search("^(.+?)[\d.]+", text)
-    if match != None:
+    if match is not None:
         groups = match.group(0)
         if groups is not None:
             search = re.search("\d(\d.?)[\d.]+", groups)
@@ -282,7 +299,7 @@ def parseAppText(item_id, text):
                 info.defaultPrice = groups
     # 券后价
     match = re.search("券后(.+?)[\d.]+", text)
-    if match != None:
+    if match is not None:
         groups = match.group(0)
         if groups is not None:
             search = re.search("\d(\d.?)[\d.]+", groups)
