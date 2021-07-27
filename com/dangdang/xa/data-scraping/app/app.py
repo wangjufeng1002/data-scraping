@@ -1,3 +1,5 @@
+import random
+
 import uiautomator2 as u2
 import time
 import subprocess
@@ -7,9 +9,12 @@ import multiprocessing
 import threading
 import re
 import entity
+import MyLog
+from timeit import default_timer
 
 file_object = open('../TM/result.txt', "a", encoding='utf-8')
-last_date = ''
+main_end = False
+log = MyLog.Logger('ha').get_log()
 
 
 def run_cmd(cmd):
@@ -33,11 +38,11 @@ def restart_memu(i):
     else:
         cmd = r'memuc reboot -i ' + str(i)
     out = run_cmd(cmd)[0]
-    print('模拟器' + str(i) + str(out))
+    log.info('模拟器' + str(i) + str(out))
 
 
 def get_phone_list():  # 获取手机设备
-    cmd = r'D:\adb.exe devices'  # % apk_file
+    cmd = r'adb.exe devices'  # % apk_file
     pr = subprocess.Popen(cmd, stdout=subprocess.PIPE, shell=True)
     pr.wait()  # 不会马上返回输出的命令，需要等待
     out = pr.stdout.readlines()  # out = pr.stdout.read().decode("UTF-8")
@@ -45,7 +50,7 @@ def get_phone_list():  # 获取手机设备
     for i in (out)[1:-1]:
         device = str(i).split("\\")[0].split("'")[-1]
         devices.append(device)
-    print(devices)
+    log.info("获取到的设备列表%s", devices)
     return devices  # 手机设备列表
 
 
@@ -57,7 +62,29 @@ def get_search_button(devices):
     return devices.xpath('@com.taobao.taobao:id/searchbtn')
 
 
+def random_search(devices):
+    keys = ['卫生纸', '电脑', '华为', '联想', '洗衣液','苹果','显卡','人间失格','宇宙的琴弦','圈量子理论','usb','零食','杯子','袜子','球衣','嘉然','七海']
+    get_search_view(devices).click_exists(timeout=10)
+    time.sleep(0.5)
+    devices.set_fastinput_ime(True)
+    time.sleep(0.5)
+    devices.send_keys(keys[random.randint(0, len(keys) - 1)])
+    time.sleep(0.5)
+    get_search_button(devices).click_exists(timeout=10)
+    time.sleep(0.5)
+    random_swipe(devices, False)
+    time.sleep(1)
+    go_back(devices, 3)
+
+
 def click_search(devices, name):
+    # 随机刷新
+    random_refresh(devices)
+    # 随机行为
+
+    random_shop_cart(devices)
+    random_message(devices)
+    random_switch_tabs(devices)
     get_search_view(devices).click_exists(timeout=10)
     time.sleep(0.5)
     devices.set_fastinput_ime(True)
@@ -67,7 +94,53 @@ def click_search(devices, name):
     get_search_button(devices).click_exists(timeout=10)
 
 
-def get_item_detail(item_id, devices):
+def random_swipe(devices, back):
+    times = random.randint(1, 3)
+    for i in range(0, times):
+        devices.swipe_ext("up", scale=0.5)
+    if back is True:
+        for i in range(0, times):
+            devices.swipe_ext("down", scale=0.5)
+
+
+def random_refresh(devices):
+    time = random.randint(0, 3)
+    for i in range(0, time):
+        devices.swipe_ext("down", scale=0.7)
+
+
+# 随机行为 浏览购物车
+def random_shop_cart(devices):
+    do = random.randint(0, 1)
+    if do == 1:
+        devices.xpath("购物车").click()
+        time.sleep(1)
+        go_back(devices, 1)
+        time.sleep(1)
+
+
+# 随机行为 浏览消息
+def random_message(devices):
+    do = random.randint(0, 1)
+    if do == 1:
+        devices.xpath("消息").click()
+        time.sleep(1)
+        go_back(devices, 1)
+        time.sleep(1)
+
+
+# 随机行为 切换标签页面
+def random_switch_tabs(devices):
+    do = random.randint(0, 1)
+    tabs = devices.xpath("//android.widget.HorizontalScrollView").child("//android.widget.TextView").all()
+    if do == 1:
+        index = random.randint(0, 3)
+        log.info("随机切换tabs 到 %s", tabs[index].text)
+        tabs[index].click()
+        time.sleep(1)
+
+
+def get_item_detail(item_id, devices, account, index):
     devices.xpath('@com.taobao.taobao:id/uik_public_menu_action_icon').wait()
     content = ''
     page_item = devices.xpath('@com.taobao.taobao:id/mainpage').child('//android.widget.TextView').all()
@@ -75,10 +148,15 @@ def get_item_detail(item_id, devices):
         if item.text != '':
             content += item.text
     parseAppText(item_id, content)
+    log.info("进程%s账号%s,获取商品%s数据:%s", str(index), account, item_id, content)
+    time.sleep(0.3)
+    random_swipe(devices, False)
+    time.sleep(1)
     return content
 
 
 def login(devices):
+    user = db.get_user()
     devices.xpath("我的淘宝").click()
     devices.xpath("设置").click_exists(timeout=30)
     time.sleep(1)
@@ -90,15 +168,18 @@ def login(devices):
     time.sleep(1)
     devices.xpath("换个账户登录").click()
     time.sleep(1)
-    devices.xpath("@com.taobao.taobao:id/aliuser_recommend_login_account_et").set_text("superamayamay")
+    devices.xpath("@com.taobao.taobao:id/aliuser_recommend_login_account_et").set_text(user['account'])
     time.sleep(1)
     devices.xpath("@com.taobao.taobao:id/aliuser_recommend_login_next_btn").click()
     time.sleep(1)
-    devices.xpath("@com.taobao.taobao:id/aliuser_recommend_login_password_et").set_text("ztv963852_QWE")
+    devices.xpath("@com.taobao.taobao:id/aliuser_recommend_login_password_et").set_text(user['password'])
     time.sleep(1)
     devices.xpath("@com.taobao.taobao:id/aliuser_recommend_login_next_btn").click()
     time.sleep(1)
     devices.set_fastinput_ime(False)
+    time.sleep(1)
+    devices.xpath("首页").click()
+    return user
 
 
 def skip(devices):
@@ -107,31 +188,61 @@ def skip(devices):
         skip_hongbao(devices)
         skip_positive(devices)
         time.sleep(1)
+        if main_end is True:
+            break
 
 
-def process(device, list):
-    d = u2.connect(device)
-    d.app_stop("com.taobao.taobao")
+def restart_app(devices):
+    devices.app_stop("com.taobao.taobao")
     time.sleep(1)
-    d.app_start("com.taobao.taobao")
-    threading.Thread(target=skip, args=(d,)).start()
+    devices.app_start("com.taobao.taobao")
+
+
+def process(device, list, index):
+    start = default_timer()
+    global main_end
+    main_end = False
+    try:
+        d = u2.connect(device)
+    except:
+        restart_memu(index)
+
+    restart_app(d)
+    t = threading.Thread(target=skip, args=(d,))
+    t.start()
     time.sleep(1)
+    logged_account = get_logged_account(d)
+    log.info("进程%s登录的账号是%s", str(index), logged_account)
     d.xpath('@com.taobao.taobao:id/searchbtn').wait()
     get_search_view(d).click_exists(timeout=10)
-    d.press("back")
+    go_back(d, 3)
     for data in list:
-        click_search(d, data['item_url'])
-        time.sleep(1)
-        valid_button = valid(d)
-        if valid_button is not None:
-            # 跳转换号登录
-            print("账号暂时失效")
+        try:
+            n = random.randint(0, 8)
+            if n == 4:
+                random_search(d)
+            sleep=random.randint(3, 20)
+            time.sleep(sleep)
+            log.info("进程%s,账号%s,休息%s秒",index,logged_account,sleep)
+            click_search(d, data['item_url'])
             time.sleep(1)
-            go_back(d, 4)
-            login(d)
-        get_item_detail(devices=d, item_id=data['item_id'])
-        time.sleep(1)
-        go_back(d, 3)
+            valid_button = valid(d)
+            if valid_button is not None:
+                # 跳转换号登录
+                log.info("进程%s账号%s暂时失效", index, logged_account)
+                time.sleep(1)
+                go_back(d, 4)
+                logged_account = login(d)['account']
+                log.info("进程%s切换账号登录%s", str(index), logged_account)
+                continue
+            get_item_detail(devices=d, item_id=data['item_id'], account=logged_account, index=index)
+            time.sleep(1)
+            go_back(d, 3)
+        except:
+            restart_app(d)
+            continue
+    main_end = True
+    log.info("进程%s账号%s,抓取数据%s个,用时%s", str(index), logged_account, str(len(list)), str(default_timer() - start))
 
 
 def go_back(devices, times):
@@ -209,17 +320,8 @@ def parseAppText(item_id, text):
     if len(coupons) > 0:
         info.coupons = (",".join(coupons))
     db.update_info(info)
-    print(info.toString())
     file_object.write(info.toString() + "\n")
     file_object.flush()
-    # 包邮
-    # 销量
-    # match = re.search(u"月销(.+?)(\+|\d+)", text)
-    # if match != None:
-    #     groups = match.group(0)
-    #     constants.append(groups)
-    # print(groups)
-    # print(splits)
 
 
 def init_memu(n):
@@ -227,8 +329,8 @@ def init_memu(n):
         restart_memu(i)
 
 
-def valid(device):
-    return device.xpath('@android:id/decor_content_parent').wait(timeout=1)
+def valid(devices):
+    return devices.xpath('@android:id/decor_content_parent').wait(timeout=2)
 
 
 def skip_hongbao(devices):
@@ -244,10 +346,22 @@ def skip_update(devices):
         devices.xpath("取消").click()
 
 
+def get_logged_account(devices):
+    devices.xpath("我的淘宝").click()
+    devices.xpath("设置").click_exists(timeout=30)
+    time.sleep(1)
+    user_nick = devices.xpath("@com.taobao.taobao:id/tv_setting_page_user_nick").wait(timeout=3)
+    devices.press("back")
+    time.sleep(0.3)
+    devices.xpath("首页").click()
+    return user_nick.text
+
+
 # com.taobao.taobao
 if __name__ == '__main__':
+    count = input("请输入模拟器个数")
     while True:
-        init_memu(1)
+        init_memu(int(count))
         time.sleep(5)
         devices_list = get_phone_list()
         data = db.get_need_process()
@@ -256,7 +370,7 @@ if __name__ == '__main__':
         lists = list_split(data, math.ceil(len(data) / len(devices_list)))
         threads = []
         for index, device in enumerate(devices_list):
-            p = multiprocessing.Process(target=process, args=(device, lists[index]))
+            p = multiprocessing.Process(target=process, args=(device, lists[index], index))
             threads.append(p)
             p.start()
         for t in threads:

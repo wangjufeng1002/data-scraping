@@ -17,8 +17,18 @@ def update_status(lists, status):
 
 def update_info(data):
     with UsingMysql()as um:
-        sql="update book_info set  default_price='{}',active_price='{}',coupons='{}',free='{}',original_text='{}',sales='{}',is_success=2 where item_id='{}'".format(
-                data.defaultPrice, data.activePrice, data.coupons, data.free, data.originalText, data.sales, data.itemId)
-        print(sql)
+        sql = "update book_info set  default_price='{}',active_price='{}',coupons='{}',free='{}',original_text='{}',sales='{}',is_success=2 where item_id='{}'".format(
+            data.defaultPrice, data.activePrice, data.coupons, data.free, data.originalText, data.sales, data.itemId)
         um.cursor.execute(sql)
         um._conn.commit()
+
+
+def get_user():
+    with UsingMysql()as um:
+        sql = "select * from headers   order by update_time asc limit 1"
+        um.cursor.execute(sql)
+        data = um.cursor.fetchone()
+        sql ="update headers set update_time=now() where id={}".format(data['id'])
+        um.cursor.execute(sql)
+        um._conn.commit()
+        return data

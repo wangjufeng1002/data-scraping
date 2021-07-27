@@ -45,11 +45,6 @@ class UsingMysql(object):
         # 在退出的时候自动关闭连接和cursor
         self._cursor.close()
         self._conn.close()
-
-        if self._log_time is True:
-            diff = default_timer() - self._start
-            print('-- %s: %.6f 秒' % (self._log_label, diff))
-
     @property
     def cursor(self):
         return self._cursor
