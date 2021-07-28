@@ -41,7 +41,7 @@ def get_user():
 
 def get_account_info(account):
     with UsingMysql()as um:
-        sql = "select * from headers where  account={}".format(account)
+        sql = "select * from headers where  account='{}'".format(account)
         um.cursor.execute(sql)
         data = um.cursor.fetchone()
         return data
