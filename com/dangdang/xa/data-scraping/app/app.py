@@ -157,6 +157,11 @@ def random_switch_tabs(devices):
 
 
 def get_item_detail(item_id, devices, account, index):
+    exist=devices.xpath("商品过期不存在").wait(timeout=2)
+    if exist is not None:
+        log.info("商品%s过期或不存在",item_id)
+        parseAppText(item_id, "商品过期或不存在")
+        return
     devices.xpath('@com.taobao.taobao:id/uik_public_menu_action_icon').wait()
     content = ''
     page_item = devices.xpath('@com.taobao.taobao:id/mainpage').child('//android.widget.TextView').all()
@@ -408,20 +413,22 @@ def get_logged_account(devices):
 
 # com.taobao.taobao
 if __name__ == '__main__':
-    count = input("请输入模拟器个数")
-    while True:
-        init_memu(int(count))
-        time.sleep(5)
-        devices_list = get_phone_list()
-        data = db.get_need_process()
-        if len(data) == 0:
-            break
-        lists = list_split(data, math.ceil(len(data) / len(devices_list)))
-        threads = []
-        for index, device in enumerate(devices_list):
-            p = multiprocessing.Process(target=process, args=(device, lists[index], index))
-            threads.append(p)
-            p.start()
-        for t in threads:
-            t.join()
-        kill_adb_connect()
+    d=u2.connect()
+    get_item_detail("12",d,"123",1)
+    # count = input("请输入模拟器个数")
+    # while True:
+    #     init_memu(int(count))
+    #     time.sleep(5)
+    #     devices_list = get_phone_list()
+    #     data = db.get_need_process()
+    #     if len(data) == 0:
+    #         break
+    #     lists = list_split(data, math.ceil(len(data) / len(devices_list)))
+    #     threads = []
+    #     for index, device in enumerate(devices_list):
+    #         p = multiprocessing.Process(target=process, args=(device, lists[index], index))
+    #         threads.append(p)
+    #         p.start()
+    #     for t in threads:
+    #         t.join()
+    #     kill_adb_connect()
