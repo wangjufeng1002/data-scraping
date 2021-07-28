@@ -303,7 +303,7 @@ def parseAppText(item_id, text):
     if match is not None:
         groups = match.group(0)
         if groups is not None:
-            search = re.search("\d(\d?)[\d.]+", groups)
+            search = re.search("\d(\d)*[\d.]*", groups)
             if search is not None:
                 price = search.group(0)
                 # 都赋值，后面价格定位替换
@@ -317,7 +317,7 @@ def parseAppText(item_id, text):
     if match is not None:
         groups = match.group(0)
         if groups is not None:
-            search = re.search("\d(\d?)[\d.]+", groups)
+            search = re.search("\d(\d)*[\d.]*", groups)
             if search is not None:
                 price = search.group(0)
                 info.activePrice = price
@@ -327,7 +327,7 @@ def parseAppText(item_id, text):
     if match != None:
         groups = match.group(0)
         if groups is not None:
-            search = re.search("\d(\d?)[\d.]+", groups)
+            search = re.search("\d(\d)*[\d.]*", groups)
             if search is not None:
                 price = search.group(0)
                 info.defaultPrice = price
