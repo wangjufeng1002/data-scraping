@@ -27,7 +27,7 @@ def run_cmd(cmd):
 def kill_adb_connect():
     cmd = r'adb kill-server'
     run_cmd(cmd)
-    print("断开所有连接")
+    log.info("断开所有连接")
 
 
 def restart_memu(i):
@@ -66,15 +66,19 @@ def get_search_button(devices):
 def random_comment(devices):
     devices.swipe_ext("up", scale=1)
     time.sleep(0.5)
-    devices.xpath("查看全部").click()
-    time.sleep(1)
-    devices.swipe_ext("up", scale=0.7)
-    go_back(devices, 1)
+    devices.swipe_ext("up", scale=0.6)
+    time.sleep(0.5)
+    comment=devices.xpath('查看全部').wait(timeout=1)
+    if comment is not None:
+        devices.xpath("查看全部").click()
+        time.sleep(1)
+        devices.swipe_ext("up", scale=0.7)
+        go_back(devices, 1)
 
 
 def random_search(devices):
     keys = ['卫生纸', '电脑', '华为', '联想', '洗衣液', '苹果', '显卡', '人间失格', '宇宙的琴弦', '圈量子理论', 'usb', '零食', '杯子', '袜子', '球衣', '嘉然',
-            '七海','康师傅','辣条','小熊饼干','灯泡','墙纸','python教学']
+            '七海', '康师傅', '辣条', '小熊饼干', '灯泡', '墙纸', 'python教学']
     get_search_view(devices).click_exists(timeout=10)
     time.sleep(0.5)
     devices.set_fastinput_ime(True)
@@ -120,6 +124,7 @@ def random_refresh(devices):
         time.sleep(0.2)
         devices.swipe_ext("down", scale=0.3)
     time.sleep(1)
+
 
 # 随机行为 浏览购物车
 def random_shop_cart(devices):
@@ -218,20 +223,25 @@ def process(device, list, index):
     start = default_timer()
     global main_end
     main_end = False
+    logged_account=''
     try:
         d = u2.connect(device)
     except:
+        log.info("线程%s连接adb发生错误,重启app",index)
         restart_memu(index)
 
-    restart_app(d)
-    t = threading.Thread(target=skip, args=(d,))
-    t.start()
-    time.sleep(1)
-    logged_account = get_logged_account(d)
-    log.info("进程%s登录的账号是%s", str(index), logged_account)
-    d.xpath('@com.taobao.taobao:id/searchbtn').wait()
-    get_search_view(d).click_exists(timeout=10)
-    go_back(d, 3)
+    try:
+        restart_app(d)
+        t = threading.Thread(target=skip, args=(d,))
+        t.start()
+        time.sleep(1)
+        logged_account = get_logged_account(d)
+        log.info("进程%s登录的账号是%s", str(index), logged_account)
+        d.xpath('@com.taobao.taobao:id/searchbtn').wait()
+        get_search_view(d).click_exists(timeout=10)
+        go_back(d, 3)
+    except:
+        main_end=False
     for data in list:
         try:
             n = random.randint(0, 8)
@@ -249,12 +259,17 @@ def process(device, list, index):
                 time.sleep(1)
                 go_back(d, 4)
                 logged_account = login(d)['account']
+                account_info = db.get_account_info(logged_account)
+                if int(account_info['fail_times']) > 5:
+                    log.info("账号%s,出现滑块次数过多,程序休息10分钟")
+                    time.sleep(360)
                 log.info("进程%s切换账号登录%s", str(index), logged_account)
                 continue
             get_item_detail(devices=d, item_id=data['item_id'], account=logged_account, index=index)
             time.sleep(1)
             go_back(d, 3)
-        except:
+        except Exception as e:
+            log.info("进程%s,商品%s抓取发生异常,重启app,%s",index,data,e)
             restart_app(d)
             continue
     main_end = True
@@ -353,6 +368,7 @@ def parseAppText(item_id, text):
 
     if len(coupons) > 0:
         info.coupons = (",".join(coupons))
+    print(info.toString())
     db.update_info(info)
     file_object.write(info.toString() + "\n")
     file_object.flush()
