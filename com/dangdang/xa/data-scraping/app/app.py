@@ -300,7 +300,7 @@ def skip_positive(devices):
 def parseAppText(item_id, text):
     text = text.replace("||", " ")
     info = entity.AppBookInfo(itemId=item_id, defaultPrice=None, activePrice=None, coupons=None, free=None, sales=None,
-                              originalText=text)
+                              originalText=text,name=None)
     coupons = []
     text = text[3:]
     # 活动价格
@@ -370,7 +370,14 @@ def parseAppText(item_id, text):
     if match is not None:
         groups = match.group(0)
         info.sales = groups
-
+    match = re.search(u"큚(.+?)ꄪ", text)
+    if match != None:
+        groups = match.group(0)
+        ignoTextGroups = re.search(u"큚(.+?)领取", groups)
+        if ignoTextGroups != None:
+            groups = groups.replace(ignoTextGroups.group(0), "")
+        groups = groups.replace(" ", "").replace("큚", "").replace("ꄪ", "")
+        info.name = groups
     if len(coupons) > 0:
         info.coupons = (",".join(coupons))
     print(info.toString())
