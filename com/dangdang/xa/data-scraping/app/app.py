@@ -370,7 +370,12 @@ def parseAppText(item_id, text):
     if match is not None:
         groups = match.group(0)
         info.sales = groups
-    match = re.search(u"큚(.+?)ꄪ", text)
+
+    #提取名称
+    if "큚" in text and "ꄪ" not  in text:
+        match = re.search(u"큚(.+?)+", text)
+    else:
+        match = re.search(u"큚(.+?)ꄪ", text)
     if match != None:
         groups = match.group(0)
         ignoTextGroups = re.search(u"큚(.+?)领取", groups)
