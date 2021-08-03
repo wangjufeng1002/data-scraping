@@ -549,25 +549,3 @@ def run(devices_addr, number, account, password, products, result):
         # 出现异常终止操作 并终止app
         stop_memu(number)
 
-
-if __name__ == '__main__':
-    count = input("请输入模拟器个数")
-    while True:
-        data = db.get_need_process()
-        log.info("获取到待处理的数据%s", len(data))
-        if len(data) == 0:
-            log.info("数据处理完毕,等待10分钟再次查询未处理数据")
-            time.sleep(600)
-            continue
-        init_memu(int(count))
-        time.sleep(5)
-        devices_list = get_phone_list()
-        lists = list_split(data, math.ceil(len(data) / len(devices_list)))
-        threads = []
-        for index, device in enumerate(devices_list):
-            p = multiprocessing.Process(target=process, args=(device, lists[index], index))
-            threads.append(p)
-            p.start()
-        for t in threads:
-            t.join()
-        kill_adb_connect()
