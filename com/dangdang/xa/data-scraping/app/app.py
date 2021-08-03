@@ -1,16 +1,19 @@
+import json
+import math
 import random
 
 import uiautomator2 as u2
 import time
 import subprocess
 import db
-import math
 import multiprocessing
 import threading
 import re
 import entity
 import MyLog
 from timeit import default_timer
+from multiprocessing import Manager
+import func_timeout
 
 file_object = open('../TM/result.txt', "a", encoding='utf-8')
 main_end = False
@@ -28,6 +31,20 @@ def kill_adb_connect():
     cmd = r'adb kill-server'
     run_cmd(cmd)
     log.info("断开所有连接")
+
+
+def get_memu_status(number):
+    cmd = r'memuc isvmrunning -i ' + str(number)
+    out = run_cmd(cmd)[0]
+    if "Not" in str(out):
+        return False
+    else:
+        return True
+
+
+def stop_memu(i):
+    cmd = r'memuc stop -i ' + str(i)
+    run_cmd(cmd)
 
 
 def restart_memu(i):
@@ -68,7 +85,7 @@ def random_comment(devices):
     time.sleep(0.5)
     devices.swipe_ext("up", scale=0.6)
     time.sleep(0.5)
-    comment=devices.xpath('查看全部').wait(timeout=1)
+    comment = devices.xpath('查看全部').wait(timeout=1)
     if comment is not None:
         devices.xpath("查看全部").click()
         time.sleep(1)
@@ -78,7 +95,7 @@ def random_comment(devices):
 
 def random_search(devices):
     keys = ['卫生纸', '电脑', '华为', '联想', '洗衣液', '苹果', '显卡', '人间失格', '宇宙的琴弦', '圈量子理论', 'usb', '零食', '杯子', '袜子', '球衣', '嘉然',
-            '七海', '康师傅', '辣条', '小熊饼干', '灯泡', '墙纸', 'python教学']
+            '七海', '康师傅', '辣条', '小熊饼干', '灯泡', '墙纸', 'python教学', '阿迪', '耐克', '背包', '甜品', '面具', '玩具', 'lovelive']
     get_search_view(devices).click_exists(timeout=10)
     time.sleep(0.5)
     devices.set_fastinput_ime(True)
@@ -86,6 +103,11 @@ def random_search(devices):
     devices.send_keys(keys[random.randint(0, len(keys) - 1)])
     time.sleep(0.5)
     get_search_button(devices).click_exists(timeout=10)
+    if valid(devices) is not None:
+        log.info("随机搜索出现验证")
+        time.sleep(1)
+        go_back(devices, 4)
+        return
     time.sleep(0.5)
     random_swipe(devices, False)
     time.sleep(1)
@@ -100,7 +122,10 @@ def click_search(devices, name):
     random_shop_cart(devices)
     random_message(devices)
     random_switch_tabs(devices)
+    ##点击两次
     get_search_view(devices).click_exists(timeout=10)
+    time.sleep(0.5)
+    get_search_view(devices).click_exists(timeout=2)
     time.sleep(0.5)
     devices.set_fastinput_ime(True)
     time.sleep(0.5)
@@ -157,9 +182,9 @@ def random_switch_tabs(devices):
 
 
 def get_item_detail(item_id, devices, account, index):
-    exist=devices.xpath("商品过期不存在").wait(timeout=2)
+    exist = devices.xpath("商品过期不存在").wait(timeout=2)
     if exist is not None:
-        log.info("商品%s过期或不存在",item_id)
+        log.info("商品%s过期或不存在", item_id)
         parseAppText(item_id, "商品过期或不存在")
         return
     devices.xpath('@com.taobao.taobao:id/uik_public_menu_action_icon').wait()
@@ -180,9 +205,8 @@ def get_item_detail(item_id, devices, account, index):
     return content
 
 
-def login(devices):
+def login(devices, account, password):
     restart_app(devices)
-    user = db.get_user()
     devices.xpath("我的淘宝").click()
     devices.xpath("设置").click_exists(timeout=30)
     time.sleep(1)
@@ -194,26 +218,29 @@ def login(devices):
     time.sleep(1)
     devices.xpath("换个账户登录").click()
     time.sleep(1)
-    devices.xpath("@com.taobao.taobao:id/aliuser_recommend_login_account_et").set_text(user['account'])
+    devices.xpath("@com.taobao.taobao:id/aliuser_recommend_login_account_et").set_text(account)
     time.sleep(1)
     devices.xpath("@com.taobao.taobao:id/aliuser_recommend_login_next_btn").click()
     time.sleep(1)
-    devices.xpath("@com.taobao.taobao:id/aliuser_recommend_login_password_et").set_text(user['password'])
+    devices.xpath("@com.taobao.taobao:id/aliuser_recommend_login_password_et").set_text(password)
     time.sleep(1)
     devices.xpath("@com.taobao.taobao:id/aliuser_recommend_login_next_btn").click()
     time.sleep(1)
     devices.set_fastinput_ime(False)
     time.sleep(1)
     devices.xpath("首页").click()
-    return user
 
 
 def skip(devices):
+    start_time = default_timer()
     while True:
         skip_update(devices)
         skip_hongbao(devices)
         skip_positive(devices)
         time.sleep(1)
+        # 开启3分钟 线程退出 防止主线程意外关闭而这个线程还没结束
+        if default_timer() - start_time > 120:
+            break
         if main_end is True:
             break
 
@@ -228,11 +255,11 @@ def process(device, list, index):
     start = default_timer()
     global main_end
     main_end = False
-    logged_account=''
+    logged_account = ''
     try:
         d = u2.connect(device)
     except:
-        log.info("线程%s连接adb发生错误,重启app",index)
+        log.info("线程%s连接adb发生错误,重启app", index)
         restart_memu(index)
 
     try:
@@ -246,10 +273,10 @@ def process(device, list, index):
         get_search_view(d).click_exists(timeout=10)
         go_back(d, 3)
     except:
-        main_end=False
+        main_end = False
     for data in list:
         try:
-            n = random.randint(0, 8)
+            n = random.randint(0, 10)
             if n == 4:
                 random_search(d)
             sleep = random.randint(3, 20)
@@ -263,7 +290,7 @@ def process(device, list, index):
                 log.info("进程%s账号%s暂时失效", index, logged_account)
                 time.sleep(1)
                 go_back(d, 4)
-                logged_account = login(d)['account']
+                # logged_account = login(d)['account']
                 account_info = db.get_account_info(logged_account)
                 if int(account_info['fail_times']) > 5:
                     log.info("账号%s,出现滑块次数过多,程序休息10分钟")
@@ -274,7 +301,7 @@ def process(device, list, index):
             time.sleep(1)
             go_back(d, 3)
         except Exception as e:
-            log.info("进程%s,商品%s抓取发生异常,重启app,%s",index,data,e)
+            log.info("进程%s,商品%s抓取发生异常,重启app,%s", index, data, e)
             restart_app(d)
             continue
     main_end = True
@@ -378,6 +405,7 @@ def parseAppText(item_id, text):
     file_object.write(info.toString() + "\n")
     file_object.flush()
 
+
 def init_memu(n):
     for i in range(n):
         restart_memu(i)
@@ -411,24 +439,123 @@ def get_logged_account(devices):
     return user_nick.text
 
 
-# com.taobao.taobao
+def get_memu_config():
+    with open("./conf.json", "r+", encoding='utf-8') as f:
+        conf_text = f.read()
+        return json.loads(conf_text)
+
+
+def get_memu_port(number):
+    ports = get_memu_config().get("accountInfo")
+    for port in ports:
+        if port['number'] == number:
+            return port['port']
+    return None
+
+
+def get_memu_login_account(number):
+    accountInfo = get_memu_config().get("accountInfo")
+    for account in accountInfo:
+        if account['number'] == number:
+            return str(account['account'])
+    return None
+
+
+def process_data(number, account, passwd, products):
+    log.info("开始处理数据,入参:account:%s,passwd:%s,number:%s,products:%s", account, passwd, number, products)
+    result = Manager().list()
+    try:
+        port = get_memu_port(number)
+        if port is None:
+            log.info("获取配置端口号失败,请检查配置")
+            return
+        status = get_memu_status(number)
+        if status is False:
+            restart_memu(number)
+        devices_addr = '127.0.0.1:' + port
+        p = multiprocessing.Process(target=run, args=(devices_addr, number, account, passwd, products, result))
+        p.start()
+        p.join()
+        return result
+    except Exception as e:
+        print(e)
+    return result
+
+
+def heart(number):
+    try:
+        log.info("心跳检测,number:%s", number)
+        port = get_memu_port(number)
+        if port is None:
+            log.info("获取配置端口号失败,请检查配置")
+            return
+        devices_addr = '127.0.0.1:' + port
+        device = u2.connect(devices_addr)
+        device.xpath("我的淘宝").click_exists(timeout=5)
+        time.sleep(1)
+        device.xpath("设置").click_exists(timeout=5)
+        time.sleep(1)
+        device.press("back")
+        log.info("app运行正常")
+    except Exception as e:
+        log.info("心跳监控APP出现异常,重启", e)
+        restart_memu(number)
+
+
+def run(devices_addr, number, account, password, products, result):
+    try:
+        global main_end
+        main_end = False
+        device = u2.connect(devices_addr)
+        device.app_start("com.taobao.taobao")
+        # 开启跳过广告线程
+        threading.Thread(target=skip, args=(device,)).start()
+        logged_account = get_memu_login_account(number)
+        log.info("当前模拟器登录的账号是:%s", logged_account)
+        if account != logged_account:
+            log.info("当前模拟器登录账号不一致,重新登录")
+            login(device, account, password)
+        # 第一次
+        for item in products:
+            url = 'http://detail.tmall.com/item.htm?id=' + str(item)
+            click_search(device, url)
+            time.sleep(1)
+            valid_button = valid(device)
+            if valid_button is not None:
+                log.info("进程%s账号%s暂时失效", number, logged_account)
+                time.sleep(1)
+                # 账号失效了就暂时不用了,这次请求直接结束
+                break
+            content = get_item_detail(devices=device, item_id=item, account=logged_account, index=number)
+            result.append(content)
+            time.sleep(1)
+            go_back(device, 3)
+
+        main_end = True
+    except Exception as e:
+        log.info(e)
+        # 出现异常终止操作 并终止app
+        stop_memu(number)
+
+
 if __name__ == '__main__':
-    d=u2.connect()
-    get_item_detail("12",d,"123",1)
-    # count = input("请输入模拟器个数")
-    # while True:
-    #     init_memu(int(count))
-    #     time.sleep(5)
-    #     devices_list = get_phone_list()
-    #     data = db.get_need_process()
-    #     if len(data) == 0:
-    #         break
-    #     lists = list_split(data, math.ceil(len(data) / len(devices_list)))
-    #     threads = []
-    #     for index, device in enumerate(devices_list):
-    #         p = multiprocessing.Process(target=process, args=(device, lists[index], index))
-    #         threads.append(p)
-    #         p.start()
-    #     for t in threads:
-    #         t.join()
-    #     kill_adb_connect()
+    count = input("请输入模拟器个数")
+    while True:
+        data = db.get_need_process()
+        log.info("获取到待处理的数据%s", len(data))
+        if len(data) == 0:
+            log.info("数据处理完毕,等待10分钟再次查询未处理数据")
+            time.sleep(600)
+            continue
+        init_memu(int(count))
+        time.sleep(5)
+        devices_list = get_phone_list()
+        lists = list_split(data, math.ceil(len(data) / len(devices_list)))
+        threads = []
+        for index, device in enumerate(devices_list):
+            p = multiprocessing.Process(target=process, args=(device, lists[index], index))
+            threads.append(p)
+            p.start()
+        for t in threads:
+            t.join()
+        kill_adb_connect()
