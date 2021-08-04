@@ -16,10 +16,9 @@ def update_status(lists, status):
         um._conn.commit()
 
 
-def update_info(data):
+def update_info(origin_text,item_id):
     with UsingMysql()as um:
-        sql = "update book_info set  default_price='{}',active_price='{}',coupons='{}',free='{}',original_text='{}',sales='{}',is_success=2 where item_id='{}'".format(
-            data.defaultPrice, data.activePrice, data.coupons, data.free, data.originalText, data.sales, data.itemId)
+        sql = "update book_info set original_text='{}',is_success=2 where item_id='{}'".format(origin_text,item_id)
         um.cursor.execute(sql)
         um._conn.commit()
 
@@ -61,7 +60,12 @@ def get_job_status(ip, port):
         data = um.cursor.fetchone()
         return data
 
-
+def get_job_status_by_account(account):
+    with UsingMysql() as um:
+        sql = "select * from job_status where account='{}'".format(account)
+        um.cursor.execute(sql)
+        data = um.cursor.fetchone()
+        return data
 def update_job_status(ip, port, status):
     with UsingMysql() as um:
         sql = "update job_status set run_status={} where ip='{}' and port='{}'".format(status, ip, port)

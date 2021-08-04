@@ -93,17 +93,19 @@ def get_search_button(devices):
 
 
 # 查看评论
-def random_comment(devices):
-    devices.swipe_ext("up", scale=1)
-    time.sleep(0.5)
-    devices.swipe_ext("up", scale=0.6)
-    time.sleep(0.5)
-    comment = devices.xpath('查看全部').wait(timeout=1)
-    if comment is not None:
-        devices.xpath("查看全部").click()
-        time.sleep(1)
-        devices.swipe_ext("up", scale=0.7)
-        go_back(devices, 1)
+def random_comment(devices, weight):
+    if random_do(int(weight) * 10):
+        log.info("随机策略查看评论")
+        devices.swipe_ext("up", scale=1)
+        time.sleep(0.5)
+        devices.swipe_ext("up", scale=0.6)
+        time.sleep(0.5)
+        comment = devices.xpath('查看全部').wait(timeout=1)
+        if comment is not None:
+            devices.xpath("查看全部").click()
+            time.sleep(1)
+            devices.swipe_ext("up", scale=0.7)
+            go_back(devices, 1)
 
 
 def random_search(devices):
@@ -129,19 +131,16 @@ def random_search(devices):
     go_back(devices, 3)
 
 
-def click_search(devices, name):
-    #随机刷新
-    random_refresh(devices)
-    # 随机行为
-
-    random_shop_cart(devices)
-    random_message(devices)
-    random_switch_tabs(devices)
-    ##点击两次
+def click_search(devices, name, random_policy):
+    # 随机策略
+    random_refresh(devices, random_policy['refresh'])
+    random_shop_cart(devices, random_policy['shopCart'])
+    random_message(devices, random_policy['message'])
+    random_switch_tabs(devices, random_policy['switchTabs'])
     get_search_view(devices).click_exists(timeout=10)
     time.sleep(0.5)
     # 点击一下空白处 让pre search 弹窗消失
-    devices.click(300,300)
+    devices.click(300, 300)
     devices.set_fastinput_ime(True)
     time.sleep(0.5)
     devices.send_keys(name)
@@ -158,18 +157,25 @@ def random_swipe(devices, back):
             devices.swipe_ext("down", scale=0.5)
 
 
-def random_refresh(devices):
-    times = random.randint(0, 2)
-    for i in range(0, times):
+def random_do(weight):
+    number = random.randint(0, 10)
+    if number < weight:
+        return True
+    return False
+
+
+def random_refresh(devices, weight):
+    if random_do(int(weight) * 10):
+        log.info("随机策略刷新")
         time.sleep(0.2)
         devices.swipe_ext("down", scale=0.3)
-    time.sleep(1)
+        time.sleep(1)
 
 
 # 随机行为 浏览购物车
-def random_shop_cart(devices):
-    do = random.randint(0, 1)
-    if do == 1:
+def random_shop_cart(devices, weight):
+    if random_do(int(weight) * 10):
+        log.info("随机策略查看购物车")
         devices.xpath("购物车").click()
         time.sleep(1)
         go_back(devices, 1)
@@ -177,9 +183,9 @@ def random_shop_cart(devices):
 
 
 # 随机行为 浏览消息
-def random_message(devices):
-    do = random.randint(0, 1)
-    if do == 1:
+def random_message(devices, weight):
+    if random_do(int(weight) * 10):
+        log.info("随机策略查看消息")
         devices.xpath("消息").click()
         time.sleep(1)
         go_back(devices, 1)
@@ -187,16 +193,16 @@ def random_message(devices):
 
 
 # 随机行为 切换标签页面
-def random_switch_tabs(devices):
-    do = random.randint(0, 1)
-    tabs = devices.xpath("//android.widget.HorizontalScrollView").child("//android.widget.TextView").all()
-    if do == 1:
+def random_switch_tabs(devices, weight):
+    if random_do(int(weight) * 10):
+        log.info("随机策略切换tabs")
+        tabs = devices.xpath("//android.widget.HorizontalScrollView").child("//android.widget.TextView").all()
         index = random.randint(0, 3)
         tabs[index].click()
         time.sleep(1)
 
 
-def get_item_detail(item_id, devices, account, index):
+def get_item_detail(item_id, devices, account, index, conf):
     exist = devices.xpath("商品过期不存在").wait(timeout=2)
     if exist is not None:
         log.info("商品%s过期或不存在", item_id)
@@ -209,11 +215,8 @@ def get_item_detail(item_id, devices, account, index):
             content += item.text
     log.info("进程%s账号%s,获取商品%s数据:%s", str(index), account, item_id, content)
     time.sleep(0.3)
-    select = random.randint(0, 1)
-    if select == 0:
-        random_comment(devices)
-    else:
-        random_swipe(devices, False)
+    random_comment(devices, conf['comment'])
+
     time.sleep(1)
     return content
 
@@ -335,6 +338,13 @@ def get_memu_login_account(number):
     return None
 
 
+def get_memu_policy(account):
+    data = db.get_job_status_by_account(account)
+    config = json.loads(data['config'])
+    log.info("获得账号配置信息:%s", config)
+    return config['random']
+
+
 def process_data(number, account, passwd, products, port):
     log.info("开始处理数据,入参:account:%s,passwd:%s,number:%s,products:%s", account, passwd, number, products)
     ip = get_host_ip()
@@ -347,22 +357,19 @@ def process_data(number, account, passwd, products, port):
     if restart_app is True:
         log.info("正在启动app,请稍后重试")
         return -1
-    result = Manager().list()
     try:
         status = get_memu_status(number)
         if status is False:
             restart_memu(number)
         devices_addr = '127.0.0.1:' + str(port)
-        p = multiprocessing.Process(target=run, args=(devices_addr, number, account, passwd, products, result))
+        p = multiprocessing.Process(target=run, args=(devices_addr, number, account, passwd, products))
         p.start()
 
         p.join()
         db.update_job_status(ip, port, '0')
-        return result
     except Exception as e:
         log.info(traceback.format_exc())
         db.update_job_status(ip, port, '0')
-    return result
 
 
 def heart(number):
@@ -385,23 +392,27 @@ def heart(number):
         restart_memu(number)
 
 
-def run(devices_addr, number, account, password, products, result):
+def run(devices_addr, number, account, password, products):
     try:
         global main_end
         main_end = False
         device = u2.connect(devices_addr)
         time.sleep(2)
+        random_policy = get_memu_policy(account)
         device.app_start("com.taobao.taobao")
         # 开启跳过广告线程
         threading.Thread(target=skip, args=(device,)).start()
         logged_account = get_memu_login_account(number)
         log.info("当前模拟器登录的账号是:%s", logged_account)
+        time.sleep(0.3)
+        device.xpath("首页").click_exists(timeout=5)
+        time.sleep(0.3)
         if account != logged_account:
             log.info("当前模拟器登录账号不一致,重新登录")
             login(device, account, password)
         for item in products:
             url = 'http://detail.tmall.com/item.htm?id=' + str(item)
-            click_search(device, url)
+            click_search(device, url, random_policy)
             time.sleep(1)
             valid_button = valid(device)
             if valid_button is not None:
@@ -409,11 +420,14 @@ def run(devices_addr, number, account, password, products, result):
                 db.update_account_info(account)
                 # 账号失效了就暂时不用了,这次请求直接结束
                 break
-            content = get_item_detail(devices=device, item_id=item, account=logged_account, index=number)
-            result.append(content)
+            content = get_item_detail(devices=device, item_id=item, account=logged_account, index=number,
+                                      conf=random_policy)
+            db.update_info(content, item)
             time.sleep(1)
             go_back(device, 3)
-            sleep_time = random.randint(0, 10)
+            start = random_policy['timeSleep']['begin']
+            end = random_policy['timeSleep']['end']
+            sleep_time = random.randint(int(start), int(end))
             time.sleep(sleep_time)
             log.info("账号%s休息%s秒", account, sleep_time)
 
