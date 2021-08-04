@@ -11,6 +11,7 @@ import re
 import entity
 import MyLog
 from timeit import default_timer
+import datetime
 
 file_object = open('../TM/result.txt', "a", encoding='utf-8')
 main_end = False
@@ -303,8 +304,14 @@ def parseAppText(item_id, text):
                               originalText=text,name=None)
     coupons = []
     text = text[3:]
+    # 先替换掉日期影响
+    month = datetime.datetime.now().month
+    match = re.search(str(month) + "月" + "(.+?)开卖", text)
+    if match is not None:
+        groups = match.group(0)
+        text = text.replace(groups, "日期替换")
     # 活动价格
-    match = re.search("^(.+?)[\d.]+", text)
+    match = re.search("￥(.+?)[\d.]+", text)
     if match is not None:
         groups = match.group(0)
         if groups is not None:
@@ -318,7 +325,7 @@ def parseAppText(item_id, text):
                 info.activePrice = groups
                 info.defaultPrice = groups
     # 券后价
-    match = re.search("券后(.+?)[\d.]+", text)
+    match = re.search("(券后|折后)￥(.+?)[\d.]+", text)
     if match is not None:
         groups = match.group(0)
         if groups is not None:
@@ -328,7 +335,7 @@ def parseAppText(item_id, text):
                 info.activePrice = price
             else:
                 info.activePrice = groups
-    match = re.search("价格(.+?)[\d.]+", text)
+    match = re.search("价格￥(.+?)[\d.]+", text)
     if match != None:
         groups = match.group(0)
         if groups is not None:
