@@ -11,11 +11,13 @@ import MyLog
 from timeit import default_timer
 import db
 import socket
+
 # 主线程运行标志,来让跳过弹窗的子线程能随主线程终止而结束
 main_end = False
 # 启动app锁，启动过程中不能执行操作
 restart_app = False
-
+# 心跳锁 防止心跳检测过程中请求来处理异常
+heart_lock = False
 log = MyLog.Logger('CMT').get_log()
 
 
@@ -372,10 +374,17 @@ def process_data(number, account, passwd, products, port):
         db.update_job_status(ip, port, '0')
 
 
-def heart(number,account):
-    job_status=db.get_job_status_by_account(account)
-    if job_status['run_status'] ==1:
-        log.info("任务正在处理中,不进行心跳检测,%s",account)
+def go_home(device):
+    setup_page = device.xpath("地区设置").wait(timeout=2)
+    if setup_page is not None:
+        go_back(device, 1)
+    device.xpath("首页").click_exists(timeout=5)
+
+
+def heart(number, account):
+    job_status = db.get_job_status_by_account(account)
+    if job_status['run_status'] == 1:
+        log.info("任务正在处理中,不进行心跳检测,%s", account)
         return
     try:
         log.info("心跳检测,number:%s", number)
@@ -385,8 +394,16 @@ def heart(number,account):
             return
         devices_addr = '127.0.0.1:' + port
         device = u2.connect(devices_addr)
+        job_status = db.get_job_status_by_account(account)
+        if job_status['run_status'] == 1:
+            log.info("任务正在处理中,不进行心跳检测,%s", account)
+            return
         device.xpath("我的淘宝").click_exists(timeout=5)
         time.sleep(1)
+        job_status = db.get_job_status_by_account(account)
+        if job_status['run_status'] == 1:
+            log.info("任务正在处理中,不进行心跳检测,%s", account)
+            return
         device.xpath("设置").click_exists(timeout=5)
         time.sleep(1)
         device.press("back")
@@ -409,7 +426,7 @@ def run(devices_addr, number, account, password, products):
         logged_account = get_memu_login_account(number)
         log.info("当前模拟器登录的账号是:%s", logged_account)
         time.sleep(0.3)
-        device.xpath("首页").click_exists(timeout=5)
+        go_home(device)
         time.sleep(0.3)
         if account != logged_account:
             log.info("当前模拟器登录账号不一致,重新登录")
@@ -432,8 +449,8 @@ def run(devices_addr, number, account, password, products):
             start = random_policy['timeSleep']['begin']
             end = random_policy['timeSleep']['end']
             sleep_time = random.randint(int(start), int(end))
-            time.sleep(sleep_time)
             log.info("账号%s休息%s秒", account, sleep_time)
+            time.sleep(sleep_time)
 
     except Exception as e:
         log.info(traceback.format_exc())

@@ -27,6 +27,7 @@ def run():
 def async_run(number, account, passwd, products, port):
     cmt.process_data(number, account, passwd, products, port)
 
+
 @app.route("/heart", methods=["POST"])
 def heart():
     get_data = request.get_data()
