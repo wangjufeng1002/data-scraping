@@ -98,7 +98,7 @@ def random_comment(devices, weight):
         log.info("随机策略查看评论")
         devices.swipe_ext("up", scale=1)
         time.sleep(0.5)
-        devices.swipe_ext("up", scale=0.6)
+        devices.swipe_ext("up", scale=0.2)
         time.sleep(0.5)
         comment = devices.xpath('查看全部').wait(timeout=1)
         if comment is not None:

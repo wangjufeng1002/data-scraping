@@ -1,4 +1,5 @@
 import multiprocessing
+import threading
 
 from flask import Flask, request
 from flask_cors import *
@@ -18,11 +19,13 @@ def run():
     number = json_obj.get("number")
     products = json_obj.get("products")
     port = json_obj.get("port")
-
-    result = cmt.process_data(number, account, passwd, products, port)
-    data = {'data': str(result)}
+    threading.Thread(target=async_run, args=(number, account, passwd, products, port,)).start()
+    data = {'data': "1"}
     return json.dumps(data, ensure_ascii=False)
 
+
+def async_run(number, account, passwd, products, port):
+    cmt.process_data(number, account, passwd, products, port)
 
 @app.route("/heart", methods=["POST"])
 def heart():
