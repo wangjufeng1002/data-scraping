@@ -2,7 +2,6 @@ import json
 import random
 import traceback
 
-import requests
 import uiautomator2 as u2
 import time
 import subprocess
@@ -10,12 +9,13 @@ import multiprocessing
 import threading
 import MyLog
 from timeit import default_timer
-from multiprocessing import Manager
 import db
 import socket
-
+# 主线程运行标志,来让跳过弹窗的子线程能随主线程终止而结束
 main_end = False
+# 启动app锁，启动过程中不能执行操作
 restart_app = False
+
 log = MyLog.Logger('CMT').get_log()
 
 
@@ -372,7 +372,11 @@ def process_data(number, account, passwd, products, port):
         db.update_job_status(ip, port, '0')
 
 
-def heart(number):
+def heart(number,account):
+    job_status=db.get_job_status_by_account(account)
+    if job_status['run_status'] ==1:
+        log.info("任务正在处理中,不进行心跳检测,%s",account)
+        return
     try:
         log.info("心跳检测,number:%s", number)
         port = get_memu_port(number)
@@ -431,9 +435,8 @@ def run(devices_addr, number, account, password, products):
             time.sleep(sleep_time)
             log.info("账号%s休息%s秒", account, sleep_time)
 
-        main_end = True
     except Exception as e:
         log.info(traceback.format_exc())
-        main_end = True
         # 出现异常终止操作 并终止app
         stop_memu(number)
+    main_end = True

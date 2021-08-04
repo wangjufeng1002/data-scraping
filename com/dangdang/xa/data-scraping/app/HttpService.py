@@ -1,3 +1,5 @@
+import multiprocessing
+
 from flask import Flask, request
 from flask_cors import *
 import json
@@ -15,9 +17,9 @@ def run():
     passwd = json_obj.get("password")
     number = json_obj.get("number")
     products = json_obj.get("products")
-    port=json_obj.get("port")
+    port = json_obj.get("port")
 
-    result = cmt.process_data(number, account, passwd, products,port)
+    result = cmt.process_data(number, account, passwd, products, port)
     data = {'data': str(result)}
     return json.dumps(data, ensure_ascii=False)
 
@@ -27,7 +29,9 @@ def heart():
     get_data = request.get_data()
     json_obj = json.loads(get_data)
     number = json_obj.get("number")
-    cmt.heart(number)
+    account = json_obj.get("account")
+    cmt.heart(number, account)
+    return "1"
 
 
 if __name__ == '__main__':
