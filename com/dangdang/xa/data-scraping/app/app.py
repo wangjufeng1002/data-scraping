@@ -109,7 +109,9 @@ def random_comment(devices):
 def random_search(devices):
     keys = ['卫生纸', '电脑', '华为', '联想', '洗衣液', '苹果', '显卡', '人间失格', '宇宙的琴弦', '圈量子理论', 'usb', '零食', '杯子', '袜子', '球衣', '嘉然',
             '七海', '康师傅', '辣条', '小熊饼干', '灯泡', '墙纸', 'python教学', '阿迪', '耐克', '背包', '甜品', '面具', '玩具', 'lovelive']
-    get_search_view(devices).click_exists(timeout=10)
+    get_search_view(devices).click_exists(timeout=2)
+    time.sleep(0.5)
+    get_search_view(devices).click_exists(timeout=5)
     time.sleep(0.5)
     devices.set_fastinput_ime(True)
     time.sleep(0.5)
@@ -128,7 +130,7 @@ def random_search(devices):
 
 
 def click_search(devices, name):
-    # 随机刷新
+    #随机刷新
     random_refresh(devices)
     # 随机行为
 
@@ -138,8 +140,8 @@ def click_search(devices, name):
     ##点击两次
     get_search_view(devices).click_exists(timeout=10)
     time.sleep(0.5)
-    get_search_view(devices).click_exists(timeout=2)
-    time.sleep(0.5)
+    # 点击一下空白处 让pre search 弹窗消失
+    devices.click(300,300)
     devices.set_fastinput_ime(True)
     time.sleep(0.5)
     devices.send_keys(name)
@@ -157,7 +159,7 @@ def random_swipe(devices, back):
 
 
 def random_refresh(devices):
-    times = random.randint(0, 3)
+    times = random.randint(0, 2)
     for i in range(0, times):
         time.sleep(0.2)
         devices.swipe_ext("down", scale=0.3)
@@ -333,7 +335,7 @@ def get_memu_login_account(number):
     return None
 
 
-def process_data(number, account, passwd, products,port):
+def process_data(number, account, passwd, products, port):
     log.info("开始处理数据,入参:account:%s,passwd:%s,number:%s,products:%s", account, passwd, number, products)
     ip = get_host_ip()
     job_status = db.get_job_status(ip, port)
@@ -420,5 +422,4 @@ def run(devices_addr, number, account, password, products, result):
         log.info(traceback.format_exc())
         main_end = True
         # 出现异常终止操作 并终止app
-        #stop_memu(number)
-
+        stop_memu(number)
