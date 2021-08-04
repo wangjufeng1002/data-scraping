@@ -1,23 +1,33 @@
 import json
-import math
 import random
+import traceback
 
+import requests
 import uiautomator2 as u2
 import time
 import subprocess
-import db
 import multiprocessing
 import threading
-import re
-import entity
 import MyLog
 from timeit import default_timer
 from multiprocessing import Manager
-import func_timeout
+import db
+import socket
 
-file_object = open('../TM/result.txt', "a", encoding='utf-8')
 main_end = False
-log = MyLog.Logger('ha').get_log()
+restart_app = False
+log = MyLog.Logger('CMT').get_log()
+
+
+def get_host_ip():
+    try:
+        s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+        s.connect(('8.8.8.8', 80))
+        ip = s.getsockname()[0]
+    finally:
+        s.close()
+
+    return ip
 
 
 def run_cmd(cmd):
@@ -48,6 +58,8 @@ def stop_memu(i):
 
 
 def restart_memu(i):
+    global restart_app
+    restart_app = True
     cmd = r'memuc isvmrunning -i ' + str(i)
     out = run_cmd(cmd)[0]
     if "Not" in str(out):
@@ -56,6 +68,7 @@ def restart_memu(i):
         cmd = r'memuc reboot -i ' + str(i)
     out = run_cmd(cmd)[0]
     log.info('模拟器' + str(i) + str(out))
+    restart_app = False
 
 
 def get_phone_list():  # 获取手机设备
@@ -185,7 +198,6 @@ def get_item_detail(item_id, devices, account, index):
     exist = devices.xpath("商品过期不存在").wait(timeout=2)
     if exist is not None:
         log.info("商品%s过期或不存在", item_id)
-        parseAppText(item_id, "商品过期或不存在")
         return
     devices.xpath('@com.taobao.taobao:id/uik_public_menu_action_icon').wait()
     content = ''
@@ -193,7 +205,6 @@ def get_item_detail(item_id, devices, account, index):
     for item in page_item:
         if item.text != '':
             content += item.text
-    parseAppText(item_id, content)
     log.info("进程%s账号%s,获取商品%s数据:%s", str(index), account, item_id, content)
     time.sleep(0.3)
     select = random.randint(0, 1)
@@ -251,63 +262,6 @@ def restart_app(devices):
     devices.app_start("com.taobao.taobao")
 
 
-def process(device, list, index):
-    start = default_timer()
-    global main_end
-    main_end = False
-    logged_account = ''
-    try:
-        d = u2.connect(device)
-    except:
-        log.info("线程%s连接adb发生错误,重启app", index)
-        restart_memu(index)
-
-    try:
-        restart_app(d)
-        t = threading.Thread(target=skip, args=(d,))
-        t.start()
-        time.sleep(1)
-        logged_account = get_logged_account(d)
-        log.info("进程%s登录的账号是%s", str(index), logged_account)
-        d.xpath('@com.taobao.taobao:id/searchbtn').wait()
-        get_search_view(d).click_exists(timeout=10)
-        go_back(d, 3)
-    except:
-        main_end = False
-    for data in list:
-        try:
-            n = random.randint(0, 10)
-            if n == 4:
-                random_search(d)
-            sleep = random.randint(3, 20)
-            time.sleep(sleep)
-            log.info("进程%s,账号%s,休息%s秒", index, logged_account, sleep)
-            click_search(d, data['item_url'])
-            time.sleep(1)
-            valid_button = valid(d)
-            if valid_button is not None:
-                # 跳转换号登录
-                log.info("进程%s账号%s暂时失效", index, logged_account)
-                time.sleep(1)
-                go_back(d, 4)
-                # logged_account = login(d)['account']
-                account_info = db.get_account_info(logged_account)
-                if int(account_info['fail_times']) > 5:
-                    log.info("账号%s,出现滑块次数过多,程序休息10分钟")
-                    time.sleep(360)
-                log.info("进程%s切换账号登录%s", str(index), logged_account)
-                continue
-            get_item_detail(devices=d, item_id=data['item_id'], account=logged_account, index=index)
-            time.sleep(1)
-            go_back(d, 3)
-        except Exception as e:
-            log.info("进程%s,商品%s抓取发生异常,重启app,%s", index, data, e)
-            restart_app(d)
-            continue
-    main_end = True
-    log.info("进程%s账号%s,抓取数据%s个,用时%s", str(index), logged_account, str(len(list)), str(default_timer() - start))
-
-
 def go_back(devices, times):
     for i in range(times):
         devices.press("back")
@@ -322,100 +276,6 @@ def skip_positive(devices):
     button = devices.xpath('@com.taobao.taobao:id/provision_positive_button').wait(3)
     if button is not None:
         button.click()
-
-
-def parseAppText(item_id, text):
-    text = text.replace("||", " ")
-    info = entity.AppBookInfo(itemId=item_id, defaultPrice=None, activePrice=None, coupons=None, free=None, sales=None,
-                              originalText=text,name=None)
-    coupons = []
-    text = text[3:]
-    # 活动价格
-    match = re.search("^(.+?)[\d.]+", text)
-    if match is not None:
-        groups = match.group(0)
-        if groups is not None:
-            search = re.search("\d(\d)*[\d.]*", groups)
-            if search is not None:
-                price = search.group(0)
-                # 都赋值，后面价格定位替换
-                info.activePrice = price
-                info.defaultPrice = price
-            else:
-                info.activePrice = groups
-                info.defaultPrice = groups
-    # 券后价
-    match = re.search("券后(.+?)[\d.]+", text)
-    if match is not None:
-        groups = match.group(0)
-        if groups is not None:
-            search = re.search("\d(\d)*[\d.]*", groups)
-            if search is not None:
-                price = search.group(0)
-                info.activePrice = price
-            else:
-                info.activePrice = groups
-    match = re.search("价格(.+?)[\d.]+", text)
-    if match != None:
-        groups = match.group(0)
-        if groups is not None:
-            search = re.search("\d(\d)*[\d.]*", groups)
-            if search is not None:
-                price = search.group(0)
-                info.defaultPrice = price
-            else:
-                info.defaultPrice = groups
-    # 提取 “领券...领取” 中的内容
-    match = re.search("领券(.+?)领取", text)
-    if match != None:
-        groups = match.group(0)
-        coupons.append(groups)
-    # 提取 “查看...领取” 中的内容
-    match = re.search("查看(.+?)领取", text)
-    if match != None:
-        # 领券内容
-        groups = match.group(0)
-        coupons.append(groups)
-    # 满减
-    match = re.search("满(.+?)减(.+?)\d+", text)
-    if match != None:
-        groups = match.group(0)
-        coupons.append(groups)
-        # print(groups)
-        # 包邮
-    match = re.search("满(\d+?)享包邮", text)
-    if match != None:
-        groups = match.group(0)
-        # print(groups)
-        info.free = groups
-
-    match = re.search(u"月销(.+?)\+", text)
-    if match != None:
-        groups = match.group(0)
-        info.sales = groups
-    match = re.search(u"月销(.+?)\d+", text)
-    if match is not None:
-        groups = match.group(0)
-        info.sales = groups
-
-    #提取名称
-    if "큚" in text and "ꄪ" not  in text:
-        match = re.search(u"큚(.+?)+", text)
-    else:
-        match = re.search(u"큚(.+?)ꄪ", text)
-    if match != None:
-        groups = match.group(0)
-        ignoTextGroups = re.search(u"큚(.+?)领取", groups)
-        if ignoTextGroups != None:
-            groups = groups.replace(ignoTextGroups.group(0), "")
-        groups = groups.replace(" ", "").replace("큚", "").replace("ꄪ", "")
-        info.name = groups
-    if len(coupons) > 0:
-        info.coupons = (",".join(coupons))
-    print(info.toString())
-    db.update_info(info)
-    file_object.write(info.toString() + "\n")
-    file_object.flush()
 
 
 def init_memu(n):
@@ -473,24 +333,33 @@ def get_memu_login_account(number):
     return None
 
 
-def process_data(number, account, passwd, products):
+def process_data(number, account, passwd, products,port):
     log.info("开始处理数据,入参:account:%s,passwd:%s,number:%s,products:%s", account, passwd, number, products)
+    ip = get_host_ip()
+    job_status = db.get_job_status(ip, port)
+    if job_status['run_status'] == 1:
+        log.info("ip:%s,port:%s的分片正在运行,请稍后请求", ip, port)
+        return -1
+    # 更新为运行状态
+    db.update_job_status(ip, port, '1')
+    if restart_app is True:
+        log.info("正在启动app,请稍后重试")
+        return -1
     result = Manager().list()
     try:
-        port = get_memu_port(number)
-        if port is None:
-            log.info("获取配置端口号失败,请检查配置")
-            return
         status = get_memu_status(number)
         if status is False:
             restart_memu(number)
-        devices_addr = '127.0.0.1:' + port
+        devices_addr = '127.0.0.1:' + str(port)
         p = multiprocessing.Process(target=run, args=(devices_addr, number, account, passwd, products, result))
         p.start()
+
         p.join()
+        db.update_job_status(ip, port, '0')
         return result
     except Exception as e:
-        print(e)
+        log.info(traceback.format_exc())
+        db.update_job_status(ip, port, '0')
     return result
 
 
@@ -519,6 +388,7 @@ def run(devices_addr, number, account, password, products, result):
         global main_end
         main_end = False
         device = u2.connect(devices_addr)
+        time.sleep(2)
         device.app_start("com.taobao.taobao")
         # 开启跳过广告线程
         threading.Thread(target=skip, args=(device,)).start()
@@ -527,7 +397,6 @@ def run(devices_addr, number, account, password, products, result):
         if account != logged_account:
             log.info("当前模拟器登录账号不一致,重新登录")
             login(device, account, password)
-        # 第一次
         for item in products:
             url = 'http://detail.tmall.com/item.htm?id=' + str(item)
             click_search(device, url)
@@ -535,17 +404,21 @@ def run(devices_addr, number, account, password, products, result):
             valid_button = valid(device)
             if valid_button is not None:
                 log.info("进程%s账号%s暂时失效", number, logged_account)
-                time.sleep(1)
+                db.update_account_info(account)
                 # 账号失效了就暂时不用了,这次请求直接结束
                 break
             content = get_item_detail(devices=device, item_id=item, account=logged_account, index=number)
             result.append(content)
             time.sleep(1)
             go_back(device, 3)
+            sleep_time = random.randint(0, 10)
+            time.sleep(sleep_time)
+            log.info("账号%s休息%s秒", account, sleep_time)
 
         main_end = True
     except Exception as e:
-        log.info(e)
+        log.info(traceback.format_exc())
+        main_end = True
         # 出现异常终止操作 并终止app
-        stop_memu(number)
+        #stop_memu(number)
 

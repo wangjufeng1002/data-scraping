@@ -15,8 +15,9 @@ def run():
     passwd = json_obj.get("password")
     number = json_obj.get("number")
     products = json_obj.get("products")
+    port=json_obj.get("port")
 
-    result = cmt.process_data(number, account, passwd, products)
+    result = cmt.process_data(number, account, passwd, products,port)
     data = {'data': str(result)}
     return json.dumps(data, ensure_ascii=False)
 
