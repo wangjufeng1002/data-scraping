@@ -224,7 +224,7 @@ def get_item_detail(item_id, devices, account, index, conf):
 
 
 def login(devices, account, password):
-    restart_app(devices)
+    restart_app_func(devices)
     devices.xpath("我的淘宝").click()
     devices.xpath("设置").click_exists(timeout=30)
     time.sleep(1)
@@ -263,7 +263,7 @@ def skip(devices):
             break
 
 
-def restart_app(devices):
+def restart_app_func(devices):
     devices.app_stop("com.taobao.taobao")
     time.sleep(1)
     devices.app_start("com.taobao.taobao")
