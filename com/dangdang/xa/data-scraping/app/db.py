@@ -26,7 +26,6 @@ def get_job_status(ip, port):
         um.cursor.execute(sql)
         data = um.cursor.fetchone()
         return data
-
 def get_job_status_by_account(account):
     with UsingMysql() as um:
         sql = "select * from job_status where account='{}'".format(account)

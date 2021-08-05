@@ -332,12 +332,10 @@ def get_memu_port(number):
     return None
 
 
-def get_memu_login_account(number):
-    accountInfo = get_memu_config().get("accountInfo")
-    for account in accountInfo:
-        if account['number'] == number:
-            return str(account['account'])
-    return None
+def get_memu_login_account(ip,port):
+    job_info = db.get_job_status(ip, port)
+    accountInfo = job_info['account']
+    return accountInfo
 
 
 def get_memu_policy(account):
@@ -416,7 +414,7 @@ def heart(number, account):
         restart_memu(number)
 
 
-def run(devices_addr, number, account, password, products,task_id,task_label):
+def run(devices_addr, number, account, password, products,task_id,task_label,ip,port):
     try:
         global main_end
         main_end = False
@@ -426,7 +424,7 @@ def run(devices_addr, number, account, password, products,task_id,task_label):
         device.app_start("com.taobao.taobao")
         # 开启跳过广告线程
         threading.Thread(target=skip, args=(device,)).start()
-        logged_account = get_memu_login_account(number)
+        logged_account = get_memu_login_account(ip,port)
         log.info("当前模拟器登录的账号是:%s", logged_account)
         time.sleep(0.3)
         go_home(device)
