@@ -19,13 +19,15 @@ def run():
     number = json_obj.get("number")
     products = json_obj.get("products")
     port = json_obj.get("port")
-    threading.Thread(target=async_run, args=(number, account, passwd, products, port,)).start()
+    task_id=json_obj.get("task_id")
+    task_label=json_obj.get("task_label")
+    threading.Thread(target=async_run, args=(number, account, passwd, products, port,task_id,task_label)).start()
     data = {'data': "1"}
     return json.dumps(data, ensure_ascii=False)
 
 
-def async_run(number, account, passwd, products, port):
-    cmt.process_data(number, account, passwd, products, port)
+def async_run(number, account, passwd, products, port,task_id,task_label):
+    cmt.process_data(number, account, passwd, products, port,task_id,task_label)
 
 
 @app.route("/heart", methods=["POST"])
@@ -36,6 +38,9 @@ def heart():
     account = json_obj.get("account")
     cmt.heart(number, account)
     return "1"
+@app.route("/test", methods=["GET"])
+def test():
+    return "success"
 
 
 if __name__ == '__main__':

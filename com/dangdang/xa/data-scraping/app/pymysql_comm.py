@@ -4,7 +4,7 @@ from timeit import default_timer
 
 host = '192.168.47.210'
 port = 3306
-db = 'data-reptile'
+db = 'data-scraping'
 user = 'root'
 password = '123456'
 

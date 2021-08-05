@@ -347,7 +347,7 @@ def get_memu_policy(account):
     return config['random']
 
 
-def process_data(number, account, passwd, products, port):
+def process_data(number, account, passwd, products, port,task_id,task_label):
     log.info("开始处理数据,入参:account:%s,passwd:%s,number:%s,products:%s", account, passwd, number, products)
     ip = get_host_ip()
     job_status = db.get_job_status(ip, port)
@@ -364,7 +364,7 @@ def process_data(number, account, passwd, products, port):
         if status is False:
             restart_memu(number)
         devices_addr = '127.0.0.1:' + str(port)
-        p = multiprocessing.Process(target=run, args=(devices_addr, number, account, passwd, products))
+        p = multiprocessing.Process(target=run, args=(devices_addr, number, account, passwd, products,task_id,task_label))
         p.start()
 
         p.join()
@@ -382,6 +382,9 @@ def go_home(device):
 
 
 def heart(number, account):
+    if get_memu_status(number) is False:
+        log.info("程序未启动")
+        return
     job_status = db.get_job_status_by_account(account)
     if job_status['run_status'] == 1:
         log.info("任务正在处理中,不进行心跳检测,%s", account)
@@ -413,7 +416,7 @@ def heart(number, account):
         restart_memu(number)
 
 
-def run(devices_addr, number, account, password, products):
+def run(devices_addr, number, account, password, products,task_id,task_label):
     try:
         global main_end
         main_end = False
@@ -443,7 +446,7 @@ def run(devices_addr, number, account, password, products):
                 break
             content = get_item_detail(devices=device, item_id=item, account=logged_account, index=number,
                                       conf=random_policy)
-            db.update_info(content, item)
+            db.update_info(content, item,task_id,task_label)
             time.sleep(1)
             go_back(device, 3)
             start = random_policy['timeSleep']['begin']
