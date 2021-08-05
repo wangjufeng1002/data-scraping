@@ -96,7 +96,7 @@ def get_search_button(devices):
 
 # 查看评论
 def random_comment(devices, weight):
-    if random_do(int(weight) * 10):
+    if random_do(float(weight) * 10):
         log.info("随机策略查看评论")
         devices.swipe_ext("up", scale=1)
         time.sleep(0.5)
@@ -167,7 +167,7 @@ def random_do(weight):
 
 
 def random_refresh(devices, weight):
-    if random_do(int(weight) * 10):
+    if random_do(float(weight) * 10):
         log.info("随机策略刷新")
         time.sleep(0.2)
         devices.swipe_ext("down", scale=0.3)
@@ -176,7 +176,7 @@ def random_refresh(devices, weight):
 
 # 随机行为 浏览购物车
 def random_shop_cart(devices, weight):
-    if random_do(int(weight) * 10):
+    if random_do(float(weight) * 10):
         log.info("随机策略查看购物车")
         devices.xpath("购物车").click()
         time.sleep(1)
@@ -186,7 +186,7 @@ def random_shop_cart(devices, weight):
 
 # 随机行为 浏览消息
 def random_message(devices, weight):
-    if random_do(int(weight) * 10):
+    if random_do(float(weight) * 10):
         log.info("随机策略查看消息")
         devices.xpath("消息").click()
         time.sleep(1)
@@ -196,7 +196,7 @@ def random_message(devices, weight):
 
 # 随机行为 切换标签页面
 def random_switch_tabs(devices, weight):
-    if random_do(int(weight) * 10):
+    if random_do(float(weight) * 10):
         log.info("随机策略切换tabs")
         tabs = devices.xpath("//android.widget.HorizontalScrollView").child("//android.widget.TextView").all()
         index = random.randint(0, 3)
