@@ -208,7 +208,7 @@ def get_item_detail(item_id, devices, account, index, conf):
     exist = devices.xpath("商品过期不存在").wait(timeout=2)
     if exist is not None:
         log.info("商品%s过期或不存在", item_id)
-        return
+        return "商品%s过期或不存在".format(item_id)
     devices.xpath('@com.taobao.taobao:id/uik_public_menu_action_icon').wait()
     content = ''
     page_item = devices.xpath('@com.taobao.taobao:id/mainpage').child('//android.widget.TextView').all()
