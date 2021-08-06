@@ -318,21 +318,7 @@ def get_logged_account(devices):
     return user_nick.text
 
 
-def get_memu_config():
-    with open("./conf.json", "r+", encoding='utf-8') as f:
-        conf_text = f.read()
-        return json.loads(conf_text)
-
-
-def get_memu_port(number):
-    ports = get_memu_config().get("accountInfo")
-    for port in ports:
-        if port['number'] == number:
-            return port['port']
-    return None
-
-
-def get_memu_login_account(ip,port):
+def get_memu_login_account(ip, port):
     job_info = db.get_job_status(ip, port)
     accountInfo = job_info['account']
     return accountInfo
@@ -345,7 +331,7 @@ def get_memu_policy(account):
     return config['random']
 
 
-def process_data(number, account, passwd, products, port,task_id,task_label):
+def process_data(number, account, passwd, products, port, task_id, task_label):
     log.info("开始处理数据,入参:account:%s,passwd:%s,number:%s,products:%s", account, passwd, number, products)
     ip = get_host_ip()
     job_status = db.get_job_status(ip, port)
@@ -362,7 +348,8 @@ def process_data(number, account, passwd, products, port,task_id,task_label):
         if status is False:
             restart_memu(number)
         devices_addr = '127.0.0.1:' + str(port)
-        p = multiprocessing.Process(target=run, args=(devices_addr, number, account, passwd, products,task_id,task_label))
+        p = multiprocessing.Process(target=run,
+                                    args=(devices_addr, number, account, passwd, products, task_id, task_label))
         p.start()
 
         p.join()
@@ -379,7 +366,7 @@ def go_home(device):
     device.xpath("首页").click_exists(timeout=5)
 
 
-def heart(number, account):
+def heart(number, account, port):
     if get_memu_status(number) is False:
         log.info("程序未启动")
         return
@@ -389,10 +376,6 @@ def heart(number, account):
         return
     try:
         log.info("心跳检测,number:%s", number)
-        port = get_memu_port(number)
-        if port is None:
-            log.info("获取配置端口号失败,请检查配置")
-            return
         devices_addr = '127.0.0.1:' + port
         device = u2.connect(devices_addr)
         job_status = db.get_job_status_by_account(account)
@@ -414,7 +397,7 @@ def heart(number, account):
         restart_memu(number)
 
 
-def run(devices_addr, number, account, password, products,task_id,task_label,ip,port):
+def run(devices_addr, number, account, password, products, task_id, task_label, ip, port):
     try:
         global main_end
         main_end = False
@@ -424,7 +407,7 @@ def run(devices_addr, number, account, password, products,task_id,task_label,ip,
         device.app_start("com.taobao.taobao")
         # 开启跳过广告线程
         threading.Thread(target=skip, args=(device,)).start()
-        logged_account = get_memu_login_account(ip,port)
+        logged_account = get_memu_login_account(ip, port)
         log.info("当前模拟器登录的账号是:%s", logged_account)
         time.sleep(0.3)
         go_home(device)
@@ -444,7 +427,7 @@ def run(devices_addr, number, account, password, products,task_id,task_label,ip,
                 break
             content = get_item_detail(devices=device, item_id=item, account=logged_account, index=number,
                                       conf=random_policy)
-            db.update_info(content, item,task_id,task_label)
+            db.update_info(content, item, task_id, task_label)
             time.sleep(1)
             go_back(device, 3)
             start = random_policy['timeSleep']['begin']

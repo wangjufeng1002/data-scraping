@@ -36,7 +36,8 @@ def heart():
     json_obj = json.loads(get_data)
     number = json_obj.get("number")
     account = json_obj.get("account")
-    cmt.heart(number, account)
+    port=json_obj.get("port")
+    cmt.heart(number, account,port)
     return "1"
 @app.route("/test", methods=["GET"])
 def test():
