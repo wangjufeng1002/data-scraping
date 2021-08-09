@@ -95,9 +95,9 @@ def get_search_button(devices):
 
 
 # 查看评论
-def random_comment(devices, weight):
+def random_comment(devices, weight, ip, port, account):
     if random_do(float(weight) * 10):
-        log.info("随机策略查看评论")
+        db.insert_account_log(account, ip, port, "25", "账号随机查看评论")
         devices.swipe_ext("up", scale=1)
         time.sleep(0.5)
         devices.swipe_ext("up", scale=0.2)
@@ -110,35 +110,36 @@ def random_comment(devices, weight):
             go_back(devices, 1)
 
 
-def random_search(devices):
-    keys = ['卫生纸', '电脑', '华为', '联想', '洗衣液', '苹果', '显卡', '人间失格', '宇宙的琴弦', '圈量子理论', 'usb', '零食', '杯子', '袜子', '球衣', '嘉然',
-            '七海', '康师傅', '辣条', '小熊饼干', '灯泡', '墙纸', 'python教学', '阿迪', '耐克', '背包', '甜品', '面具', '玩具', 'lovelive']
-    get_search_view(devices).click_exists(timeout=2)
-    time.sleep(0.5)
-    get_search_view(devices).click_exists(timeout=5)
-    time.sleep(0.5)
-    devices.set_fastinput_ime(True)
-    time.sleep(0.5)
-    devices.send_keys(keys[random.randint(0, len(keys) - 1)])
-    time.sleep(0.5)
-    get_search_button(devices).click_exists(timeout=10)
-    if valid(devices) is not None:
-        log.info("随机搜索出现验证")
+def random_search(devices, random_policy, ip, port, account):
+    if random_do(float(random_policy) * 10):
+        db.insert_account_log(account, ip, port, "24", "账号随机搜索")
+        keys = db.get_keywords()['key_words']
+        get_search_view(devices).click_exists(timeout=2)
+        time.sleep(0.5)
+        get_search_view(devices).click_exists(timeout=5)
+        time.sleep(0.5)
+        devices.set_fastinput_ime(True)
+        time.sleep(0.5)
+        devices.send_keys(keys[random.randint(0, len(keys) - 1)])
+        time.sleep(0.5)
+        get_search_button(devices).click_exists(timeout=10)
+        if valid(devices) is not None:
+            log.info("随机搜索出现验证")
+            time.sleep(1)
+            go_back(devices, 4)
+            return
+        time.sleep(0.5)
+        random_swipe(devices, False)
         time.sleep(1)
-        go_back(devices, 4)
-        return
-    time.sleep(0.5)
-    random_swipe(devices, False)
-    time.sleep(1)
-    go_back(devices, 3)
+        go_back(devices, 3)
 
 
-def click_search(devices, name, random_policy):
+def click_search(devices, name, random_policy, ip, port, account):
     # 随机策略
-    random_refresh(devices, random_policy['refresh'])
-    random_shop_cart(devices, random_policy['shopCart'])
-    random_message(devices, random_policy['message'])
-    random_switch_tabs(devices, random_policy['switchTabs'])
+    random_refresh(devices, random_policy['refresh'], ip, port, account)
+    random_shop_cart(devices, random_policy['shopCart'], ip, port, account)
+    random_message(devices, random_policy['message'], ip, port, account)
+    random_switch_tabs(devices, random_policy['switchTabs'], ip, port, account)
     get_search_view(devices).click_exists(timeout=10)
     time.sleep(0.5)
     # 点击一下空白处 让pre search 弹窗消失
@@ -166,18 +167,18 @@ def random_do(weight):
     return False
 
 
-def random_refresh(devices, weight):
+def random_refresh(devices, weight, ip, port, account):
     if random_do(float(weight) * 10):
-        log.info("随机策略刷新")
+        db.insert_account_log(account, ip, port, "20", "账号随机刷新")
         time.sleep(0.2)
         devices.swipe_ext("down", scale=0.3)
         time.sleep(1)
 
 
 # 随机行为 浏览购物车
-def random_shop_cart(devices, weight):
+def random_shop_cart(devices, weight, ip, port, account):
     if random_do(float(weight) * 10):
-        log.info("随机策略查看购物车")
+        db.insert_account_log(account, ip, port, "21", "账号随机浏览购物车")
         devices.xpath("购物车").click()
         time.sleep(1)
         go_back(devices, 1)
@@ -185,9 +186,9 @@ def random_shop_cart(devices, weight):
 
 
 # 随机行为 浏览消息
-def random_message(devices, weight):
+def random_message(devices, weight, ip, port, account):
     if random_do(float(weight) * 10):
-        log.info("随机策略查看消息")
+        db.insert_account_log(account, ip, port, "22", "账号随机查看消息")
         devices.xpath("消息").click()
         time.sleep(1)
         go_back(devices, 1)
@@ -195,9 +196,9 @@ def random_message(devices, weight):
 
 
 # 随机行为 切换标签页面
-def random_switch_tabs(devices, weight):
+def random_switch_tabs(devices, weight, ip, port, account):
     if random_do(float(weight) * 10):
-        log.info("随机策略切换tabs")
+        db.insert_account_log(account, ip, port, "23", "账号随机切换标签页")
         tabs = devices.xpath("//android.widget.HorizontalScrollView").child("//android.widget.TextView").all()
         index = random.randint(0, 3)
         tabs[index].click()
@@ -414,26 +415,31 @@ def run(devices_addr, number, account, password, products, task_id, task_label, 
         time.sleep(0.3)
         if account != logged_account:
             log.info("当前模拟器登录账号不一致,重新登录")
+            db.insert_account_log(account, ip, port, '10', "账号更换登录")
             login(device, account, password)
         for item in products:
+            random_search(device, random_policy['search'], ip, port, account)
             url = 'http://detail.tmall.com/item.htm?id=' + str(item)
-            click_search(device, url, random_policy)
+            click_search(device, url, random_policy, ip, port, account)
             time.sleep(1)
             valid_button = valid(device)
             if valid_button is not None:
                 log.info("进程%s账号%s暂时失效", number, logged_account)
                 db.update_account_info(account)
+                db.insert_account_log(account, ip, port, '-1', "账号出现验证码")
                 # 账号失效了就暂时不用了,这次请求直接结束
                 break
             content = get_item_detail(devices=device, item_id=item, account=logged_account, index=number,
                                       conf=random_policy)
             db.update_info(content, item, task_id, task_label)
+            db.insert_account_log(account, ip, port, '1', "账号获取商品详情")
             time.sleep(1)
             go_back(device, 3)
             start = random_policy['timeSleep']['begin']
             end = random_policy['timeSleep']['end']
             sleep_time = random.randint(int(start), int(end))
             log.info("账号%s休息%s秒", account, sleep_time)
+            db.insert_account_log(account, ip, port, '2', "账号休息%s秒".format(sleep_time))
             time.sleep(sleep_time)
 
     except Exception as e:
