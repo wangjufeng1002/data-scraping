@@ -40,7 +40,7 @@ def update_job_status(ip, port, status):
 
 def get_keywords():
     with UsingMysql() as um:
-        sql="select * from random_keywords"
+        sql="select key_words from random_keywords"
         um.cursor.execute(sql)
         return um.cursor.fetchall()
 

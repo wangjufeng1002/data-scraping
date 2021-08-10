@@ -100,7 +100,10 @@ def random_comment(devices, weight, ip, port, account):
 def random_search(devices, random_policy, ip, port, account):
     if random_do(float(random_policy) * 10):
         db.insert_account_log(account, ip, port, "24", "账号随机搜索")
-        keys = db.get_keywords()['key_words']
+        keys = []
+        words = db.get_keywords()
+        for word in words:
+            keys.append(word)
         get_search_view(devices).click_exists(timeout=2)
         time.sleep(0.5)
         get_search_view(devices).click_exists(timeout=5)
@@ -194,7 +197,7 @@ def random_switch_tabs(devices, weight, ip, port, account):
         time.sleep(1)
 
 
-def get_item_detail(item_id, devices, account, index, conf,ip,port):
+def get_item_detail(item_id, devices, account, index, conf, ip, port):
     exist = devices.xpath("商品过期不存在").wait(timeout=2)
     if exist is not None:
         log.info("商品%s过期或不存在", item_id)
@@ -208,7 +211,7 @@ def get_item_detail(item_id, devices, account, index, conf,ip,port):
             content += item.text
     log.info("进程%s账号%s,获取商品%s数据:%s", str(index), account, item_id, content)
     time.sleep(0.3)
-    random_comment(devices, conf['comment'],ip,port,account)
+    random_comment(devices, conf['comment'], ip, port, account)
 
     time.sleep(1)
     return content
@@ -322,10 +325,10 @@ def get_memu_policy(account):
     return config['random']
 
 
-def process_data( account, passwd, products, port, task_id, task_label):
+def process_data(account, passwd, products, port, task_id, task_label):
     log.info("开始处理数据,入参:account:%s,passwd:%s,products:%s", account, passwd, products)
     ip = get_host_ip()
-    number=port[3]
+    number = port[3]
     job_status = db.get_job_status(ip, port)
     if job_status['run_status'] == 1:
         log.info("ip:%s,port:%s的分片正在运行,请稍后请求", ip, port)
@@ -341,7 +344,8 @@ def process_data( account, passwd, products, port, task_id, task_label):
             restart_memu(number)
         devices_addr = '127.0.0.1:' + str(port)
         p = multiprocessing.Process(target=run,
-                                    args=(devices_addr, number, account, passwd, products, task_id, task_label,ip,port,))
+                                    args=(
+                                    devices_addr, number, account, passwd, products, task_id, task_label, ip, port,))
         p.start()
 
         p.join()
@@ -421,7 +425,7 @@ def run(devices_addr, number, account, password, products, task_id, task_label, 
                 # 账号失效了就暂时不用了,这次请求直接结束
                 break
             content = get_item_detail(devices=device, item_id=item, account=logged_account, index=number,
-                                      conf=random_policy,ip=ip,port=port)
+                                      conf=random_policy, ip=ip, port=port)
             db.update_info(content, item, task_id, task_label)
             db.insert_account_log(account, ip, port, '1', "账号获取商品详情")
             time.sleep(1)
