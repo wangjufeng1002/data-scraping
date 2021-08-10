@@ -388,7 +388,7 @@ def heart(number, account, port):
         log.info("app运行正常")
     except Exception as e:
         log.info("心跳监控APP出现异常,重启", e)
-        restart_memu(number,ip,port)
+        stop_memu(number)
 
 
 def run(devices_addr, number, account, password, products, task_id, task_label, ip, port):
