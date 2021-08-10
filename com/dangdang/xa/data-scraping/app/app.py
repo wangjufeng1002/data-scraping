@@ -417,6 +417,9 @@ def run(devices_addr, number, account, password, products, task_id, task_label, 
             db.insert_account_log(account, ip, port, '10', "账号更换登录")
             login(device, account, password)
         for item in products:
+            device.xpath("我的淘宝").click_exists(timeout=5)
+            time.sleep(1)
+            device.press("back")
             random_search(device, random_policy['search'], ip, port, account)
             url = 'http://detail.tmall.com/item.htm?id=' + str(item)
             click_search(device, url, random_policy, ip, port, account)
