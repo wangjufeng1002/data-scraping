@@ -14,10 +14,7 @@ import socket
 
 # 主线程运行标志,来让跳过弹窗的子线程能随主线程终止而结束
 main_end = False
-# 启动app锁，启动过程中不能执行操作
-restart_app = False
-# 心跳锁 防止心跳检测过程中请求来处理异常
-heart_lock = False
+
 log = MyLog.Logger('CMT').get_log()
 
 
@@ -59,9 +56,8 @@ def stop_memu(i):
     run_cmd(cmd)
 
 
-def restart_memu(i):
-    global restart_app
-    restart_app = True
+def restart_memu(i,ip,port):
+    db.update_job_status(ip, port, '2')
     cmd = r'memuc isvmrunning -i ' + str(i)
     out = run_cmd(cmd)[0]
     if "Not" in str(out):
@@ -70,7 +66,7 @@ def restart_memu(i):
         cmd = r'memuc reboot -i ' + str(i)
     out = run_cmd(cmd)[0]
     log.info('模拟器' + str(i) + str(out))
-    restart_app = False
+    db.update_job_status(ip, port, '2')
 
 
 def get_search_view(devices):
@@ -282,10 +278,6 @@ def skip_positive(devices):
         button.click()
 
 
-def init_memu(n):
-    for i in range(n):
-        restart_memu(i)
-
 
 def valid(devices):
     return devices.xpath('@android:id/decor_content_parent').wait(timeout=2)
@@ -336,15 +328,16 @@ def process_data(account, passwd, products, port, task_id, task_label):
     if job_status['run_status'] == 1:
         log.info("ip:%s,port:%s的分片正在运行,请稍后请求", ip, port)
         return -1
+
+    if job_status['run_status'] == 2:
+        log.info("ip:%s,port:%s的分片正在启动app,请稍后请求", ip, port)
+        return -1
     # 更新为运行状态
     db.update_job_status(ip, port, '1')
-    if restart_app is True:
-        log.info("正在启动app,请稍后重试")
-        return -1
     try:
         status = get_memu_status(number)
         if status is False:
-            restart_memu(number)
+            restart_memu(number,ip,port)
         devices_addr = '127.0.0.1:' + str(port)
         p = multiprocessing.Process(target=run,
                                     args=(
@@ -367,6 +360,7 @@ def go_home(device):
 
 
 def heart(number, account, port):
+    ip=get_host_ip()
     if get_memu_status(number) is False:
         log.info("程序未启动")
         return
@@ -394,7 +388,7 @@ def heart(number, account, port):
         log.info("app运行正常")
     except Exception as e:
         log.info("心跳监控APP出现异常,重启", e)
-        restart_memu(number)
+        restart_memu(number,ip,port)
 
 
 def run(devices_addr, number, account, password, products, task_id, task_label, ip, port):
@@ -426,6 +420,8 @@ def run(devices_addr, number, account, password, products, task_id, task_label, 
                 log.info("进程%s账号%s暂时失效", number, logged_account)
                 db.update_account_info(account)
                 db.insert_account_log(account, ip, port, '-1', "账号出现验证码")
+                stop_memu(number)
+                db.update_job_status(ip,port,'0')
                 # 账号失效了就暂时不用了,这次请求直接结束
                 break
             content = get_item_detail(devices=device, item_id=item, account=logged_account, index=number,
