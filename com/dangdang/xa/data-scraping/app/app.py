@@ -66,7 +66,7 @@ def restart_memu(i,ip,port):
         cmd = r'memuc reboot -i ' + str(i)
     out = run_cmd(cmd)[0]
     log.info('模拟器' + str(i) + str(out))
-    db.update_job_status(ip, port, '2')
+    db.update_job_status(ip, port, '1')
 
 
 def get_search_view(devices):
