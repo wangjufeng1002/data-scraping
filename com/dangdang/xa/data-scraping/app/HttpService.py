@@ -16,18 +16,17 @@ def run():
     json_obj = json.loads(get_data)
     account = json_obj.get("account")
     passwd = json_obj.get("password")
-    number = json_obj.get("number")
     products = json_obj.get("products")
     port = json_obj.get("port")
     task_id=json_obj.get("task_id")
     task_label=json_obj.get("task_label")
-    threading.Thread(target=async_run, args=(number, account, passwd, products, port,task_id,task_label)).start()
+    threading.Thread(target=async_run, args=( account, passwd, products, port,task_id,task_label)).start()
     data = {'data': "1"}
     return json.dumps(data, ensure_ascii=False)
 
 
-def async_run(number, account, passwd, products, port,task_id,task_label):
-    cmt.process_data(number, account, passwd, products, port,task_id,task_label)
+def async_run( account, passwd, products, port,task_id,task_label):
+    cmt.process_data( account, passwd, products, port,task_id,task_label)
 
 
 @app.route("/heart", methods=["POST"])

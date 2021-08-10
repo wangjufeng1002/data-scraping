@@ -73,19 +73,6 @@ def restart_memu(i):
     restart_app = False
 
 
-def get_phone_list():  # 获取手机设备
-    cmd = r'adb.exe devices'  # % apk_file
-    pr = subprocess.Popen(cmd, stdout=subprocess.PIPE, shell=True)
-    pr.wait()  # 不会马上返回输出的命令，需要等待
-    out = pr.stdout.readlines()  # out = pr.stdout.read().decode("UTF-8")
-    devices = []
-    for i in (out)[1:-1]:
-        device = str(i).split("\\")[0].split("'")[-1]
-        devices.append(device)
-    log.info("获取到的设备列表%s", devices)
-    return devices  # 手机设备列表
-
-
 def get_search_view(devices):
     return devices.xpath('@com.taobao.taobao:id/sv_search_view').child('/android.widget.FrameLayout')
 
@@ -335,9 +322,10 @@ def get_memu_policy(account):
     return config['random']
 
 
-def process_data(number, account, passwd, products, port, task_id, task_label):
-    log.info("开始处理数据,入参:account:%s,passwd:%s,number:%s,products:%s", account, passwd, number, products)
+def process_data( account, passwd, products, port, task_id, task_label):
+    log.info("开始处理数据,入参:account:%s,passwd:%s,products:%s", account, passwd, products)
     ip = get_host_ip()
+    number=port[3]
     job_status = db.get_job_status(ip, port)
     if job_status['run_status'] == 1:
         log.info("ip:%s,port:%s的分片正在运行,请稍后请求", ip, port)
