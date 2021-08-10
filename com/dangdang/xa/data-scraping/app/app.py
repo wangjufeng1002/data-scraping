@@ -56,7 +56,7 @@ def stop_memu(i):
     run_cmd(cmd)
 
 
-def restart_memu(i,ip,port):
+def restart_memu(i, ip, port):
     db.update_job_status(ip, port, '2')
     cmd = r'memuc isvmrunning -i ' + str(i)
     out = run_cmd(cmd)[0]
@@ -278,7 +278,6 @@ def skip_positive(devices):
         button.click()
 
 
-
 def valid(devices):
     return devices.xpath('@android:id/decor_content_parent').wait(timeout=2)
 
@@ -337,7 +336,7 @@ def process_data(account, passwd, products, port, task_id, task_label):
     try:
         status = get_memu_status(number)
         if status is False:
-            restart_memu(number,ip,port)
+            restart_memu(number, ip, port)
         devices_addr = '127.0.0.1:' + str(port)
         p = multiprocessing.Process(target=run,
                                     args=(
@@ -352,6 +351,13 @@ def process_data(account, passwd, products, port, task_id, task_label):
         db.update_job_status(ip, port, '0')
 
 
+def go_back_home(device):
+    page = device.xpath("首页").wait(timeout=1)
+    while page is None:
+        go_back(device, 1)
+        page = device.xpath("首页").wait(timeout=1)
+
+
 def go_home(device):
     setup_page = device.xpath("地区设置").wait(timeout=2)
     if setup_page is not None:
@@ -360,7 +366,7 @@ def go_home(device):
 
 
 def heart(number, account, port):
-    ip=get_host_ip()
+    ip = get_host_ip()
     if get_memu_status(number) is False:
         log.info("程序未启动")
         return
@@ -421,7 +427,7 @@ def run(devices_addr, number, account, password, products, task_id, task_label, 
                 db.update_account_info(account)
                 db.insert_account_log(account, ip, port, '-1', "账号出现验证码")
                 stop_memu(number)
-                db.update_job_status(ip,port,'0')
+                db.update_job_status(ip, port, '0')
                 # 账号失效了就暂时不用了,这次请求直接结束
                 break
             content = get_item_detail(devices=device, item_id=item, account=logged_account, index=number,
@@ -429,7 +435,7 @@ def run(devices_addr, number, account, password, products, task_id, task_label, 
             db.update_info(content, item, task_id, task_label)
             db.insert_account_log(account, ip, port, '1', "账号获取商品详情")
             time.sleep(1)
-            go_back(device, 3)
+            go_back_home(device)
             start = random_policy['timeSleep']['begin']
             end = random_policy['timeSleep']['end']
             sleep_time = random.randint(int(start), int(end))
