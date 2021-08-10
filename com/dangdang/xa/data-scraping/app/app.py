@@ -134,8 +134,11 @@ def click_search(devices, name, random_policy, ip, port, account):
     time.sleep(0.5)
     # 点击一下空白处 让pre search 弹窗消失
     devices.click(300, 300)
+    time.sleep(0.2)
     devices.click(300, 300)
+    time.sleep(0.2)
     devices.click(300, 300)
+    time.sleep(0.2)
     devices.set_fastinput_ime(True)
     time.sleep(0.5)
     devices.send_keys(name)
