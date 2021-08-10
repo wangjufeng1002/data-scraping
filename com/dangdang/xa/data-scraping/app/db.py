@@ -15,7 +15,7 @@ def update_info(origin_text,item_id,task_id,task_label):
 
 def update_account_info(account):
     with UsingMysql() as um:
-        sql = "update account_info set `status`=-1  where  account='{}'".format(account)
+        sql = "update account_info set `status`=-1  where  account='{}',nex_deal_time=now() ".format(account)
         um.cursor.execute(sql)
         um._conn.commit()
 
