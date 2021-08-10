@@ -103,7 +103,7 @@ def random_search(devices, random_policy, ip, port, account):
         keys = []
         words = db.get_keywords()
         for word in words:
-            keys.append(word)
+            keys.append(word['key_words'])
         get_search_view(devices).click_exists(timeout=2)
         time.sleep(0.5)
         get_search_view(devices).click_exists(timeout=5)
@@ -348,7 +348,8 @@ def process_data(account, passwd, products, port, task_id, task_label):
         devices_addr = '127.0.0.1:' + str(port)
         p = multiprocessing.Process(target=run,
                                     args=(
-                                    devices_addr, number, account, passwd, products, task_id, task_label, ip, port,))
+                                        devices_addr, number, account, passwd, products, task_id, task_label, ip,
+                                        port,))
         p.start()
 
         p.join()
