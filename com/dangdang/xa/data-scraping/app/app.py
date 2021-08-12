@@ -417,6 +417,9 @@ def run(devices_addr, number, account, password, products, task_id, task_label, 
             device.xpath("设置").get(timeout=5)
             device.press("back")
             random_search(device, random_policy['search'], ip, port, account)
+            if item.isdigit() is not True:
+                log.info("商品id:%s不正确",str(item))
+                continue
             url = 'http://detail.tmall.com/item.htm?id=' + str(item)
             click_search(device, url, random_policy, ip, port, account)
             time.sleep(1)
