@@ -111,6 +111,7 @@ def random_search(devices, random_policy, ip, port, account):
         get_search_button(devices).click_exists(timeout=10)
         if valid(devices) is not None:
             log.info("随机搜索出现验证")
+            db.insert_account_log(account, ip, port, "-24", "账号随机搜索出现验证")
             time.sleep(1)
             go_back(devices, 4)
             return
