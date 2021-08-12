@@ -389,6 +389,7 @@ def heart(number, account, port):
 
 
 def run(devices_addr, number, account, password, products, task_id, task_label, ip, port):
+    log.info("开始润")
     try:
         global main_end
         main_end = False
