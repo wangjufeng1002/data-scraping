@@ -318,7 +318,7 @@ def process_data(account, passwd, products, port, task_id, task_label):
     log.info("开始处理数据,入参:account:%s,passwd:%s,products:%s", account, passwd, products)
     ip = get_host_ip()
     # 端口号默认从21503 开始，number 取第四位数字，但数量超过十个，端口号会进位，从59变成60 这里取两位计算
-    number = int(port[2:4])-50
+    number = int(str(port)[2:4])-50
     job_status = db.get_job_status(ip, port)
     if job_status['run_status'] == 1:
         log.info("ip:%s,port:%s的分片正在运行,请稍后请求", ip, port)
@@ -412,7 +412,7 @@ def run(devices_addr, number, account, password, products, task_id, task_label, 
         get_search_view(device).click_exists(timeout=10)
         go_back(device, 3)
         for item in products:
-            device.xpath("我的淘宝").get(timeout=5)
+            device.xpath("我的淘宝").click_exists(timeout=5)
             time.sleep(1)
             device.xpath("设置").get(timeout=5)
             device.press("back")
