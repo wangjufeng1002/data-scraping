@@ -317,7 +317,8 @@ def get_memu_policy(account):
 def process_data(account, passwd, products, port, task_id, task_label):
     log.info("开始处理数据,入参:account:%s,passwd:%s,products:%s", account, passwd, products)
     ip = get_host_ip()
-    number = port[3]
+    # 端口号默认从21503 开始，number 取第四位数字，但数量超过十个，端口号会进位，从59变成60 这里取两位计算
+    number = int(port[2:4])-50
     job_status = db.get_job_status(ip, port)
     if job_status['run_status'] == 1:
         log.info("ip:%s,port:%s的分片正在运行,请稍后请求", ip, port)
@@ -346,12 +347,6 @@ def process_data(account, passwd, products, port, task_id, task_label):
         log.info(traceback.format_exc())
         db.update_job_status(ip, port, '0')
 
-
-def go_back_home(device):
-    page = device.xpath("首页").wait(timeout=1)
-    while page is None:
-        go_back(device, 1)
-        page = device.xpath("首页").wait(timeout=1)
 
 
 def go_home(device):
