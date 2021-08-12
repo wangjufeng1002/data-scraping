@@ -15,6 +15,7 @@ import socket
 
 # 主线程运行标志,来让跳过弹窗的子线程能随主线程终止而结束
 main_end = False
+from func_timeout import func_set_timeout, FunctionTimedOut
 
 log = MyLog.Logger('CMT').get_log()
 
@@ -52,31 +53,7 @@ def get_memu_status(number):
         return True
 
 
-def time_out(interval, callback):
-    def decorator(func):
-        def handler(signum, frame):
-            raise TimeoutError("run func timeout")
-
-        def wrapper(*args, **kwargs):
-            try:
-                signal.signal(signal.SIGALRM, handler)
-                signal.alarm(interval)  # interval秒后向进程发送SIGALRM信号
-                result = func(*args, **kwargs)
-                signal.alarm(0)  # 函数在规定时间执行完后关闭alarm闹钟
-                return result
-            except TimeoutError as e:
-                callback(e)
-
-        return wrapper
-
-    return decorator
-
-
-def timeout_callback(e):
-    print(e.msg)
-
-
-@time_out(60, timeout_callback)
+@func_set_timeout(60)
 def time_out_connect(addr):
     return u2.connect(addr)
 
