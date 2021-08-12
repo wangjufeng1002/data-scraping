@@ -53,7 +53,7 @@ def get_memu_status(number):
         return True
 
 
-@func_set_timeout(60)
+@func_set_timeout(120)
 def time_out_connect(addr):
     return u2.connect(addr)
 
