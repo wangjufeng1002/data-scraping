@@ -11,6 +11,7 @@ import MyLog
 from timeit import default_timer
 import db
 import socket
+import timeout_decorator
 
 # 主线程运行标志,来让跳过弹窗的子线程能随主线程终止而结束
 main_end = False
@@ -51,6 +52,9 @@ def get_memu_status(number):
         return True
 
 
+@timeout_decorator.timeout(60)
+def time_out_connect(addr):
+    return u2.connect(addr)
 def stop_memu(i):
     cmd = r'memuc stop -i ' + str(i)
     run_cmd(cmd)
@@ -318,7 +322,7 @@ def process_data(account, passwd, products, port, task_id, task_label):
     log.info("开始处理数据,入参:account:%s,passwd:%s,products:%s", account, passwd, products)
     ip = get_host_ip()
     # 端口号默认从21503 开始，number 取第四位数字，但数量超过十个，端口号会进位，从59变成60 这里取两位计算
-    number = int(str(port)[2:4])-50
+    number = int(str(port)[2:4]) - 50
     job_status = db.get_job_status(ip, port)
     if job_status['run_status'] == 1:
         log.info("ip:%s,port:%s的分片正在运行,请稍后请求", ip, port)
@@ -346,7 +350,6 @@ def process_data(account, passwd, products, port, task_id, task_label):
     except Exception as e:
         log.info(traceback.format_exc())
         db.update_job_status(ip, port, '0')
-
 
 
 def go_home(device):
@@ -393,7 +396,7 @@ def run(devices_addr, number, account, password, products, task_id, task_label, 
     try:
         global main_end
         main_end = False
-        device = u2.connect(devices_addr)
+        device=time_out_connect(devices_addr)
         time.sleep(2)
         random_policy = get_memu_policy(account)
         device.app_start("com.taobao.taobao")
@@ -419,7 +422,7 @@ def run(devices_addr, number, account, password, products, task_id, task_label, 
             device.press("back")
             random_search(device, random_policy['search'], ip, port, account)
             if item.isdigit() is not True:
-                log.info("商品id:%s不正确",str(item))
+                log.info("商品id:%s不正确", str(item))
                 continue
             url = 'http://detail.tmall.com/item.htm?id=' + str(item)
             click_search(device, url, random_policy, ip, port, account)
