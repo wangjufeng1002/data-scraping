@@ -128,13 +128,7 @@ def click_search(devices, name, random_policy, ip, port, account):
     random_switch_tabs(devices, random_policy['switchTabs'], ip, port, account)
     get_search_view(devices).click_exists(timeout=10)
     time.sleep(0.5)
-    # 点击一下空白处 让pre search 弹窗消失
-    devices.click(300, 300)
-    time.sleep(0.2)
-    devices.click(300, 300)
-    time.sleep(0.2)
-    devices.click(300, 300)
-    time.sleep(0.2)
+
     devices.set_fastinput_ime(True)
     time.sleep(0.5)
     devices.send_keys(name)
@@ -338,6 +332,7 @@ def process_data(account, passwd, products, port, task_id, task_label):
         if status is False:
             restart_memu(number, ip, port)
         devices_addr = '127.0.0.1:' + str(port)
+        time.sleep(5)
         p = multiprocessing.Process(target=run,
                                     args=(
                                         devices_addr, number, account, passwd, products, task_id, task_label, ip,
@@ -416,9 +411,14 @@ def run(devices_addr, number, account, password, products, task_id, task_label, 
             log.info("当前模拟器登录账号不一致,重新登录")
             db.insert_account_log(account, ip, port, '10', "账号更换登录")
             login(device, account, password)
+        # 第一次打开app搜索会有个pre search 的提示，会吞掉操作，这里预先点击返回一次
+        device.xpath('@com.taobao.taobao:id/searchbtn').wait()
+        get_search_view(device).click_exists(timeout=10)
+        go_back(device, 3)
         for item in products:
-            device.xpath("我的淘宝").click_exists(timeout=5)
+            device.xpath("我的淘宝").get(timeout=5)
             time.sleep(1)
+            device.xpath("设置").get(timeout=5)
             device.press("back")
             random_search(device, random_policy['search'], ip, port, account)
             url = 'http://detail.tmall.com/item.htm?id=' + str(item)
@@ -438,7 +438,7 @@ def run(devices_addr, number, account, password, products, task_id, task_label, 
             db.update_info(content, item, task_id, task_label)
             db.insert_account_log(account, ip, port, '1', "账号获取商品详情")
             time.sleep(1)
-            go_back_home(device)
+            go_back(device, 3)
             start = random_policy['timeSleep']['begin']
             end = random_policy['timeSleep']['end']
             sleep_time = random.randint(int(start), int(end))
