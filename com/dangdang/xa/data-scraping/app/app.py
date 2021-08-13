@@ -437,9 +437,9 @@ def run(devices_addr, number, account, password, products, task_id, task_label, 
         device = time_out_connect(devices_addr)
         time.sleep(2)
         random_policy = get_memu_policy(account)
-        if number == 1:
-            device.app_start("com.tunnelworkshop.postern")
-            go_back(device, 1)
+        #启动代理app todo 自动配置代理ip
+        device.app_start("com.tunnelworkshop.postern")
+        go_back(device, 1)
         time.sleep(1)
         device.app_start("com.taobao.taobao")
         # 开启跳过广告线程
