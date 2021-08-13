@@ -394,14 +394,53 @@ def heart(number, account, port):
         stop_memu(number)
 
 
+@func_set_timeout(300)
+def run_item(device, ip, port, account, item, random_policy, number, logged_account, task_id, task_label):
+    device.xpath("我的淘宝").click_exists(timeout=5)
+    time.sleep(1)
+    device.xpath("设置").get(timeout=5)
+    device.press("back")
+    random_search(device, random_policy['search'], ip, port, account)
+    if item.isdigit() is not True:
+        log.info("商品id:%s不正确", str(item))
+        return
+    url = 'http://detail.tmall.com/item.htm?id=' + str(item)
+    click_search(device, url, random_policy, ip, port, account)
+    time.sleep(1)
+    valid_button = valid(device)
+    if valid_button is not None:
+        log.info("进程%s账号%s暂时失效", number, logged_account)
+        db.update_account_info(account)
+        db.insert_account_log(account, ip, port, '-1', "账号出现验证码")
+        stop_memu(number)
+        db.update_job_status(ip, port, '0')
+        # 账号失效了就暂时不用了,这次请求直接结束
+        return
+    content = get_item_detail(devices=device, item_id=item, account=logged_account, index=number,
+                              conf=random_policy, ip=ip, port=port)
+    db.update_info(content, item, task_id, task_label)
+    db.insert_account_log(account, ip, port, '1', "账号获取商品详情")
+    time.sleep(1)
+    go_back(device, 3)
+    start = random_policy['timeSleep']['begin']
+    end = random_policy['timeSleep']['end']
+    sleep_time = random.randint(int(start), int(end))
+    log.info("账号%s休息%s秒", account, sleep_time)
+    db.insert_account_log(account, ip, port, '2', "账号休息{}秒".format(sleep_time))
+    time.sleep(sleep_time)
+
+
 def run(devices_addr, number, account, password, products, task_id, task_label, ip, port):
-    log.info("开始润")
     try:
         global main_end
         main_end = False
         device = time_out_connect(devices_addr)
         time.sleep(2)
         random_policy = get_memu_policy(account)
+        if number == 1:
+            device.app_start("com.tunnelworkshop.postern")
+            go_back(device, 1)
+        time.sleep(1)
         device.app_start("com.taobao.taobao")
         # 开启跳过广告线程
         threading.Thread(target=skip, args=(device,)).start()
@@ -417,40 +456,10 @@ def run(devices_addr, number, account, password, products, task_id, task_label, 
         # 第一次打开app搜索会有个pre search 的提示，会吞掉操作，这里预先点击返回一次
         device.xpath('@com.taobao.taobao:id/searchbtn').wait()
         get_search_view(device).click_exists(timeout=10)
+        time.sleep(1)
         go_back(device, 3)
         for item in products:
-            device.xpath("我的淘宝").click_exists(timeout=5)
-            time.sleep(1)
-            device.xpath("设置").get(timeout=5)
-            device.press("back")
-            random_search(device, random_policy['search'], ip, port, account)
-            if item.isdigit() is not True:
-                log.info("商品id:%s不正确", str(item))
-                continue
-            url = 'http://detail.tmall.com/item.htm?id=' + str(item)
-            click_search(device, url, random_policy, ip, port, account)
-            time.sleep(1)
-            valid_button = valid(device)
-            if valid_button is not None:
-                log.info("进程%s账号%s暂时失效", number, logged_account)
-                db.update_account_info(account)
-                db.insert_account_log(account, ip, port, '-1', "账号出现验证码")
-                stop_memu(number)
-                db.update_job_status(ip, port, '0')
-                # 账号失效了就暂时不用了,这次请求直接结束
-                break
-            content = get_item_detail(devices=device, item_id=item, account=logged_account, index=number,
-                                      conf=random_policy, ip=ip, port=port)
-            db.update_info(content, item, task_id, task_label)
-            db.insert_account_log(account, ip, port, '1', "账号获取商品详情")
-            time.sleep(1)
-            go_back(device, 3)
-            start = random_policy['timeSleep']['begin']
-            end = random_policy['timeSleep']['end']
-            sleep_time = random.randint(int(start), int(end))
-            log.info("账号%s休息%s秒", account, sleep_time)
-            db.insert_account_log(account, ip, port, '2', "账号休息{}秒".format(sleep_time))
-            time.sleep(sleep_time)
+            run_item(device, ip, port, account, item, random_policy, number, logged_account, task_id, task_label)
 
     except Exception as e:
         log.info(traceback.format_exc())
