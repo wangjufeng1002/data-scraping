@@ -1,6 +1,5 @@
 import json
 import random
-import signal
 import traceback
 
 import uiautomator2 as u2
@@ -15,7 +14,7 @@ import socket
 
 # 主线程运行标志,来让跳过弹窗的子线程能随主线程终止而结束
 main_end = False
-from func_timeout import func_set_timeout, FunctionTimedOut
+from func_timeout import func_set_timeout
 
 log = MyLog.Logger('CMT').get_log()
 
@@ -128,20 +127,26 @@ def random_search(devices, random_policy, ip, port, account):
         go_back(devices, 3)
 
 
-def click_search(devices, name, random_policy, ip, port, account):
+def click_search(devices, name, random_policy, ip, port, account, phone):
     # 随机策略
     random_refresh(devices, random_policy['refresh'], ip, port, account)
     random_shop_cart(devices, random_policy['shopCart'], ip, port, account)
     random_message(devices, random_policy['message'], ip, port, account)
     random_switch_tabs(devices, random_policy['switchTabs'], ip, port, account)
-    get_search_view(devices).click_exists(timeout=10)
+    if phone is True:
+        devices.xpath("扫一扫").parent().click()
+    else:
+        get_search_view(devices).click_exists(timeout=10)
     time.sleep(0.5)
 
     devices.set_fastinput_ime(True)
     time.sleep(0.5)
     devices.send_keys(name)
     time.sleep(0.5)
-    get_search_button(devices).click_exists(timeout=10)
+    if phone is True:
+        devices.xpath("搜索").click()
+    else:
+        get_search_button(devices).click_exists(timeout=10)
 
 
 def random_swipe(devices, back):
@@ -193,12 +198,14 @@ def random_switch_tabs(devices, weight, ip, port, account):
     if random_do(float(weight) * 10):
         db.insert_account_log(account, ip, port, "23", "账号随机切换标签页")
         tabs = devices.xpath("//android.widget.HorizontalScrollView").child("//android.widget.TextView").all()
-        index = random.randint(0, 3)
+        if len(tabs) <= 0:
+            return
+        index = random.randint(0, len(tabs) - 1)
         tabs[index].click()
         time.sleep(1)
 
 
-def get_item_detail(item_id, devices, account, index, conf, ip, port):
+def get_item_detail(item_id, devices, account, index, conf, ip, port, phone):
     exist = devices.xpath("商品过期不存在").wait(timeout=2)
     if exist is not None:
         log.info("商品%s过期或不存在", item_id)
@@ -206,7 +213,10 @@ def get_item_detail(item_id, devices, account, index, conf, ip, port):
     devices.xpath('@com.taobao.taobao:id/uik_public_menu_action_icon').wait()
     content = ''
     devices.swipe_ext("up", scale=0.5)
-    page_item = devices.xpath('@com.taobao.taobao:id/mainpage').child('//android.widget.TextView').all()
+    resource_id = '@com.taobao.taobao:id/mainpage'
+    if phone is True:
+        resource_id = '@com.taobao.taobao:id/mainpage2'
+    page_item = devices.xpath(resource_id).child('//android.widget.TextView').all()
     for item in page_item:
         if item.text != '':
             content += item.text
@@ -344,8 +354,8 @@ def process_data(account, passwd, products, port, task_id, task_label):
         time.sleep(5)
         p = multiprocessing.Process(target=run,
                                     args=(
-                                        devices_addr, number, account, passwd, products, task_id, task_label, ip,
-                                        port,))
+                                        devices_addr, number, account, products, task_id, task_label, ip,
+                                        port,False))
         p.start()
 
         p.join()
@@ -395,17 +405,14 @@ def heart(number, account, port):
 
 
 @func_set_timeout(300)
-def run_item(device, ip, port, account, item, random_policy, number, logged_account, task_id, task_label):
-    device.xpath("我的淘宝").click_exists(timeout=5)
-    time.sleep(1)
-    device.xpath("设置").get(timeout=5)
-    device.press("back")
-    random_search(device, random_policy['search'], ip, port, account)
+def run_item(device, ip, port, account, item, random_policy, number, logged_account, task_id, task_label, phone):
+    if phone is False:
+        random_search(device, random_policy['search'], ip, port, account)
     if item.isdigit() is not True:
         log.info("商品id:%s不正确", str(item))
         return
     url = 'http://detail.tmall.com/item.htm?id=' + str(item)
-    click_search(device, url, random_policy, ip, port, account)
+    click_search(device, url, random_policy, ip, port, account, phone)
     time.sleep(1)
     valid_button = valid(device)
     if valid_button is not None:
@@ -417,7 +424,7 @@ def run_item(device, ip, port, account, item, random_policy, number, logged_acco
         # 账号失效了就暂时不用了,这次请求直接结束
         return
     content = get_item_detail(devices=device, item_id=item, account=logged_account, index=number,
-                              conf=random_policy, ip=ip, port=port)
+                              conf=random_policy, ip=ip, port=port, phone=phone)
     db.update_info(content, item, task_id, task_label)
     db.insert_account_log(account, ip, port, '1', "账号获取商品详情")
     time.sleep(1)
@@ -430,14 +437,14 @@ def run_item(device, ip, port, account, item, random_policy, number, logged_acco
     time.sleep(sleep_time)
 
 
-def run(devices_addr, number, account, password, products, task_id, task_label, ip, port):
+def run(devices_addr, number, account, products, task_id, task_label, ip, port, phone=False):
     try:
         global main_end
         main_end = False
         device = time_out_connect(devices_addr)
         time.sleep(2)
         random_policy = get_memu_policy(account)
-        #启动代理app todo 自动配置代理ip
+        # 启动代理app todo 自动配置代理ip
         device.app_start("com.tunnelworkshop.postern")
         go_back(device, 1)
         time.sleep(1)
@@ -449,20 +456,22 @@ def run(devices_addr, number, account, password, products, task_id, task_label, 
         time.sleep(0.3)
         go_home(device)
         time.sleep(0.3)
-        if account != logged_account:
-            log.info("当前模拟器登录账号不一致,重新登录")
-            db.insert_account_log(account, ip, port, '10', "账号更换登录")
-            login(device, account, password)
-        # 第一次打开app搜索会有个pre search 的提示，会吞掉操作，这里预先点击返回一次
-        device.xpath('@com.taobao.taobao:id/searchbtn').wait()
-        get_search_view(device).click_exists(timeout=10)
-        time.sleep(1)
-        go_back(device, 3)
+        if phone is False:
+            # 第一次打开app搜索会有个pre search 的提示，会吞掉操作，这里预先点击返回一次
+            device.xpath('@com.taobao.taobao:id/searchbtn').wait()
+            get_search_view(device).click_exists(timeout=10)
+            time.sleep(1)
+            go_back(device, 3)
         for item in products:
-            run_item(device, ip, port, account, item, random_policy, number, logged_account, task_id, task_label)
+            run_item(device, ip, port, account, item, random_policy, number, logged_account, task_id, task_label, phone)
 
     except Exception as e:
         log.info(traceback.format_exc())
         # 出现异常终止操作 并终止app
-        stop_memu(number)
+        if phone is False:
+            stop_memu(number)
     main_end = True
+
+
+if __name__ == '__main__':
+    run("PQY5T21204002156", 1, 'hakurei', ['607946680237', '638751411901'], '1', '12', '123456789', '123', True)
