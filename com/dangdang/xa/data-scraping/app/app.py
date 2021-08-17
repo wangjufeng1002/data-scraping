@@ -438,7 +438,7 @@ def run_item(device, ip, port, account, item, random_policy, number, logged_acco
 
 
 def run_phone(devices_addr, number, account, products, task_id, task_label, ip, port):
-    job_status=db.get_job_status(ip,port)
+    job_status = db.get_job_status(ip, port)
     if job_status['run_status'] == 1:
         log.info("ip:%s,port:%s的分片正在运行,请稍后请求", ip, port)
         return -1
@@ -448,9 +448,7 @@ def run_phone(devices_addr, number, account, products, task_id, task_label, ip, 
         db.update_job_status(ip, port, 0)
     except Exception as e:
         log.info(traceback.format_exc())
-        db.update_job_status(ip,port,0)
-
-
+        db.update_job_status(ip, port, 0)
 
 
 def run(devices_addr, number, account, products, task_id, task_label, ip, port, phone=False):

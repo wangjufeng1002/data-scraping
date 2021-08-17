@@ -1,7 +1,7 @@
 import multiprocessing
 import threading
 
-from flask import Flask, request
+from flask import Flask, request, send_from_directory
 from flask_cors import *
 import json
 import app as cmt
@@ -10,7 +10,7 @@ app = Flask(__name__)
 CORS(app, supports_credentials=True)
 
 
-#@app.route("/process", methods=["POST"])
+@app.route("/process", methods=["POST"])
 def run():
     get_data = request.get_data()
     json_obj = json.loads(get_data)
@@ -42,11 +42,18 @@ def run_phone():
 
 def async_run_phone(addr, account, products, task_id, task_label, ip, port):
     cmt.run_phone(addr, "0", account, products, task_id, task_label, ip, port)
+
+
 def async_run(account, passwd, products, port, task_id, task_label):
     cmt.process_data(account, passwd, products, port, task_id, task_label)
 
 
-#@app.route("/heart", methods=["POST"])
+@app.route('/get_proxy_app', methods=['GET'])
+def return_proxy_app():
+    return send_from_directory('', 'Postern-3.1.2.apk')
+
+
+@app.route("/heart", methods=["POST"])
 def heart():
     get_data = request.get_data()
     json_obj = json.loads(get_data)
