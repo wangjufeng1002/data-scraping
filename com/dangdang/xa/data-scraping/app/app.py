@@ -355,7 +355,7 @@ def process_data(account, passwd, products, port, task_id, task_label):
         p = multiprocessing.Process(target=run,
                                     args=(
                                         devices_addr, number, account, products, task_id, task_label, ip,
-                                        port,False))
+                                        port, False))
         p.start()
 
         p.join()
@@ -435,6 +435,22 @@ def run_item(device, ip, port, account, item, random_policy, number, logged_acco
     log.info("账号%s休息%s秒", account, sleep_time)
     db.insert_account_log(account, ip, port, '2', "账号休息{}秒".format(sleep_time))
     time.sleep(sleep_time)
+
+
+def run_phone(devices_addr, number, account, products, task_id, task_label, ip, port):
+    job_status=db.get_job_status(ip,port)
+    if job_status['run_status'] == 1:
+        log.info("ip:%s,port:%s的分片正在运行,请稍后请求", ip, port)
+        return -1
+    try:
+        db.update_job_status(ip, port, 1)
+        run(devices_addr, number, account, products, task_id, task_label, ip, port, True)
+        db.update_job_status(ip, port, 0)
+    except Exception as e:
+        log.info(traceback.format_exc())
+        db.update_job_status(ip,port,0)
+
+
 
 
 def run(devices_addr, number, account, products, task_id, task_label, ip, port, phone=False):

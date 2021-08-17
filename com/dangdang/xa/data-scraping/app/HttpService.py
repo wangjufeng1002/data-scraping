@@ -10,7 +10,7 @@ app = Flask(__name__)
 CORS(app, supports_credentials=True)
 
 
-@app.route("/process", methods=["POST"])
+#@app.route("/process", methods=["POST"])
 def run():
     get_data = request.get_data()
     json_obj = json.loads(get_data)
@@ -41,14 +41,12 @@ def run_phone():
 
 
 def async_run_phone(addr, account, products, task_id, task_label, ip, port):
-    cmt.run(addr, "0", account, products, task_id, task_label, ip, port, True)
-
-
+    cmt.run_phone(addr, "0", account, products, task_id, task_label, ip, port)
 def async_run(account, passwd, products, port, task_id, task_label):
     cmt.process_data(account, passwd, products, port, task_id, task_label)
 
 
-@app.route("/heart", methods=["POST"])
+#@app.route("/heart", methods=["POST"])
 def heart():
     get_data = request.get_data()
     json_obj = json.loads(get_data)
