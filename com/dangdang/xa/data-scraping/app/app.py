@@ -474,8 +474,12 @@ def run(devices_addr, number, account, products, task_id, task_label, ip, port, 
             # 第一次打开app搜索会有个pre search 的提示，会吞掉操作，这里预先点击返回一次
             device.xpath('@com.taobao.taobao:id/searchbtn').wait()
             get_search_view(device).click_exists(timeout=10)
-            time.sleep(1)
+            time.sleep(3)
             go_back(device, 3)
+            # 这里由于性能问题，启动卡顿等原因，可能莫名其妙吞操作,导致app退出,这里检测一下 如果app被退出，就重新启动
+            running = device.app_list_running()
+            if 'com.taobao.taobao' not in running:
+                device.app_start("com.taobao.taobao")
         for item in products:
             run_item(device, ip, port, account, item, random_policy, number, logged_account, task_id, task_label, phone)
 
@@ -487,5 +491,3 @@ def run(devices_addr, number, account, products, task_id, task_label, ip, port, 
     main_end = True
 
 
-if __name__ == '__main__':
-    run("PQY5T21204002156", 1, 'hakurei', ['607946680237', '638751411901'], '1', '12', '123456789', '123', True)
