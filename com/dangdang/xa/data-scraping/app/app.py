@@ -373,7 +373,6 @@ def go_home(device):
 
 
 def heart(number, account, port):
-    ip = get_host_ip()
     if get_memu_status(number) is False:
         log.info("程序未启动")
         return
@@ -425,8 +424,9 @@ def run_item(device, ip, port, account, item, random_policy, number, logged_acco
         return
     content = get_item_detail(devices=device, item_id=item, account=logged_account, index=number,
                               conf=random_policy, ip=ip, port=port, phone=phone)
-    db.update_info(content, item, task_id, task_label)
-    db.insert_account_log(account, ip, port, '1', "账号获取商品详情")
+    if content is not None and len(content) > 0:
+        db.update_info(content, item, task_id, task_label)
+        db.insert_account_log(account, ip, port, '1', "账号获取商品详情")
     time.sleep(1)
     go_back(device, 3)
     start = random_policy['timeSleep']['begin']
@@ -489,5 +489,3 @@ def run(devices_addr, number, account, products, task_id, task_label, ip, port, 
         if phone is False:
             stop_memu(number)
     main_end = True
-
-
