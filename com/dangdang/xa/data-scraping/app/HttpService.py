@@ -31,17 +31,16 @@ def run_phone():
     json_obj = json.loads(get_data)
     account = json_obj.get("account")
     products = json_obj.get("products")
-    addr = json_obj.get("addr")
-    port = json_obj.get("port")
+    addr = json_obj.get("port")
     task_id = json_obj.get("task_id")
     task_label = json_obj.get("task_label")
-    threading.Thread(target=async_run_phone, args=(addr, account, products, task_id, task_label, addr, port)).start()
+    threading.Thread(target=async_run_phone, args=(addr, account, products, task_id, task_label, addr)).start()
     data = {'data': "1"}
     return json.dumps(data, ensure_ascii=False)
 
 
-def async_run_phone(addr, account, products, task_id, task_label, ip, port):
-    cmt.run_phone(addr, "0", account, products, task_id, task_label, ip, port)
+def async_run_phone(addr, account, products, task_id, task_label, port):
+    cmt.run_phone(addr, "0", account, products, task_id, task_label, port)
 
 
 def async_run(account, passwd, products, port, task_id, task_label):

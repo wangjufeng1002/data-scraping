@@ -415,13 +415,17 @@ def run_item(device, ip, port, account, item, random_policy, number, logged_acco
     time.sleep(1)
     valid_button = valid(device)
     if valid_button is not None:
-        log.info("进程%s账号%s暂时失效", number, logged_account)
-        db.update_account_info(account)
-        db.insert_account_log(account, ip, port, '-1', "账号出现验证码")
-        stop_memu(number)
-        db.update_job_status(ip, port, '0')
-        # 账号失效了就暂时不用了,这次请求直接结束
-        return
+        if phone is False:
+            log.info("进程%s账号%s暂时失效", number, logged_account)
+            db.update_account_info(account)
+            db.insert_account_log(account, ip, port, '-1', "账号出现验证码")
+            stop_memu(number)
+            db.update_job_status(ip, port, '0')
+            # 账号失效了就暂时不用了,这次请求直接结束
+            return
+        else:
+            log.info("手机上出现验证")
+            time.sleep(100)
     content = get_item_detail(devices=device, item_id=item, account=logged_account, index=number,
                               conf=random_policy, ip=ip, port=port, phone=phone)
     if content is not None and len(content) > 0:
@@ -437,14 +441,20 @@ def run_item(device, ip, port, account, item, random_policy, number, logged_acco
     time.sleep(sleep_time)
 
 
-def run_phone(devices_addr, number, account, products, task_id, task_label, ip, port):
+def run_phone(devices_addr, number, account, products, task_id, task_label, port):
+    ip = get_host_ip()
     job_status = db.get_job_status(ip, port)
     if job_status['run_status'] == 1:
         log.info("ip:%s,port:%s的分片正在运行,请稍后请求", ip, port)
         return -1
     try:
         db.update_job_status(ip, port, 1)
-        run(devices_addr, number, account, products, task_id, task_label, ip, port, True)
+        p = multiprocessing.Process(target=run,
+                                    args=(
+                                        devices_addr, number, account, products, task_id, task_label, ip,
+                                        port, True))
+        p.start()
+        p.join()
         db.update_job_status(ip, port, 0)
     except Exception as e:
         log.info(traceback.format_exc())
