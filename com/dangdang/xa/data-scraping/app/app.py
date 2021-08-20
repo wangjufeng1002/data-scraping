@@ -129,10 +129,10 @@ def random_search(devices, random_policy, ip, port, account):
 
 def click_search(devices, name, random_policy, ip, port, account, phone):
     # 随机策略
-    #random_refresh(devices, random_policy['refresh'], ip, port, account)
-    #random_shop_cart(devices, random_policy['shopCart'], ip, port, account)
-    #random_message(devices, random_policy['message'], ip, port, account)
-    #random_switch_tabs(devices, random_policy['switchTabs'], ip, port, account)
+    random_refresh(devices, random_policy['refresh'], ip, port, account)
+    random_shop_cart(devices, random_policy['shopCart'], ip, port, account)
+    random_message(devices, random_policy['message'], ip, port, account)
+    random_switch_tabs(devices, random_policy['switchTabs'], ip, port, account)
     if phone is True:
         devices.xpath("扫一扫").parent().click()
     else:
