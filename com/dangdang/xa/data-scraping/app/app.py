@@ -129,10 +129,10 @@ def random_search(devices, random_policy, ip, port, account):
 
 def click_search(devices, name, random_policy, ip, port, account, phone):
     # 随机策略
-    random_refresh(devices, random_policy['refresh'], ip, port, account)
-    random_shop_cart(devices, random_policy['shopCart'], ip, port, account)
-    random_message(devices, random_policy['message'], ip, port, account)
-    random_switch_tabs(devices, random_policy['switchTabs'], ip, port, account)
+    #random_refresh(devices, random_policy['refresh'], ip, port, account)
+    #random_shop_cart(devices, random_policy['shopCart'], ip, port, account)
+    #random_message(devices, random_policy['message'], ip, port, account)
+    #random_switch_tabs(devices, random_policy['switchTabs'], ip, port, account)
     if phone is True:
         devices.xpath("扫一扫").parent().click()
     else:
@@ -217,14 +217,17 @@ def get_item_detail(item_id, devices, account, index, conf, ip, port, phone):
     if phone is True:
         resource_id = '@com.taobao.taobao:id/mainpage2'
     page_item = devices.xpath(resource_id).child('//android.widget.TextView').all()
+    #有些商品页面用的组件id又不一样，这里两个id都查
+    if len(page_item)==0:
+        page_item=devices.xpath("@com.taobao.taobao:id/mainpage").child('//android.widget.TextView').all()
     for item in page_item:
         if item.text != '':
             content += item.text
     log.info("进程%s账号%s,获取商品%s数据:%s", str(index), account, item_id, content)
     time.sleep(0.3)
-    random_comment(devices, conf['comment'], ip, port, account)
+    #random_comment(devices, conf['comment'], ip, port, account)
 
-    time.sleep(1)
+    #time.sleep(1)
     return content
 
 
@@ -291,7 +294,7 @@ def skip_positive(devices):
 
 
 def valid(devices):
-    return devices.xpath('@android:id/decor_content_parent').wait(timeout=2)
+    return devices.xpath('@android:id/decor_content_parent').wait(timeout=1)
 
 
 def skip_hongbao(devices):
@@ -412,7 +415,7 @@ def run_item(device, ip, port, account, item, random_policy, number, logged_acco
         return
     url = 'http://detail.tmall.com/item.htm?id=' + str(item)
     click_search(device, url, random_policy, ip, port, account, phone)
-    time.sleep(1)
+    time.sleep(0.3)
     valid_button = valid(device)
     if valid_button is not None:
         if phone is False:
@@ -431,7 +434,7 @@ def run_item(device, ip, port, account, item, random_policy, number, logged_acco
     if content is not None and len(content) > 0:
         db.update_info(content, item, task_id, task_label)
         db.insert_account_log(account, ip, port, '1', "账号获取商品详情")
-    time.sleep(1)
+    time.sleep(0.3)
     go_back(device, 3)
     start = random_policy['timeSleep']['begin']
     end = random_policy['timeSleep']['end']
@@ -442,6 +445,7 @@ def run_item(device, ip, port, account, item, random_policy, number, logged_acco
 
 
 def run_phone(devices_addr, number, account, products, task_id, task_label, port):
+    log.info("本次手机%s抓取商品%s",devices_addr,products)
     ip = get_host_ip()
     job_status = db.get_job_status(ip, port)
     if job_status['run_status'] == 1:
@@ -470,6 +474,7 @@ def run(devices_addr, number, account, products, task_id, task_label, ip, port, 
         random_policy = get_memu_policy(account)
         # 启动代理app todo 自动配置代理ip
         device.app_start("com.tunnelworkshop.postern")
+        device.app_stop("com.taobao.taobao")
         go_back(device, 1)
         time.sleep(1)
         device.app_start("com.taobao.taobao")
