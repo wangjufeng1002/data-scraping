@@ -76,7 +76,7 @@ def processDefaultBookData(itemUrlEntity, header, ip, logUtils):
     proxy = {'http:': "http://" + ip, 'https:': "https://" + ip}
     session = HTMLSession()
     detailResponse = session.get(itemUrlEntity.itemUrl, proxies=proxy)
-    detailHtmlSoup = BeautifulSoup(detailResponse.text, features='html.parser')
+    detailHtmlSoup = BeautifulSoup(detailResponse.text.encode("utf-8"), features='html.parser')
     book = Book(tmId=itemUrlEntity.itemId, name=None, isbn=None, auther=None, fixPrice=None, promotionPrice=None,
                 promotionPriceDesc=None, price=None, promotionType=None, activeStartTime=None,
                 activeEndTime=None,
@@ -329,6 +329,49 @@ def processBookPromoInfo(category, header, logUtils):
             finally:
                 time.sleep(random.randint(3, 10))
 
+
+# 多线程调度方法
+def processBookDefaultInfo(category, header, logUtils):
+    pageSize = 10000
+    while True:
+        errCnt = 0
+        retryCnt = 0
+        index = 0
+        proxyIp = getIpProxyPool.get_proxy_from_redis()['proxy_detail']['ip']
+        itemUrls = dataReptiledb.getItemUrl(category=category, page_size=pageSize)
+        if itemUrls is None or len(itemUrls) <= 0:
+            break
+        while index <= len(itemUrls) - 1:
+            try:
+                book,status = processDefaultBookData(itemUrls[index], header, proxyIp, logUtils)
+                dataReptiledb.updateSuccessFlag(flag=1, itemId=itemUrls[index].itemId)
+                #disturbUrl(header, proxyIp, logUtils)
+            except Exception as  e:
+                errCnt+=1
+                logUtils.logger.error("线程{threadName} - {itemId} 发生异常 - 代理IP:{proxyIp} - {e}".format(
+                    threadName=threading.current_thread().getName(), itemId=itemUrls[index].itemId, proxyIp=proxyIp,
+                    e=e))
+                #超过阀值，直接退出
+                if errCnt > constants.error_cnt:
+                    return
+                #重试次数统计
+                retryCnt += 1
+                if retryCnt >= constants.retry_cnt:
+                    index += 1
+                    retryCnt = 0
+                time.sleep(random.randint(10,20))
+                proxyIp = getIpProxyPool.get_proxy_from_redis()['proxy_detail']['ip']
+            else:
+                # try:
+                #    dataReptiledb.updateBookSuccessFlag(flag=status, itemId=itemUrls[index].itemId)
+                # except:
+                #     logUtils.logger.info("线程{threadName} - {itemId} 更新is_sucess标志失败".format(
+                #         threadName=threading.current_thread().getName(), itemId=itemUrls[index].itemId))
+                # else:
+                #     logUtils.logger.info("线程{threadName} - {itemId} 处理完成,代理IP:{ip}".format(threadName=threading.current_thread().getName(), itemId=itemUrls[index].itemId, ip=proxyIp))
+                index += 1
+            # finally:
+            #     time.sleep(random.randint(1, 10))
 
 def processBookPromoInfoTest(category, headerIndex):
     while True:
