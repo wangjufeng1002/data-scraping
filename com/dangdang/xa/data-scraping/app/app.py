@@ -190,6 +190,7 @@ def get_item_detail(item_id, devices, account, index):
         return
     devices.xpath('@com.taobao.taobao:id/uik_public_menu_action_icon').wait()
     content = ''
+    devices.swipe_ext("up", scale=0.5)
     page_item = devices.xpath('@com.taobao.taobao:id/mainpage').child('//android.widget.TextView').all()
     for item in page_item:
         if item.text != '':
