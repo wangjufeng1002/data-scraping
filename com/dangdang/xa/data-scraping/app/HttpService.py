@@ -58,8 +58,8 @@ def heart():
     json_obj = json.loads(get_data)
     number = json_obj.get("number")
     account = json_obj.get("account")
-    port = json_obj.get("port")
-    cmt.heart(number, account, port)
+    addr = json_obj.get("port")
+    cmt.heart(number, account, addr, addr)
     return "1"
 
 

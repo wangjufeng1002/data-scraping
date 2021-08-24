@@ -11,7 +11,11 @@ def update_info(origin_text,item_id,task_id,task_label):
         um._conn.commit()
 
 
-
+def get_running_account():
+    with UsingMysql() as um:
+        sql="select * from account_info where run_status='1'"
+        um.cursor.execute(sql)
+        return um.cursor.fetchall()
 
 def update_account_info(account):
     with UsingMysql() as um:
@@ -19,6 +23,17 @@ def update_account_info(account):
         um.cursor.execute(sql)
         um._conn.commit()
 
+def init_run_status(account):
+    with UsingMysql() as um:
+        sql = "update account_info set run_status='0' ,last_modified_time=now() where  account='{}'".format(account)
+        um.cursor.execute(sql)
+        um._conn.commit()
+
+def update_account_info_date(account):
+    with UsingMysql() as um:
+        sql = "update account_info set last_modified_time=now()  where  account='{}'".format(account)
+        um.cursor.execute(sql)
+        um._conn.commit()
 
 def get_job_status(ip, port):
     with UsingMysql() as um:
@@ -34,7 +49,7 @@ def get_job_status_by_account(account):
         return data
 def update_job_status(ip, port, status):
     with UsingMysql() as um:
-        sql = "update account_info set run_status={} where ip='{}' and port='{}'".format(status, ip, port)
+        sql = "update account_info set run_status={},last_modified_time=now() where ip='{}' and port='{}'".format(status, ip, port)
         um.cursor.execute(sql)
         um._conn.commit()
 

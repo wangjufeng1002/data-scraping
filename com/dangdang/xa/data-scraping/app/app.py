@@ -11,6 +11,7 @@ import MyLog
 from timeit import default_timer
 import db
 import socket
+from datetime import datetime
 
 # 主线程运行标志,来让跳过弹窗的子线程能随主线程终止而结束
 main_end = False
@@ -217,17 +218,17 @@ def get_item_detail(item_id, devices, account, index, conf, ip, port, phone):
     if phone is True:
         resource_id = '@com.taobao.taobao:id/mainpage2'
     page_item = devices.xpath(resource_id).child('//android.widget.TextView').all()
-    #有些商品页面用的组件id又不一样，这里两个id都查
-    if len(page_item)==0:
-        page_item=devices.xpath("@com.taobao.taobao:id/mainpage").child('//android.widget.TextView').all()
+    # 有些商品页面用的组件id又不一样，这里两个id都查
+    if len(page_item) == 0:
+        page_item = devices.xpath("@com.taobao.taobao:id/mainpage").child('//android.widget.TextView').all()
     for item in page_item:
         if item.text != '':
             content += item.text
     log.info("进程%s账号%s,获取商品%s数据:%s", str(index), account, item_id, content)
     time.sleep(0.3)
-    #random_comment(devices, conf['comment'], ip, port, account)
+    # random_comment(devices, conf['comment'], ip, port, account)
 
-    #time.sleep(1)
+    # time.sleep(1)
     return content
 
 
@@ -375,18 +376,14 @@ def go_home(device):
     device.xpath("首页").click_exists(timeout=5)
 
 
-def heart(number, account, port):
-    if get_memu_status(number) is False:
-        log.info("程序未启动")
-        return
+def heart(number, account, port, addr):
     job_status = db.get_job_status_by_account(account)
     if job_status['run_status'] == 1:
         log.info("任务正在处理中,不进行心跳检测,%s", account)
         return
+    device = u2.connect(addr)
     try:
-        log.info("心跳检测,number:%s", number)
-        devices_addr = '127.0.0.1:' + port
-        device = u2.connect(devices_addr)
+
         job_status = db.get_job_status_by_account(account)
         if job_status['run_status'] == 1:
             log.info("任务正在处理中,不进行心跳检测,%s", account)
@@ -403,7 +400,8 @@ def heart(number, account, port):
         log.info("app运行正常")
     except Exception as e:
         log.info("心跳监控APP出现异常,重启", e)
-        stop_memu(number)
+        restart_app_func(device)
+        # stop_memu(number)
 
 
 @func_set_timeout(300)
@@ -427,12 +425,14 @@ def run_item(device, ip, port, account, item, random_policy, number, logged_acco
             # 账号失效了就暂时不用了,这次请求直接结束
             return
         else:
+            db.insert_account_log(account, ip, port, '-1', "账号出现验证码")
             log.info("手机上出现验证")
             time.sleep(100)
     content = get_item_detail(devices=device, item_id=item, account=logged_account, index=number,
                               conf=random_policy, ip=ip, port=port, phone=phone)
     if content is not None and len(content) > 0:
         db.update_info(content, item, task_id, task_label)
+        db.update_account_info_date(account)
         db.insert_account_log(account, ip, port, '1', "账号获取商品详情")
     time.sleep(0.3)
     go_back(device, 3)
@@ -445,7 +445,7 @@ def run_item(device, ip, port, account, item, random_policy, number, logged_acco
 
 
 def run_phone(devices_addr, number, account, products, task_id, task_label, port):
-    log.info("本次手机%s抓取商品%s",devices_addr,products)
+    log.info("本次手机%s抓取商品%s", devices_addr, products)
     ip = get_host_ip()
     job_status = db.get_job_status(ip, port)
     if job_status['run_status'] == 1:
@@ -465,6 +465,8 @@ def run_phone(devices_addr, number, account, products, task_id, task_label, port
         db.update_job_status(ip, port, 0)
 
 
+
+
 def run(devices_addr, number, account, products, task_id, task_label, ip, port, phone=False):
     try:
         global main_end
@@ -479,7 +481,7 @@ def run(devices_addr, number, account, products, task_id, task_label, ip, port, 
         time.sleep(1)
         device.app_start("com.taobao.taobao")
         # 开启跳过广告线程
-        threading.Thread(target=skip, args=(device,)).start()
+        #threading.Thread(target=skip, args=(device,)).start()
         logged_account = get_memu_login_account(ip, port)
         log.info("当前模拟器登录的账号是:%s", logged_account)
         time.sleep(0.3)
@@ -496,11 +498,17 @@ def run(devices_addr, number, account, products, task_id, task_label, ip, port, 
             if 'com.taobao.taobao' not in running:
                 device.app_start("com.taobao.taobao")
         for item in products:
+            # 异常退出自重启
+            running = device.app_list_running()
+            if 'com.taobao.taobao' not in running:
+                device.app_start("com.taobao.taobao")
             run_item(device, ip, port, account, item, random_policy, number, logged_account, task_id, task_label, phone)
 
     except Exception as e:
         log.info(traceback.format_exc())
+        db.update_job_status(ip, port, '0')
         # 出现异常终止操作 并终止app
         if phone is False:
             stop_memu(number)
     main_end = True
+    db.update_job_status(ip, port, '0')
