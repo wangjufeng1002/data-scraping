@@ -5,7 +5,7 @@ from flask import Flask, request, send_from_directory
 from flask_cors import *
 import json
 import app as cmt
-
+import searchBook
 app = Flask(__name__)
 CORS(app, supports_credentials=True)
 
@@ -67,6 +67,15 @@ def heart():
 def test():
     return "success"
 
+
+@app.route("/search", methods=["GET"])
+def async_search():
+    get_data = request.get_data()
+    json_obj = json.loads(get_data)
+    words = json_obj.get("words")
+    shop = json_obj.get("shop")
+    threading.Thread(target=searchBook.search_api,args=(words,shop)).start()
+    return "1"
 
 if __name__ == '__main__':
     app.run(debug=True, port=10001, host="0.0.0.0")
