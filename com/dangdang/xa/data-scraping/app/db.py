@@ -79,25 +79,35 @@ def insert_account_log(account, ip, port, action, remark):
 
 def get_cookies():
     with UsingMysql() as um:
-        sql = "select * from cookies"
+        sql = "select * from cookies where `status`=1  order  by update_time asc "
         um.cursor.execute(sql)
-        return um.cursor.fetchone()
+        return um.cursor.fetchall()
+
+
+def update_cookies_status(status, id):
+    with UsingMysql() as um:
+        sql = "update cookies set update_time=now(),`status`='{}' where id='{}'".format(status,id)
+        um.cursor.execute(sql)
+        return um.cursor.fetchall()
 
 
 def get_url_by_shop_name(shop_name):
     with UsingMysql() as um:
-        sql ="select search_url from shop_url where shop_name='{}'".format(shop_name)
+        sql = "select search_url from shop_url where shop_name='{}'".format(shop_name)
         um.cursor.execute(sql)
         return um.cursor.fetchone()
+
 
 def get_book_url(id):
     with UsingMysql() as um:
-        sql="select item_id from item_url where item_id='{}'".format(id)
+        sql = "select item_id from item_url where item_id='{}'".format(id)
         um.cursor.execute(sql)
         return um.cursor.fetchone()
 
-def insert_book_url(url,id,shop):
+
+def insert_book_url(url, id, shop):
     with UsingMysql()as um:
-        sql = "insert into item_url(`item_url`,`item_id`,`shop_name`,`create_time`,`update_time`,`is_success`)value ('{}','{}','{}',now(),now(),0)".format(url,id,shop)
+        sql = "insert into item_url(`item_url`,`item_id`,`shop_name`,`create_time`,`update_time`,`is_success`)value ('{}','{}','{}',now(),now(),0)".format(
+            url, id, shop)
         um.cursor.execute(sql)
         um._conn.commit()
