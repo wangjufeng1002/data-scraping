@@ -68,7 +68,7 @@ def test():
     return "success"
 
 
-@app.route("/search", methods=["GET"])
+@app.route("/search", methods=["POST"])
 def async_search():
     get_data = request.get_data()
     json_obj = json.loads(get_data)
