@@ -34,8 +34,12 @@ def parse_html(html_body):
 def search_api(words, shop_name):
     log.info("开始在店铺:%s搜索%s", shop_name, words)
     cookies = db.get_cookies()
+    if len(cookies) == 0:
+        return
     cookie = cookies[random.randint(0, len(cookies) - 1)]
-    #更新一下最后修改时间
+    # 更新一下最后修改时间
+    if cookie['status'] == -1:
+        return
     db.update_cookies_status(1, cookie['id'])
     log.info("获取到的cookie是%s", cookie)
     url = db.get_url_by_shop_name(shop_name)['search_url']
@@ -46,7 +50,7 @@ def search_api(words, shop_name):
     data = parse_html(html)
     if len(data) == 0:
         log.info("cookies 失效,", cookie)
-        db.update_cookies_status(-1,cookie['id'])
+        db.update_cookies_status(-1, cookie['id'])
         return
     for item in data:
         log.info("item:%s", item)
