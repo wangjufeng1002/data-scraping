@@ -238,9 +238,15 @@ def get_item_detail(item_id, devices, account, index, conf, ip, port, phone, sku
 def get_item_sku_detail(devices):
     devices.xpath("选择").click()
     time.sleep(0.2)
-    content = 'sku价格('
-    page_item = devices.xpath("@com.taobao.taobao:id/header").child('//android.widget.TextView').all()[1]
-    return content + page_item.text+")"
+    content = ''
+    page_item = devices.xpath("@com.taobao.taobao:id/header").child('//android.widget.TextView').all()
+    for item in page_item:
+        if item.text != '':
+            content += item.text
+    if '券后' in content:
+        return 'sku价格（' + page_item[4].text+")"
+    else:
+        return 'sku价格（' + page_item[1].text + ")"
 
 
 def login(devices, account, password):
