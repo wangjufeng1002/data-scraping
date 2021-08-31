@@ -25,7 +25,7 @@ def init(hostParam, logFile):
     else:
         host=hostParam
     logUtils = Logger(filename=logFile, level='info')
-    conn = pymysql.connect(host=host, port=3306, user="root", password="123456", database="data-reptile",
+    conn = pymysql.connect(host=host, port=3306, user="root", password="123456", database="data-scraping",
                            charset="utf8")
 
 
@@ -71,7 +71,7 @@ def getHeaders(account):
 def insertDetailPrice(book):
     conn = POOL.connection()
     cursor = conn.cursor()
-    sql = "INSERT INTO `data-reptile`.`book`" \
+    sql = "INSERT INTO `data-scraping`.`book`" \
           " ( `tm_id`, `book_name`, `book_isbn`, `book_auther`, `book_price`, `book_fix_price`, `book_prom_price`, `book_prom_price_desc`, " \
           "`book_active_desc`, `shop_name`,`book_prom_type`,`book_active_start_time`,`book_active_end_time`,`category`,`book_sales`,`book_press`) " \
           "VALUES ( '%s', '%s', '%s', '%s', '%s', '%s', '%s', '%s', '%s', '%s', '%s', '%s', '%s','%s','%s','%s') " \
@@ -114,10 +114,10 @@ def insertDetailPrice(book):
 
 
 def insertIp(ip):
-    conn = pymysql.connect(host=host, port=3306, user="root", password="123456", database="data-reptile",
+    conn = pymysql.connect(host=host, port=3306, user="root", password="123456", database="data-scraping",
                            charset="utf8")
     cursor = conn.cursor()
-    sql = "INSERT INTO `data-reptile`.`ip_pool` (`ip`) VALUES ('%s') ON DUPLICATE KEY UPDATE ip = '%s'" % (ip, ip)
+    sql = "INSERT INTO `data-scraping`.`ip_pool` (`ip`) VALUES ('%s') ON DUPLICATE KEY UPDATE ip = '%s'" % (ip, ip)
     try:
         cursor.execute(sql)
         conn.commit()
@@ -129,9 +129,9 @@ def insertIp(ip):
 
 
 def insertIps(ips):
-    conn = pymysql.connect(host=host, port=3306, user="root", password="123456", database="data-reptile",
+    conn = pymysql.connect(host=host, port=3306, user="root", password="123456", database="data-scraping",
                            charset="utf8")
-    sql = "INSERT INTO `data-reptile`.`ip_pool` (`ip`) VALUES ('%s') ON DUPLICATE KEY UPDATE ip = ip"
+    sql = "INSERT INTO `data-scraping`.`ip_pool` (`ip`) VALUES ('%s') ON DUPLICATE KEY UPDATE ip = ip"
     cursor = conn.cursor()
     for ip in ips:
         exeSql = sql % ip
@@ -145,7 +145,7 @@ def insertIps(ips):
 
 
 def getIpList():
-    conn = pymysql.connect(host=host, port=3306, user="root", password="123456", database="data-reptile",
+    conn = pymysql.connect(host=host, port=3306, user="root", password="123456", database="data-scraping",
                            charset="utf8")
     cursor = conn.cursor()
     sql = "select ip from `ip_pool`"
@@ -166,10 +166,10 @@ def getIpList():
 
 
 def insertItemUrl(itemUrls):
-    conn = pymysql.connect(host=host, port=3306, user="root", password="123456", database="data-reptile",
+    conn = pymysql.connect(host=host, port=3306, user="root", password="123456", database="data-scraping",
                            charset="utf8")
     cursor = conn.cursor()
-    sql = "INSERT INTO `data-reptile`.`item_url` ( `item_id`, `item_url`, `shop_name`,`category`) VALUES ( '%s', '%s', '%s','%s')" \
+    sql = "INSERT INTO `data-scraping`.`item_url` ( `item_id`, `item_url`, `shop_name`,`category`) VALUES ( '%s', '%s', '%s','%s')" \
           " ON DUPLICATE KEY UPDATE item_id = '%s' ,item_url = '%s',shop_name = '%s',category = '%s' "
 
     for itemUrl in itemUrls:
@@ -187,14 +187,14 @@ def insertItemUrl(itemUrls):
     cursor.close()
 
 
-def getItemUrl(category ,page_size):
+def getItemUrl(category ,page_size,startId,endId):
     conn = POOL.connection()
     cursor = conn.cursor()
     try:
         if page_size is None:
             page_size = 1000
-        sql = "select item_id as itemId,item_url as itemUrl,shop_name as shopName ,category from `item_url` where  category='%s' and is_success !=1 and is_success !=100 order by update_time ASC limit %d"
-        e_sql = sql % (category, page_size)
+        sql = "select item_id as itemId,item_url as itemUrl,shop_name as shopName ,category from `item_url` where  category='%s' and id >='%s' and id <='%s' and is_success !=1 and is_success !=100 order by update_time ASC limit %d"
+        e_sql = sql % (category,str(startId), str(endId),page_size)
         execute = cursor.execute(e_sql)
         if execute <= 0:
             return None
@@ -260,7 +260,7 @@ def updateSuccessFlag(flag, itemId):
 
 
 def getPageIndex(page, shopId, isSuccess):
-    conn = pymysql.connect(host=host, port=3306, user="root", password="123456", database="data-reptile",
+    conn = pymysql.connect(host=host, port=3306, user="root", password="123456", database="data-scraping",
                            charset="utf8")
     cursor = conn.cursor()
     sql = "select page_index  from `page_record` where  page_index = %d and shop_id = %d and is_success = %d"
@@ -276,7 +276,7 @@ def getPageIndex(page, shopId, isSuccess):
 
 
 def getPageRecords(shopId, isSuccess, category):
-    conn = pymysql.connect(host=host, port=3306, user="root", password="123456", database="data-reptile",
+    conn = pymysql.connect(host=host, port=3306, user="root", password="123456", database="data-scraping",
                            charset="utf8")
     cursor = conn.cursor()
     sql = "select page_index  from `page_record` where  shop_id = %d and is_success = %d and category ='%s'"
@@ -292,7 +292,7 @@ def getPageRecords(shopId, isSuccess, category):
 
 
 def updatePageRecords(page, shopId, isSuccess, category):
-    conn = pymysql.connect(host=host, port=3306, user="root", password="123456", database="data-reptile",
+    conn = pymysql.connect(host=host, port=3306, user="root", password="123456", database="data-scraping",
                            charset="utf8")
     cursor = conn.cursor()
     sql = "update `page_record` set is_success = %d  where page_index = %d and shop_id = %d and category='%s'"
@@ -302,7 +302,7 @@ def updatePageRecords(page, shopId, isSuccess, category):
 
 
 def updatePageRecordsBatch(page, shopId, isSuccess, category):
-    conn = pymysql.connect(host=host, port=3306, user="root", password="123456", database="data-reptile",
+    conn = pymysql.connect(host=host, port=3306, user="root", password="123456", database="data-scraping",
                            charset="utf8")
     cursor = conn.cursor()
     sql = "update `page_record` set is_success = %d  where page_index = %d and shop_id = %d and category='%s'"
@@ -315,7 +315,7 @@ def updatePageRecordsBatch(page, shopId, isSuccess, category):
 
 
 def insertPageIndex(page, shopId, isSuccess, category):
-    conn = pymysql.connect(host=host, port=3306, user="root", password="123456", database="data-reptile",
+    conn = pymysql.connect(host=host, port=3306, user="root", password="123456", database="data-scraping",
                            charset="utf8")
     sql = "insert into `page_record`(page_index,shop_id,is_success,category) values(%d,%d,%d,'%s')"
     cursor = conn.cursor()
@@ -325,7 +325,7 @@ def insertPageIndex(page, shopId, isSuccess, category):
 
 
 def getNotDealCategory():
-    conn = pymysql.connect(host=host, port=3306, user="root", password="123456", database="data-reptile",
+    conn = pymysql.connect(host=host, port=3306, user="root", password="123456", database="data-scraping",
                            charset="utf8")
     sql = "select DISTINCT category  as category from item_url where is_success !=1 and  category is not NULL"
     cursor = conn.cursor()
@@ -341,7 +341,7 @@ def getNotDealCategory():
 
 
 def getNotDealCategoryByBook():
-    conn = pymysql.connect(host=host, port=3306, user="root", password="123456", database="data-reptile",
+    conn = pymysql.connect(host=host, port=3306, user="root", password="123456", database="data-scraping",
                            charset="utf8")
     # sql = "select DISTINCT category  as category from book where (book_prom_type is null or book_prom_type = '无' or book_prom_type = 'NULL') and   category is not NULL"
     sql = "select DISTINCT category  as category from book where is_success =0  and   category is not NULL"
@@ -356,11 +356,14 @@ def getNotDealCategoryByBook():
             print(e)
     return categorys
 
-def getNotDealCategoryByItemUrl():
-    conn = pymysql.connect(host=host, port=3306, user="root", password="123456", database="data-reptile",
+def getNotDealCategoryByItemUrl(startId,endId):
+    conn = pymysql.connect(host=host, port=3306, user="root", password="123456", database="data-scraping",
                            charset="utf8")
     # sql = "select DISTINCT category  as category from book where (book_prom_type is null or book_prom_type = '无' or book_prom_type = 'NULL') and   category is not NULL"
-    sql = "select DISTINCT category  as category from item_url where is_success <=0 and  category is not NULL"
+    if id is not None:
+        sql = "select DISTINCT category  as category from item_url where is_success <=0 and  category is not NULL and id >= {startId} and id <= {endId}".format(startId=startId,endId=endId)
+    else:
+        sql = "select DISTINCT category  as category from item_url where is_success <=0 and  category is not NULL"
     cursor = conn.cursor()
     cursor.execute(sql)
     fetchall = cursor.fetchall()
@@ -374,7 +377,7 @@ def getNotDealCategoryByItemUrl():
 
 
 def getBookByNotHavePromo(category, size):
-    conn = pymysql.connect(host=host, port=3306, user="root", password="123456", database="data-reptile",
+    conn = pymysql.connect(host=host, port=3306, user="root", password="123456", database="data-scraping",
                            charset="utf8")
     sql = '''select tm_id as tmId,
 			 book_name as name,
@@ -421,7 +424,7 @@ def getBookByNotHavePromo(category, size):
 
 
 def getItemUrlByShopName(shopName, size):
-    conn = pymysql.connect(host=host, port=3306, user="root", password="123456", database="data-reptile",
+    conn = pymysql.connect(host=host, port=3306, user="root", password="123456", database="data-scraping",
                            charset="utf8")
     cursor = conn.cursor()
     sql = "select item_id as itemId,item_url as itemUrl,shop_name as shopName ,category from `item_url` where  shop_name='%s' and is_success !=1 and is_success !=100 order by update_time ASC limit %d"

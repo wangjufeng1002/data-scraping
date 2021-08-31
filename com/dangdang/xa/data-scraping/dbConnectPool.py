@@ -34,7 +34,7 @@ POOL = PooledDB(
     # 数据库密码
     password='123456',
     # 数据库名
-    database='data-reptile',
+    database='data-scraping',
     # 字符编码
     charset='utf8'
 )

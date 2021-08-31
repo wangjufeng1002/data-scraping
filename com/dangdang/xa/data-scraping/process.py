@@ -40,7 +40,7 @@ def disturbUrl(header, ip, logUtils):
     except Exception as e:
         logUtils.logger.info("线程{thread} 执行其他请求发生异常".format(thread=threading.current_thread().getName()))
         proxyIp = getIpProxyPool.get_proxy_from_redis()['proxy_detail']['ip']
-        proxy = {'http:': "http://" + proxyIp, 'https:': "https://" + proxyIp}
+        proxy = {'http': "http://" + proxyIp, 'https': "https://" + proxyIp}
         try:
             for (key, value) in disturb_urls[0].items():
                 if value is not None and len(value) != 0:
@@ -73,7 +73,7 @@ def loads_jsonp(_jsonp):
 
 # 实际解析进本信息方法
 def processDefaultBookData(itemUrlEntity, header, ip, logUtils):
-    proxy = {'http:': "http://" + ip, 'https:': "https://" + ip}
+    proxy = {'http': "http://" + ip, 'https': "https://" + ip}
     session = HTMLSession()
     detailResponse = session.get(itemUrlEntity.itemUrl, proxies=proxy)
     detailHtmlSoup = BeautifulSoup(detailResponse.text.encode("utf-8"), features='html.parser')
@@ -93,6 +93,7 @@ def processDefaultBookData(itemUrlEntity, header, ip, logUtils):
 
     book.setPrice(defaultPrice)
     itmDescUl = detailHtmlSoup.find_all(name="ul", attrs={"id": "J_AttrUL"})
+    logUtils.logger.info("{itemId} {itmDescUl}".format(itemId=itemId,itmDescUl=itmDescUl))
     if itmDescUl is None or len(itmDescUl) == 0:
         return
     contents = itmDescUl[0].contents
@@ -345,6 +346,7 @@ def processBookDefaultInfo(category, header, logUtils):
             try:
                 book,status = processDefaultBookData(itemUrls[index], header, proxyIp, logUtils)
                 dataReptiledb.updateSuccessFlag(flag=1, itemId=itemUrls[index].itemId)
+                dataReptiledb.updateBookSuccessFlag(flag=1,itemId=itemUrls[index].itemId)
                 #disturbUrl(header, proxyIp, logUtils)
             except Exception as  e:
                 errCnt+=1

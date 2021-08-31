@@ -83,10 +83,10 @@ def auto_process(flag):
     logUtils = Logger(filename='./logs/detail-current.log', level='info')
     dataReptiledb.init(None, "./logs/db-current.log")
     categorys = []
-    if flag == 1:
+    if flag == 1 or flag == '1' or flag == 4 or flag == '4':
         # 从book 表中查
         categorys = dataReptiledb.getNotDealCategoryByBook()
-    if flag == 2 or flag == 3:
+    if flag == 2 or flag == 3 or flag == '2' or flag =='3':
         # 从item_url 中查
         categorys = dataReptiledb.getNotDealCategoryByItemUrl()
     # 查询 cookies
@@ -95,11 +95,11 @@ def auto_process(flag):
         logUtils.logger.error("未找到需要处理的分类")
         raise Exception("未找到需要处理的分类")
     # 开始处理
-    if flag == 1:
+    if flag == 1 or flag == '1':
         processPromo(headers=headers, categorys=categorys, logUtils=logUtils)
-    if flag == 2:
+    if flag == 2 or flag == '2':
         processAll(headers=headers, categorys=categorys, logUtils=logUtils)
-    if flag == 3:
+    if flag == 3 or flag == '3' or flag == 4 or flag == '4':
         processDefaultInfo(headers=headers, categorys=categorys, logUtils=logUtils)
     while True:
         try:
@@ -157,5 +157,5 @@ if __name__ == '__main__':
 
     # 3.从item_url 查出未处理的Url,只处理基本信息
     #auto_process(int(active))
-    auto_process(3)
+    auto_process(active)
     # 自动
