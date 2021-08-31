@@ -2,10 +2,14 @@ from pymysql_comm import UsingMysql
 import datetime
 
 
-def update_info(origin_text, item_id, task_id, task_label):
+def update_info(origin_text, item_id, task_id, task_label,sku):
     with UsingMysql()as um:
-        sql = "update product_record set  original_info='{}',`status`=2 where item_id='{}' and task_id='{}' and task_label='{}'".format(
-            origin_text, item_id, task_id, task_label)
+        if sku is not None:
+            sql = "update product_record set  original_info='{}',`status`=2 where item_id='{}'and sku_id='{}' and task_id='{}' and task_label='{}'".format(
+                origin_text, item_id,sku, task_id, task_label)
+        else:
+            sql = "update product_record set  original_info='{}',`status`=2 where item_id='{}' and task_id='{}' and task_label='{}'".format(
+                origin_text, item_id, task_id, task_label)
         um.cursor.execute(sql)
         um._conn.commit()
 
