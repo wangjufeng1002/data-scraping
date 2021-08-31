@@ -1,7 +1,7 @@
 import json
 import random
 import traceback
-
+from decimal import Decimal
 import uiautomator2 as u2
 import time
 import subprocess
@@ -206,8 +206,8 @@ def random_switch_tabs(devices, weight, ip, port, account):
         time.sleep(1)
 
 
-def get_item_detail(item_id, devices, account, index, conf, ip, port, phone):
-    exist = devices.xpath("商品过期不存在").wait(timeout=2)
+def get_item_detail(item_id, devices, account, index, conf, ip, port, phone, sku):
+    exist = devices.xpath("商品过期不存在").wait(timeout=1)
     if exist is not None:
         log.info("商品%s过期或不存在", item_id)
         return "商品%s过期或不存在".format(item_id)
@@ -224,12 +224,23 @@ def get_item_detail(item_id, devices, account, index, conf, ip, port, phone):
     for item in page_item:
         if item.text != '':
             content += item.text
-    log.info("进程%s账号%s,获取商品%s数据:%s", str(index), account, item_id, content)
     time.sleep(0.3)
+    if sku is not None:
+        sku_info = get_item_sku_detail(devices)
+        content += sku_info
+    log.info("进程%s账号%s,获取商品%s数据:%s", str(index), account, item_id, content)
     # random_comment(devices, conf['comment'], ip, port, account)
 
     # time.sleep(1)
     return content
+
+
+def get_item_sku_detail(devices):
+    devices.xpath("选择").click()
+    time.sleep(0.2)
+    content = 'sku价格('
+    page_item = devices.xpath("@com.taobao.taobao:id/header").child('//android.widget.TextView').all()[1]
+    return content + page_item.text+")"
 
 
 def login(devices, account, password):
@@ -369,6 +380,13 @@ def process_data(account, passwd, products, port, task_id, task_label):
         db.update_job_status(ip, port, '0')
 
 
+def go_back_home(device):
+    page = device.xpath("首页").wait(timeout=0.1)
+    while page is None:
+        go_back(device, 1)
+        page = device.xpath("首页").wait(timeout=0.1)
+
+
 def go_home(device):
     setup_page = device.xpath("地区设置").wait(timeout=2)
     if setup_page is not None:
@@ -405,13 +423,16 @@ def heart(number, account, port, addr):
 
 
 @func_set_timeout(300)
-def run_item(device, ip, port, account, item, random_policy, number, logged_account, task_id, task_label, phone):
+def run_item(device, ip, port, account, item, random_policy, number, logged_account, task_id, task_label, phone, sku):
     if phone is False:
         random_search(device, random_policy['search'], ip, port, account)
     if item.isdigit() is not True:
         log.info("商品id:%s不正确", str(item))
         return
-    url = 'http://detail.tmall.com/item.htm?id=' + str(item)
+    if sku is not None:
+        url = 'http://detail.tmall.com/item.htm?id=' + str(item) + '&skuId=' + str(sku)
+    else:
+        url = 'http://detail.tmall.com/item.htm?id=' + str(item)
     click_search(device, url, random_policy, ip, port, account, phone)
     time.sleep(0.3)
     valid_button = valid(device)
@@ -429,13 +450,13 @@ def run_item(device, ip, port, account, item, random_policy, number, logged_acco
             log.info("手机上出现验证")
             time.sleep(100)
     content = get_item_detail(devices=device, item_id=item, account=logged_account, index=number,
-                              conf=random_policy, ip=ip, port=port, phone=phone)
+                              conf=random_policy, ip=ip, port=port, phone=phone, sku=sku)
     if content is not None and len(content) > 0:
-        db.update_info(content, item, task_id, task_label)
+        db.update_info(content, item, task_id, task_label,sku)
         db.update_account_info_date(account)
         db.insert_account_log(account, ip, port, '1', "账号获取商品详情")
     time.sleep(0.3)
-    go_back(device, 3)
+    go_back_home(device)
     start = random_policy['timeSleep']['begin']
     end = random_policy['timeSleep']['end']
     sleep_time = random.randint(int(start), int(end))
@@ -465,8 +486,6 @@ def run_phone(devices_addr, number, account, products, task_id, task_label, port
         db.update_job_status(ip, port, 0)
 
 
-
-
 def run(devices_addr, number, account, products, task_id, task_label, ip, port, phone=False):
     try:
         global main_end
@@ -481,7 +500,7 @@ def run(devices_addr, number, account, products, task_id, task_label, ip, port, 
         time.sleep(1)
         device.app_start("com.taobao.taobao")
         # 开启跳过广告线程
-        #threading.Thread(target=skip, args=(device,)).start()
+        # threading.Thread(target=skip, args=(device,)).start()
         logged_account = get_memu_login_account(ip, port)
         log.info("当前模拟器登录的账号是:%s", logged_account)
         time.sleep(0.3)
@@ -502,8 +521,14 @@ def run(devices_addr, number, account, products, task_id, task_label, ip, port, 
             running = device.app_list_running()
             if 'com.taobao.taobao' not in running:
                 device.app_start("com.taobao.taobao")
-            run_item(device, ip, port, account, item, random_policy, number, logged_account, task_id, task_label, phone)
-
+            if '-' in item:
+                # 带有skuid，
+                item_ids = str.split(item, '-')
+                run_item(device, ip, port, account, item_ids[0], random_policy, number, logged_account, task_id,
+                         task_label, phone, item_ids[1])
+            else:
+                run_item(device, ip, port, account, item[0], random_policy, number, logged_account, task_id, task_label,
+                         phone, None)
     except Exception as e:
         log.info(traceback.format_exc())
         db.update_job_status(ip, port, '0')
@@ -512,3 +537,8 @@ def run(devices_addr, number, account, products, task_id, task_label, ip, port, 
             stop_memu(number)
     main_end = True
     db.update_job_status(ip, port, '0')
+
+
+if __name__ == '__main__':
+    ids = str.split("123121231", '-')
+    print(ids)
