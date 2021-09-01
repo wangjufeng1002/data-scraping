@@ -244,9 +244,9 @@ def get_item_sku_detail(devices):
         if item.text != '':
             content += item.text
     if '券后' in content:
-        return 'sku价格（' + page_item[4].text+")"
+        return 'sku价格(' + page_item[4].text+")"
     else:
-        return 'sku价格（' + page_item[1].text + ")"
+        return 'sku价格(' + page_item[1].text + ")"
 
 
 def login(devices, account, password):
