@@ -533,7 +533,7 @@ def run(devices_addr, number, account, products, task_id, task_label, ip, port, 
                 run_item(device, ip, port, account, item_ids[0], random_policy, number, logged_account, task_id,
                          task_label, phone, item_ids[1])
             else:
-                run_item(device, ip, port, account, item[0], random_policy, number, logged_account, task_id, task_label,
+                run_item(device, ip, port, account, item, random_policy, number, logged_account, task_id, task_label,
                          phone, None)
     except Exception as e:
         log.info(traceback.format_exc())
