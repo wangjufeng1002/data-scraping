@@ -226,6 +226,7 @@ def get_item_detail(item_id, devices, account, index, conf, ip, port, phone, sku
             content += item.text
     time.sleep(0.3)
     if sku is not None:
+        devices.swipe_ext("up", scale=0.5)
         sku_info = get_item_sku_detail(devices)
         content += sku_info
     log.info("进程%s账号%s,获取商品%s数据:%s", str(index), account, item_id, content)
@@ -237,12 +238,13 @@ def get_item_detail(item_id, devices, account, index, conf, ip, port, phone, sku
 
 def get_item_sku_detail(devices):
     devices.xpath("选择").click()
-    time.sleep(0.2)
+    time.sleep(1)
     content = ''
     page_item = devices.xpath("@com.taobao.taobao:id/header").child('//android.widget.TextView').all()
     for item in page_item:
-        if item.text != '':
+        if item.text !=  '':
             content += item.text
+    time.sleep(0.3)
     if '券后' in content:
         return 'sku价格(' + page_item[4].text+")"
     else:

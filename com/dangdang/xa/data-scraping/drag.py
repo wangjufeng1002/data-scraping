@@ -2,6 +2,8 @@
 
 import time
 import random
+import traceback
+
 import pyautogui
 import pyautogui as pag
 import requests
@@ -71,11 +73,11 @@ def my_drag(x, ratio, timed_ratio=1):
 
 def drag():
     timed = random.uniform(0.20, 0.35)
-    user = get_user()
+    #user = get_user()
 
     tweenname, mytween = tween.get_tween()
-    logging.info("user:" + str(user) + "tween:" + str(tweenname) + "timed:" + str(timed))
-    print("user:" + str(user) + "tween:" + str(tweenname) + "timed:" + str(timed))
+    #logging.info("user:" + str(user) + "tween:" + str(tweenname) + "timed:" + str(timed))
+    #print("user:" + str(user) + "tween:" + str(tweenname) + "timed:" + str(timed))
     pyautogui.dragRel(xOffset=1100 + random.randint(-100, 500), yOffset=random.randint(-20, 20), duration=timed,
                       button='left',
                       tween=mytween)
@@ -121,22 +123,11 @@ def get_pos():
 
 
 def process():
-    account = get_user()['account']
-    res = requests.get("http://localhost:10001/getFailtimes?account=" + account)
-    count=res.json()[0]
     while get_drag_pos() is not None:
-        account = 'superamayamay'
-        res = requests.get("http://localhost:10001/getFailtimes?account=" + account)
         noise_remove()
-        time.sleep(0.1 * count)
         move_to_start()
-        if count % 3 == 0:
-            drag()
-        else:
-            if count % 3 == 1:
-                my_drag(800, account)
-            else:
-                my_drag_slow(800, account)
+        drag()
+        pag.press('f5')
 
 
 
@@ -144,4 +135,10 @@ def process():
 # 895,733
 
 if __name__ == '__main__':
-    process()
+    while True:
+        try:
+            process()
+        except Exception as e:
+            print(traceback.format_exc())
+        time.sleep(1)
+

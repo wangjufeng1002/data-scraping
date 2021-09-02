@@ -52,7 +52,7 @@ def jsonp(str):
     return detailUrl
 
 
-def write_db(detailUrl, shopName, category,coon):
+def write_db(detailUrl, shopName, category):
 
     item_urls = []
     for url in detailUrl:
@@ -61,10 +61,10 @@ def write_db(detailUrl, shopName, category,coon):
             item_url = "http:" + url
             itemUrl = ItemUrl(itemId=item_id, itemUrl=item_url, shopName=shopName, category=category)
             item_urls.append(itemUrl)
-    with open("res.txt",'a+',encoding='utf-8') as files:
-        for item in item_urls:
-            files.write(item.toString()+"\n")
-    #dataReptiledb.insertItemUrl(item_urls,coon)
+    # with open("res.txt",'a+',encoding='utf-8') as files:
+    #     for item in item_urls:
+    #         files.write(item.toString()+"\n")
+    dataReptiledb.insertItemUrl(item_urls)
 
 
 allpath = []
@@ -84,7 +84,7 @@ def getallfile(path):
             allname.append(file)
     return allpath, allname
 
-def processTxtUrl(path,category,coon):
+def processTxtUrl(path,category):
     file = open(path, encoding='utf-8')
     read = file.read().replace("undefined", "")
     soup = BeautifulSoup(read, features='html.parser')
@@ -94,15 +94,14 @@ def processTxtUrl(path,category,coon):
         detail_url = el.attrs['href']
         detailUrl.append(detail_url)
     detailUrl = list(set(detailUrl))
-    write_db(detailUrl=detailUrl, shopName="新华文轩网络书店", category=category,coon=coon)
+    write_db(detailUrl=detailUrl, shopName="博库图书专营店", category=category)
 
 
 if __name__ == '__main__':
-    coon=pymysql.connect(host='192.168.47.210', port=3306, user="root", password="123456", database="data-reptile",
-                    charset="utf8")
 
-    rootdir='D:\\1'
+
+    rootdir='D:\\bk'
     files,names=getallfile(rootdir)
     for file in files:
         print(file)
-        processTxtUrl(file,"null",coon)
+        processTxtUrl(file,"null")

@@ -10,7 +10,7 @@ bookLock = threading.Lock()
 itemUrlLock = threading.Lock()
 headerLock = threading.Lock()
 
-host = None
+host = '192.168.47.210'
 logUtils = None
 conn = None
 defaultHost = "192.168.47.210"
@@ -166,10 +166,10 @@ def getIpList():
 
 
 def insertItemUrl(itemUrls):
-    conn = pymysql.connect(host=host, port=3306, user="root", password="123456", database="data-reptile",
+    conn = pymysql.connect(host=host, port=3306, user="root", password="123456", database="data-scraping",
                            charset="utf8")
     cursor = conn.cursor()
-    sql = "INSERT INTO `data-reptile`.`item_url` ( `item_id`, `item_url`, `shop_name`,`category`) VALUES ( '%s', '%s', '%s','%s')" \
+    sql = "INSERT INTO `data-scraping`.`item_url` ( `item_id`, `item_url`, `shop_name`,`category`) VALUES ( '%s', '%s', '%s','%s')" \
           " ON DUPLICATE KEY UPDATE item_id = '%s' ,item_url = '%s',shop_name = '%s',category = '%s' "
 
     for itemUrl in itemUrls:
@@ -178,12 +178,8 @@ def insertItemUrl(itemUrls):
             itemUrl.shopName,
             itemUrl.category
         )
-        try:
-            cursor.execute(exeSql)
-            conn.commit()
-        except Exception as e:
-            print("数据库插入 item_url 发生异常 {}", e)
-            conn.rollback()
+        cursor.execute(exeSql)
+    conn.commit()
     cursor.close()
 
 
