@@ -547,6 +547,3 @@ def run(devices_addr, number, account, products, task_id, task_label, ip, port, 
     db.update_job_status(ip, port, '0')
 
 
-if __name__ == '__main__':
-    ids = str.split("123121231", '-')
-    print(ids)
