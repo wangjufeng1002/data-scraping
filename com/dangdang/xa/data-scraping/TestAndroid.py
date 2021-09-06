@@ -48,7 +48,7 @@ def taobao():
     #d(re)
     #print(d_app_list)
 def taobao2():
-    d = u2.connect("127.0.0.1:21503")
+    d = u2.connect("127.0.0.1:5037")
     #d.press("home")
     #d.app_start("com.taobao.taobao"
     d.click(0.333, 0.054)

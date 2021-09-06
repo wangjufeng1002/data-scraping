@@ -26,15 +26,15 @@ POOL = PooledDB(
     # 2 = when a cursor is created, 4 = when a query is executed, 7 = always
     ping=0,
     # 主机地址
-    host='192.168.47.210',
+    host='10.7.40.197',
     # 端口
-    port=3306,
+    port=9174,
     # 数据库用户名
-    user='root',
+    user='data_scraping_rw',
     # 数据库密码
-    password='123456',
+    password='my@#6VIDwc1vRW',
     # 数据库名
-    database='data-scraping',
+    database='data_scraping',
     # 字符编码
     charset='utf8'
 )

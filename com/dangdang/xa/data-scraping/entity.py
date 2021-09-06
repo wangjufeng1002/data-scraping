@@ -12,7 +12,7 @@ class Book:
                  activeDesc,
                  activeStartTime,
                  activeEndTime,
-                 shopName, category, sales,press):
+                 shopName, category, sales,press,skuId,skuName):
         self.tmId = tmId
         self.name = name
         self.isbn = isbn
@@ -29,7 +29,8 @@ class Book:
         self.category = category
         self.sales = sales
         self.press= press
-
+        self.skuId = skuId
+        self.skuName = skuName
     def setSales(self, sales):
         self.sales = sales
 
@@ -163,6 +164,18 @@ class Book:
         if self.press is None or self.press == 'None' or self.press == 'NULL':
             return '无'
         return self.press
+    def setSkuId(self,skuId):
+        self.skuId =skuId
+    def setSkuName(self,skuName):
+        self.skuName =skuName
+    def getSkuId(self):
+        if self.skuId is None:
+            return ""
+        return self.skuId
+    def getSkuName(self):
+        if self.skuName is None:
+            return ""
+        return self.skuName
 
     def toDESCString(self):
         result = []
@@ -273,9 +286,22 @@ class Header:
         self.account = account
         self.password = password
         self.status = status
+class SkuInfo:
+    def __init__(self,spu_id,sku_id,price,name):
+        self.spu_id = spu_id
+        self.sku_id = sku_id
+        self.price = price
+        self.name = name
 
+    def __setattr__(self, name: str, value: Any) -> None:
+        super().__setattr__(name, value)
+
+    def __getattribute__(self, name: str) -> Any:
+        return super().__getattribute__(name)
 def headerHandler(obj):
     return Header(obj.get("id",None),obj.get("cookie"),obj.get("referer"),obj.get("user-agent"),obj.get("account"),obj.get("password"),obj.get("status"))
+
+
 
 
 
