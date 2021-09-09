@@ -74,9 +74,11 @@ def get_keywords():
 
 
 def insert_account_log(account, ip, port, action, remark):
+    account_info=get_job_status(ip,port)
+    proxy=account_info['proxy_ip']
     with UsingMysql() as um:
-        sql = "INSERT INTO account_log (`account`, `ip`, `port`, `action`, `remark`, `create_date`) VALUES ('{}','{}','{}','{}','{}',now())".format(
-            account, ip, port, action, remark)
+        sql = "INSERT INTO account_log (`account`, `ip`, `proxy_ip`,`port`, `action`, `remark`, `create_date`) VALUES ('{}','{}','{}','{}','{}','{}',now())".format(
+            account, ip, proxy,port, action, remark)
         um.cursor.execute(sql)
         um._conn.commit()
 

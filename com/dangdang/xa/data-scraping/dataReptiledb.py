@@ -10,10 +10,10 @@ bookLock = threading.Lock()
 itemUrlLock = threading.Lock()
 headerLock = threading.Lock()
 
-host = '192.168.47.210'
+host = '10.7.40.197'
 logUtils = None
 conn = None
-defaultHost = "192.168.47.210"
+defaultHost = "10.7.40.197"
 
 
 def init(hostParam, logFile):
@@ -166,10 +166,10 @@ def getIpList():
 
 
 def insertItemUrl(itemUrls):
-    conn = pymysql.connect(host=host, port=3306, user="root", password="123456", database="data-scraping",
+    conn = pymysql.connect(host='10.7.40.197', port=9174, user="data_scraping_rw", password="my@#6VIDwc1vRW", database="data_scraping",
                            charset="utf8")
     cursor = conn.cursor()
-    sql = "INSERT INTO `data-scraping`.`item_url` ( `item_id`, `item_url`, `shop_name`,`category`) VALUES ( '%s', '%s', '%s','%s')" \
+    sql = "INSERT INTO `data_scraping`.`item_url` ( `item_id`, `item_url`, `shop_name`,`category`) VALUES ( '%s', '%s', '%s','%s')" \
           " ON DUPLICATE KEY UPDATE item_id = '%s' ,item_url = '%s',shop_name = '%s',category = '%s' "
 
     for itemUrl in itemUrls:

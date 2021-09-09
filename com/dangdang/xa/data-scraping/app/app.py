@@ -401,8 +401,7 @@ def go_home(device):
         go_back(device, 1)
     device.xpath("首页").click_exists(timeout=5)
 
-
-def heart(number, account, port, addr):
+def heart( account, addr):
     job_status = db.get_job_status_by_account(account)
     if job_status['run_status'] == 1:
         log.info("任务正在处理中,不进行心跳检测,%s", account)
@@ -423,7 +422,7 @@ def heart(number, account, port, addr):
         device.xpath("设置").click_exists(timeout=5)
         time.sleep(1)
         device.press("back")
-        log.info("app运行正常")
+        log.info("account:%s,addr:%s app运行正常",account,addr)
     except Exception as e:
         log.info("心跳监控APP出现异常,重启", e)
         restart_app_func(device)
@@ -547,3 +546,12 @@ def run(devices_addr, number, account, products, task_id, task_label, ip, port, 
     db.update_job_status(ip, port, '0')
 
 
+if __name__ == '__main__':
+    begin =26.0
+    for  i in range(0,400):
+        end =begin+0.1
+        url ='"https://bokuts.tmall.com/search.htm?tsearch=y&search=y&orderType=newOn_desc&viewType=grid&keyword=&lowPrice={}&highPrice={}",'
+        a=format(begin,'.1f')
+        b=format(end,'.1f')
+        print(url.format(a,b))
+        begin+=0.1
