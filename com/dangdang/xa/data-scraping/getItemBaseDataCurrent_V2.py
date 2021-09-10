@@ -56,6 +56,7 @@ def processDefaultBookData(itemUrlEntity, ip, logUtils):
     proxy = {'http': "http://" + ip, 'https': "https://" + ip}
     session = HTMLSession()
     detailResponse = session.get(itemUrlEntity.itemUrl, proxies=proxy, timeout=(3, 4))
+    #detailResponse = session.get(itemUrlEntity.itemUrl)
     detailHtmlSoup = BeautifulSoup(detailResponse.text.encode("utf-8"), features='html.parser')
     book = Book(tmId=itemUrlEntity.itemId, name=None, isbn=None, auther=None, fixPrice=None, promotionPrice=None,
                 promotionPriceDesc=None, price=None, promotionType=None, activeStartTime=None,

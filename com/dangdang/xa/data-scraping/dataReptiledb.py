@@ -221,7 +221,7 @@ def getItemUrlByItemId(itemId):
     conn = POOL.connection()
     cursor = conn.cursor()
     try:
-        sql = "select item_id as itemId,item_url as itemUrl,shop_name as shopName ,category from `item_url` where  item_id = %s"
+        sql = "select item_id as itemId,item_url as itemUrl,shop_name as shopName ,category from `item_url` where  item_id = '%s'"
         e_sql = sql % (str(itemId))
         execute = cursor.execute(e_sql)
         if execute <= 0:
