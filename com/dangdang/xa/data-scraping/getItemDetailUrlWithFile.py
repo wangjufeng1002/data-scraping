@@ -100,7 +100,7 @@ def processTxtUrl(path,category):
 if __name__ == '__main__':
 
 
-    rootdir='D:\\bk'
+    rootdir='D:\\bknew'
     files,names=getallfile(rootdir)
     for file in files:
         print(file)
