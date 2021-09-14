@@ -208,7 +208,8 @@ def random_switch_tabs(devices, weight, ip, port, account):
 
 def get_item_detail(item_id, devices, account, index, conf, ip, port, phone, sku):
     exist = devices.xpath("商品过期不存在").wait(timeout=1)
-    if exist is not None:
+    exist2 =devices.xpath("宝贝不在了").wait(timeout=1)
+    if exist is not None or exist2 is not None:
         log.info("商品%s过期或不存在", item_id)
         return "商品%s过期或不存在".format(item_id)
     devices.xpath('@com.taobao.taobao:id/uik_public_menu_action_icon').wait()
