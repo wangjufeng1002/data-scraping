@@ -137,7 +137,7 @@ def processBookDataCurrent(itemIds, logUtils):
 def executeDefaultBookDataCurrent():
     logUtils = Logger(filename='./logs/detail-base-data.log', level='info')
     dataReptiledb.init(None, "./logs/db-current.log")
-    size = 20000
+    size = 1000
     n = 1000
     item_ids = dataReptiledb.getNotDealItemUrl(size)
     temp_ids = split_list(item_ids, n)
@@ -147,44 +147,44 @@ def executeDefaultBookDataCurrent():
                          name="$自定义"+ str(threadIndex) +"<-> "+ time.strftime('%Y-%m-%d %H:%M:%S', time.localtime()) + "$").start()
         threadIndex+=1
 
-if __name__ == '__main__':
-    logUtils = Logger(filename='./logs/detail-current.log', level='info')
-    url = ItemUrl(shopName="文轩", itemId="578992496018", itemUrl="https://detail.tmall.com/item.htm?id=578992496018",
-                  category="无")
-    proxyIp = getIpProxyPool.get_proxy_from_redis()['proxy_detail']['ip']
-    processDefaultBookData(url, proxyIp, logUtils)
+# if __name__ == '__main__':
+#     logUtils = Logger(filename='./logs/detail-current.log', level='info')
+#     url = ItemUrl(shopName="文轩", itemId="578992496018", itemUrl="https://detail.tmall.com/item.htm?id=578992496018",
+#                   category="无")
+#     proxyIp = getIpProxyPool.get_proxy_from_redis()['proxy_detail']['ip']
+#     processDefaultBookData(url, proxyIp, logUtils)
 #
     # match = re.match(".*?(id=\d*)", "https://detail.tmall.com/item.htm?id=41903097818&skuId=1111", re.S).group(1).replace("id=","")
     # print(match)
 #nohup python getItemBaseDataCurrent_V2.py  >> logs/nohup-base.log 2>&1 &
-# if __name__ == '__main__':
-#     # startId = 0
-#     # endId = 999999999
-#     # opts, args = getopt.getopt(sys.argv[1:], "a:b:")
-#     # for opt, arg in opts:
-#     #     if opt == "-a":
-#     #         startId = arg
-#     #     if opt == "-b":
-#     #         endId = arg
-#
-#     logUtils = Logger(filename='./logs/detail-base-data.log', level='info')
-#     dataReptiledb.init(None, "./logs/db-current.log")
-#     # 从item_url 中查
-#     # 开始处理
-#     executeDefaultBookDataCurrent()
-#     while True:
-#         try:
-#             threadParamMap = {}
-#             time.sleep(120)
-#             custThreadCnt = 0
-#             threads = threading.enumerate()
-#             if threads is None or len(threads) ==0:
-#                 continue
-#             for thread in threads:
-#                 if "自定义" in thread.name:
-#                     custThreadCnt += 1
-#             if custThreadCnt == 0:
-#                 executeDefaultBookDataCurrent()
-#         except Exception as e:
-#             logUtils.logger.error("线程检测出现异常")
-#             logUtils.logger.error(u"线程检测出现异常", e, exc_info=True, stack_info=True)
+if __name__ == '__main__':
+    # startId = 0
+    # endId = 999999999
+    # opts, args = getopt.getopt(sys.argv[1:], "a:b:")
+    # for opt, arg in opts:
+    #     if opt == "-a":
+    #         startId = arg
+    #     if opt == "-b":
+    #         endId = arg
+
+    logUtils = Logger(filename='./logs/detail-base-data.log', level='info')
+    dataReptiledb.init(None, "./logs/db-current.log")
+    # 从item_url 中查
+    # 开始处理
+    executeDefaultBookDataCurrent()
+    while True:
+        try:
+            threadParamMap = {}
+            time.sleep(120)
+            custThreadCnt = 0
+            threads = threading.enumerate()
+            if threads is None or len(threads) ==0:
+                continue
+            for thread in threads:
+                if "自定义" in thread.name:
+                    custThreadCnt += 1
+            if custThreadCnt == 0:
+                executeDefaultBookDataCurrent()
+        except Exception as e:
+            logUtils.logger.error("线程检测出现异常")
+            logUtils.logger.error(u"线程检测出现异常", e, exc_info=True, stack_info=True)
