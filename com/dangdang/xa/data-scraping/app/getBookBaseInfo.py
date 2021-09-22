@@ -7,7 +7,10 @@ from timeit import default_timer
 import db
 from  entity import Book
 log = MyLog.Logger('CMT').get_log()
-
+def skip_sao_yi_sao(adb):
+    time.sleep(0.5)
+    if adb.xpath('//*[@resource-id="com.taobao.taobao:id/tv_tab_right"]').exists :
+        adb.press("back")
 def conver_save_book_info(item,detail_map):
     if item is None or detail_map is None or len(detail_map) == 0:
         return
@@ -18,7 +21,7 @@ def conver_save_book_info(item,detail_map):
                 promotionPriceDesc=None, price=0, promotionType=None, activeStartTime=None,
                 activeEndTime=None,
                 activeDesc=None, shopName=shop_name, category=category, sales="0",
-                press=None)
+                press=None,skuName=None,skuId=None)
     detail_map_infos = detail_map.items()
     for key ,value in detail_map_infos:
         if "书名" in key:
@@ -63,7 +66,13 @@ def run(adbNum,items):
                 adb.press("back")
             else:
                 break
-        adb.xpath("扫一扫").parent().click()
+        adb.xpath(
+            '//*[@resource-id="com.taobao.taobao:id/sv_search_view"]/android.widget.FrameLayout[1]/android.widget.FrameLayout[1]/android.widget.FrameLayout[1]/android.widget.FrameLayout[3]/android.widget.FrameLayout[1]/android.widget.FrameLayout[2]/android.widget.FrameLayout[1]/android.widget.FrameLayout[1]/android.widget.LinearLayout[1]').click()
+        #adb.xpath("扫一扫").parent().click()
+        #跳过扫一扫
+        #skip_sao_yi_sao(adb)
+        adb.set_fastinput_ime(True)
+        time.sleep(0.5)
         adb.send_keys(item.get("item_url"))
         adb.xpath("搜索").click()
         #判断商品是否存在
@@ -81,6 +90,7 @@ def run(adbNum,items):
                 break
         adb.xpath("参数").click()
         detail_map = {}
+        up_count=0
         while True:
             container = adb.xpath("@com.taobao.taobao:id/container").all()
             for con in container:
@@ -95,10 +105,12 @@ def run(adbNum,items):
                    if childEle.get("resource-id") == 'com.taobao.taobao:id/value':
                        value = childEle.get("text")
                 detail_map.setdefault(key,value)
-            if detail_map.get("出版社名称") is None:
+            up_count+=1
+            if up_count < 2:
                 adb.swipe_ext("up", scale=0.8)  # 代码会vkk
                 time.sleep(0.5)
             else:
+                up_count = 0
                 break
         adb.press("back")
         #转换信息并保存
@@ -113,5 +125,5 @@ if __name__ == '__main__':
     # ]
     # run("e574eade",items)
     itemUrls = db.get_book_url_by_status(0)
-    run("e574eade",itemUrls)
-
+    run("89a4eade",itemUrls)
+    run("e574eade", itemUrls)

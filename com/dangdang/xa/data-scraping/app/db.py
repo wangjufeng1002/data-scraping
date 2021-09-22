@@ -158,12 +158,12 @@ def insert_book_data(book):
                  book.getPromotionPrice(), book.getPromotionPriceDesc(), book.getActiveDescStr(), book.getShopName(),
                  book.getPromotionType(), book.getActiveStartTime(), book.getActiveEndTime(), book.getCategory(),
                  book.getSales(), book.getPress(), book.getSkuId(), book.getSkuName(),
-                )
+                 )
         um.cursor.execute(sql)
         um._conn.commit()
 
 def update_item_url_status(status,item_id):
     with UsingMysql() as um:
-        sql = "update  item_url set is_success='{}'  where item_id '{} ".format(status,item_id)
+        sql = "update  item_url set is_success='{}'  where item_id ='{}' ".format(status,item_id)
         um.cursor.execute(sql)
         um._conn.commit()

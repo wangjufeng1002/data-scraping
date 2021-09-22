@@ -1,4 +1,5 @@
 import time
+from datetime import datetime
 class AppBookInfo:
 
     def __init__(self, itemId, defaultPrice, activePrice, coupons, free,sales,name,originalText):
@@ -22,7 +23,7 @@ class Book:
                  activeDesc,
                  activeStartTime,
                  activeEndTime,
-                 shopName, category, sales,press):
+                 shopName, category, sales,press,skuId,skuName):
         self.tmId = tmId
         self.name = name
         self.isbn = isbn
@@ -39,6 +40,8 @@ class Book:
         self.category = category
         self.sales = sales
         self.press= press
+        self.skuId = skuId
+        self.skuName = skuName
 
     def setSales(self, sales):
         self.sales = sales
@@ -174,6 +177,21 @@ class Book:
             return '无'
         return self.press
 
+    def setSkuId(self, skuId):
+        self.skuId = skuId
+
+    def setSkuName(self, skuName):
+        self.skuName = skuName
+
+    def getSkuId(self):
+        if self.skuId is None:
+            return ""
+        return self.skuId
+
+    def getSkuName(self):
+        if self.skuName is None:
+            return ""
+        return self.skuName
     def toDESCString(self):
         result = []
         result.append("[天猫ID:" + self.getTmId() + "]")
