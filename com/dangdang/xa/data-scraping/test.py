@@ -254,20 +254,33 @@ def macth_brackets(text):
 
 if __name__ == '__main__':
     proxyIp = getIpProxyPool.get_proxy_from_redis()['proxy_detail']['ip']
-    print(proxyIp)
-    proxy = {'http': "http://" + proxyIp, 'https': "https://" + proxyIp}
-    session = HTMLSession()
-    detailResponse = session.get("http://httpbin.org/ip", proxies=proxy)
-    print(detailResponse.text)
 
-    ip = "222.249.238.138:8080"
+    # print(proxyIp)
+    # proxy = {'http': "http://" + proxyIp, 'https': "https://" + proxyIp}
+    # session = HTMLSession()
+    # detailResponse = session.get("http://httpbin.org/ip", proxies=proxy)
+    # print(detailResponse.text)
+    session = HTMLSession()
+    get = session.get(
+        "http://http.tiqu.letecs.com/getip3?num=1&type=1&pro=&city=0&yys=0&port=11&pack=181521&ts=0&ys=0&cs=0&lb=1&sb=0&pb=4&mr=1&regions=&gm=4")
+    ip = get.text.replace("\r", "").replace("\n", "")
+
+
+    #ip = "42.57.151.173:4278"
     proxy = {'http': "http://" + ip, 'https': "https://" + ip}
     session = HTMLSession()
     detailResponse = session.get("http://httpbin.org/ip", proxies=proxy)
     #detailResponse = session.get("http://httpbin.org/ip")
     print(detailResponse.text)
-    # detailResponse = session.get("https://detail.tmall.com/item.htm?id=41903097818", proxies=proxy)
-    # detailHtmlSoup = BeautifulSoup(detailResponse.text.encode("utf-8"), features='html.parser')
+
+
+
+    detailResponse = session.get("https://detail.tmall.com/item.htm?id=639273188572&rn=ee05056c4d5f08774e1c67ee62f7b955&abbucket=4", proxies=proxy)
+    detailHtmlSoup = BeautifulSoup(detailResponse.text.encode("utf-8"), features='html.parser')
+    print(detailResponse.text)
+
+
+
     # match= re.search("TShop\\.Setup\\((.*)\\);", detailResponse.text, re.S)
     # text = match.group(0)
     # match = re.match("TShop\\.Setup\\((.*)\\);", text, re.S)

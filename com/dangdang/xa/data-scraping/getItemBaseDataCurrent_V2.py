@@ -8,7 +8,24 @@ from requests_html import HTMLSession
 
 import dataReptiledb
 import getIpProxyPool
-from entity import Book, Logger, SkuInfo,ItemUrl
+from entity import Book, Logger, SkuInfo, ItemUrl
+
+
+def get_proxy_ip(type):
+    proxyIp = None
+    if type == 1:
+        return getIpProxyPool.get_proxy_from_redis()['proxy_detail']['ip']
+    if type == 2:
+        while True:
+            session = HTMLSession()
+            response = session.get(
+                "http://http.tiqu.letecs.com/getip3?num=1&type=1&pro=&city=0&yys=0&port=11&pack=181521&ts=0&ys=0&cs=0&lb=1&sb=0&pb=4&mr=1&regions=&gm=4")
+            proxyIp = response.text.replace("\r","").replace("\n","")
+            if "code" in proxyIp:
+                time.sleep(3)
+            else:
+                return proxyIp
+
 
 
 def macth_brackets(text):
@@ -53,11 +70,11 @@ def analySkuInfoJson(jsonStr):
 
 
 def processDefaultBookData(itemUrlEntity, ip, logUtils):
-    #proxy = {'http': "http://" + ip, 'https': "https://" + ip}
+    # proxy = {'http': "http://" + ip, 'https': "https://" + ip}
     session = HTMLSession()
-    #detailResponse = session.get(itemUrlEntity.itemUrl, proxies=proxy, timeout=(3, 4))
+    # detailResponse = session.get(itemUrlEntity.itemUrl, proxies=proxy, timeout=(3, 4))
     detailResponse = session.get(itemUrlEntity.itemUrl)
-    #detailResponse = session.get(itemUrlEntity.itemUrl)
+    # detailResponse = session.get(itemUrlEntity.itemUrl)
     detailHtmlSoup = BeautifulSoup(detailResponse.text.encode("utf-8"), features='html.parser')
     book = Book(tmId=itemUrlEntity.itemId, name=None, isbn=None, auther=None, fixPrice=None, promotionPrice=None,
                 promotionPriceDesc=None, price=None, promotionType=None, activeStartTime=None,
@@ -96,7 +113,10 @@ def processDefaultBookData(itemUrlEntity, ip, logUtils):
     ##解析是否有sku信息
     jsonStr = macth_brackets(detailResponse.text)
     sku_infos = analySkuInfoJson(jsonStr)
-    logUtils.logger.info("{threadName} <-> {item_id} 下的sku有 {num} 个".format(threadName=threading.current_thread().getName(),item_id=itemUrlEntity.itemId, num= 0 if sku_infos is None else len(sku_infos)))
+    logUtils.logger.info(
+        "{threadName} <-> {item_id} 下的sku有 {num} 个".format(threadName=threading.current_thread().getName(),
+                                                           item_id=itemUrlEntity.itemId,
+                                                           num=0 if sku_infos is None else len(sku_infos)))
     if sku_infos is not None and len(sku_infos) > 1:
         for sku_info in sku_infos:
             book.setSkuId(sku_info.sku_id)
@@ -110,14 +130,16 @@ def processDefaultBookData(itemUrlEntity, ip, logUtils):
         "线程{threadName} - 基础信息抓取完成 {itemId}- 代理IP:{proxyIp}".format(threadName=threading.current_thread().getName(),
                                                                     itemId=itemUrlEntity.itemId, proxyIp=ip))
 
+
 def split_list(listTemp, n):
     for i in range(0, len(listTemp), n):
         yield listTemp[i:i + n]
 
 
 def processBookDataCurrent(itemIds, logUtils):
+    proxyIp = get_proxy_ip(2)
+    logUtils.logger.info("getIpProxyPool 获取代理IP proxyIp:{proxyIp}".format(proxyIp=proxyIp))
     for itemId in itemIds:
-        proxyIp = getIpProxyPool.get_proxy_from_redis()['proxy_detail']['ip']
         itemUrlEntitys = dataReptiledb.getItemUrlByItemId(itemId=itemId)
         if itemUrlEntitys is None or len(itemUrlEntitys) == 0:
             continue
@@ -128,8 +150,10 @@ def processBookDataCurrent(itemIds, logUtils):
             logUtils.logger.error("线程{threadName} - {itemId} 发生异常 - 代理IP:{proxyIp} - {e}".format(
                 threadName=threading.current_thread().getName(), itemId=itemUrlEntity.itemId, proxyIp=proxyIp,
                 e=e))
+            proxyIp = get_proxy_ip(2)
+            logUtils.logger.info("getIpProxyPool 获取代理IP proxyIp:{proxyIp}".format(proxyIp=proxyIp))
         else:
-            logUtils.logger.error("线程{threadName} - {itemId} 基础信息抓取完成 - 代理IP:{proxyIp}".format(
+            logUtils.logger.info("线程{threadName} - {itemId} 基础信息抓取完成 - 代理IP:{proxyIp}".format(
                 threadName=threading.current_thread().getName(), itemId=itemUrlEntity.itemId, proxyIp=proxyIp))
             dataReptiledb.updateSuccessFlag(flag=1, itemId=itemUrlEntity.itemId)
             dataReptiledb.updateBookSuccessFlag(flag=1, itemId=itemUrlEntity.itemId)
@@ -145,8 +169,10 @@ def executeDefaultBookDataCurrent():
     threadIndex = 0
     for tmp in temp_ids:
         threading.Thread(target=processBookDataCurrent, args=(tmp, logUtils),
-                         name="$自定义"+ str(threadIndex) +"<-> "+ time.strftime('%Y-%m-%d %H:%M:%S', time.localtime()) + "$").start()
-        threadIndex+=1
+                         name="$自定义" + str(threadIndex) + "<-> " + time.strftime('%Y-%m-%d %H:%M:%S',
+                                                                                 time.localtime()) + "$").start()
+        threadIndex += 1
+
 
 # if __name__ == '__main__':
 #     logUtils = Logger(filename='./logs/detail-current.log', level='info')
@@ -155,9 +181,9 @@ def executeDefaultBookDataCurrent():
 #     proxyIp = getIpProxyPool.get_proxy_from_redis()['proxy_detail']['ip']
 #     processDefaultBookData(url, proxyIp, logUtils)
 #
-    # match = re.match(".*?(id=\d*)", "https://detail.tmall.com/item.htm?id=41903097818&skuId=1111", re.S).group(1).replace("id=","")
-    # print(match)
-#nohup python getItemBaseDataCurrent_V2.py  >> logs/nohup-base.log 2>&1 &
+# match = re.match(".*?(id=\d*)", "https://detail.tmall.com/item.htm?id=41903097818&skuId=1111", re.S).group(1).replace("id=","")
+# print(match)
+# nohup python getItemBaseDataCurrent_V2.py  >> logs/nohup-base.log 2>&1 &
 if __name__ == '__main__':
     # startId = 0
     # endId = 999999999
@@ -179,7 +205,7 @@ if __name__ == '__main__':
             time.sleep(120)
             custThreadCnt = 0
             threads = threading.enumerate()
-            if threads is None or len(threads) ==0:
+            if threads is None or len(threads) == 0:
                 continue
             for thread in threads:
                 if "自定义" in thread.name:
