@@ -70,7 +70,7 @@ def analySkuInfoJson(jsonStr):
 
 
 def processDefaultBookData(itemUrlEntity, ip, logUtils):
-    # proxy = {'http': "http://" + ip, 'https': "https://" + ip}
+    proxy = {'http': "http://" + ip, 'https': "https://" + ip}
     session = HTMLSession()
     # detailResponse = session.get(itemUrlEntity.itemUrl, proxies=proxy, timeout=(3, 4))
     detailResponse = session.get(itemUrlEntity.itemUrl)
@@ -137,7 +137,7 @@ def split_list(listTemp, n):
 
 
 def processBookDataCurrent(itemIds, logUtils):
-    proxyIp = get_proxy_ip(2)
+    proxyIp = get_proxy_ip(1)
     logUtils.logger.info("getIpProxyPool 获取代理IP proxyIp:{proxyIp}".format(proxyIp=proxyIp))
     for itemId in itemIds:
         itemUrlEntitys = dataReptiledb.getItemUrlByItemId(itemId=itemId)
@@ -150,7 +150,7 @@ def processBookDataCurrent(itemIds, logUtils):
             logUtils.logger.error("线程{threadName} - {itemId} 发生异常 - 代理IP:{proxyIp} - {e}".format(
                 threadName=threading.current_thread().getName(), itemId=itemUrlEntity.itemId, proxyIp=proxyIp,
                 e=e))
-            proxyIp = get_proxy_ip(2)
+            proxyIp = get_proxy_ip(1)
             logUtils.logger.info("getIpProxyPool 获取代理IP proxyIp:{proxyIp}".format(proxyIp=proxyIp))
         else:
             logUtils.logger.info("线程{threadName} - {itemId} 基础信息抓取完成 - 代理IP:{proxyIp}".format(
