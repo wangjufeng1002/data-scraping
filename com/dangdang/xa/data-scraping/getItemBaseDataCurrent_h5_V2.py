@@ -26,7 +26,24 @@ def get_proxy_ip(type):
             else:
                 return proxyIp
 
-
+def macth_h5_detail(text):
+    match = re.search("_DATA_Detail =(.*)};", text, re.S)
+    text = match.group(0)
+    stack = []
+    match_s = "{"
+    match_e = "}"
+    jsonStr = ""
+    start_index = text.find("_DATA_Detail = ") + len("_DATA_Detail = ")
+    end_index = len(text) - 1
+    for i in range(start_index, end_index):
+        if text[i] == match_s:
+            stack.append(i)
+        if text[i] == match_e:
+            stack.pop()
+        if len(stack) == 0:
+            jsonStr = text[start_index:i+1]
+            break
+    return jsonStr
 
 def macth_brackets(text):
     match = re.search("TShop\\.Setup\\((.*)\\);", text, re.S)
@@ -46,24 +63,7 @@ def macth_brackets(text):
             jsonStr = text[start_index + 1:i]
             break
     return jsonStr
-def macth_h5_detail(text):
-    match = re.search("_DATA_Detail =(.*)};", text, re.S)
-    text = match.group(0)
-    stack = []
-    match_s = "{"
-    match_e = "}"
-    jsonStr = ""
-    start_index = text.find("_DATA_Detail =") + len("_DATA_Detail =")
-    end_index = len(text) - 1
-    for i in range(start_index, end_index):
-        if text[i] == match_s:
-            stack.append(i)
-        if text[i] == match_e:
-            stack.pop()
-        if len(stack) == 0:
-            jsonStr = text[start_index + 1:i]
-            break
-    return jsonStr
+
 
 def analySkuInfoJson(jsonStr):
     sku_infos = []
@@ -85,15 +85,55 @@ def analySkuInfoJson(jsonStr):
         sku_infos.append(info)
     return sku_infos
 
+def analySkuInfoJsonH5(json):
+    sku_infos = []
+    #skuID 和 propPath 的对应关系
+    sku_id_map={}
+    sku_name_map={}
+    sku_price_map = {}
+    skuBase = json.get("skuBase").get("skus")
+    if skuBase is None or len(skuBase) ==0:
+        return sku_infos
+    #skuid-vid
+    for temp in skuBase:
+        sku_id_map.setdefault(temp.get("skuId"),temp.get("propPath").split(":")[1])
+    # 取出skuID 对象的名称
+    skuBase = json.get("skuBase").get("props").get("values")
+    for temp in skuBase:
+        sku_name_map.setdefault(temp.get("vid"),temp.get("name"))
+    #取出skuId 对应的价格
+    skuBase = json.get("mock").get("skuCore").get("sku2info")
+    for key,value in skuBase.items():
+        sku_price_map.setdefault(key,value.get("price").get("priceText"))
+    #组装
+    for key,value in sku_id_map:
+        info = SkuInfo(sku_id=None, spu_id=None, name=None, price=None)
+        #获取价格
+        info.sku_id=key
+        info.name=sku_name_map.get(value)
+        info.price=sku_price_map.get(key)
+    return sku_infos
+
+
+
+def conver(book,key,value):
+    if "书名" in key:
+        book.setName(value.replace(" ", "").replace(" ", ""))
+    if "ISBN" in key:
+        book.setIsbn(value.replace("ISBN编号: ", "").replace(" ", ""))
+    if ("作者" in key) or ("编者" in key):
+        if "作者地区" not in key:
+            book.setAuther(value.replace("作者: ", "").replace(" ", ""))
+    if ("定价:" in key) or ("定价：" in key) or ("定价" in key):
+        book.setFixPrice(value.replace("定价: ", "").replace("价格: ", "").replace("定价：", "").replace(" ", ""))
+    if ("出版社" in key) or ("出版社" in key):
+        book.setPress(value.replace("出版社名称:", "").replace(" ", "").replace(" ", ""))
+
 
 def processDefaultBookData(itemUrlEntity, ip, logUtils):
     proxy = {'http': "http://" + ip, 'https': "https://" + ip}
     session = HTMLSession()
-    headers = dataReptiledb.getUseHeaders(None)
-    detailResponse = session.get(itemUrlEntity.itemUrl, proxies=proxy,headers=headers[0], timeout=(3, 4))
-    #detailResponse = session.get(itemUrlEntity.itemUrl)
-    # detailResponse = session.get(itemUrlEntity.itemUrl)
-    detailHtmlSoup = BeautifulSoup(detailResponse.text.encode("utf-8"), features='html.parser')
+    detailResponse = session.get("https://detail.m.tmall.com/templatesNew/index?id={}".format(itemUrlEntity.itemId), proxies=proxy, timeout=(3, 4))
     book = Book(tmId=itemUrlEntity.itemId, name=None, isbn=None, auther=None, fixPrice=None, promotionPrice=None,
                 promotionPriceDesc=None, price=None, promotionType=None, activeStartTime=None,
                 activeEndTime=None,
@@ -105,32 +145,16 @@ def processDefaultBookData(itemUrlEntity, ip, logUtils):
             "线程{threadName} - 商品已经下架 {id}".format(threadName=threading.current_thread().getName(),
                                                   id=itemUrlEntity.itemId))
         return None, 2
-
-    defaultPrice = re.match(".*?(\"defaultItemPrice\":.*&).*", detailResponse.text, re.S).group(1).split(',')[
-        0].replace("defaultItemPrice", "").replace('\"', "").replace(":", "").replace(",", "")
-
-    book.setPrice(defaultPrice)
-    itmDescUl = detailHtmlSoup.find_all(name="ul", attrs={"id": "J_AttrUL"})
-    logUtils.logger.info("{itemId} {itmDescUl}".format(itemId=itemUrlEntity.itemId, itmDescUl=itmDescUl))
-    if itmDescUl is None or len(itmDescUl) == 0:
-        return
-    contents = itmDescUl[0].contents
-    for con in contents:
-        if "书名" in con.next:
-            book.setName(con.next.replace("书名: ", ""))
-        if "ISBN" in con.next:
-            book.setIsbn(con.next.replace("ISBN编号: ", ""))
-        if ("作者" in con.next) or ("编者" in con.next):
-            if "作者地区" not in con.next:
-                book.setAuther(con.next.replace("作者: ", ""))
-        if ("定价:" in con.next) or ("定价：" in con.next):
-            book.setFixPrice(con.next.replace("定价: ", "").replace("价格: ", "").replace("定价：", ""))
-        if ("出版社" in con.next) or ("出版社" in con.next):
-            book.setPress(con.next.replace("出版社名称:", "").replace(" ", ""))
-
-    ##解析是否有sku信息
-    jsonStr = macth_brackets(detailResponse.text)
-    sku_infos = analySkuInfoJson(jsonStr)
+    detail = macth_h5_detail(detailResponse.text)
+    detailJson = json.loads(detail)
+    #转换基本信息
+    baseDetails = detailJson.get("props").get("groupProps")[0].get("基本信息")
+    for temp in baseDetails:
+        for key,value in temp.items():
+            #print(key,value)
+            conver(book,key,value)
+    #解析sku
+    sku_infos = analySkuInfoJsonH5(detailJson)
     logUtils.logger.info(
         "{threadName} <-> {item_id} 下的sku有 {num} 个".format(threadName=threading.current_thread().getName(),
                                                            item_id=itemUrlEntity.itemId,
@@ -144,9 +168,9 @@ def processDefaultBookData(itemUrlEntity, ip, logUtils):
     else:
         # 写入数据库
         dataReptiledb.insertDetailPrice(book)
-    logUtils.logger.info(
-        "线程{threadName} - 基础信息抓取完成 {itemId}- 代理IP:{proxyIp}".format(threadName=threading.current_thread().getName(),
-                                                                    itemId=itemUrlEntity.itemId, proxyIp=ip))
+    # logUtils.logger.info(
+    #     "线程{threadName} - 基础信息抓取完成 {itemId}- 代理IP:{proxyIp}".format(threadName=threading.current_thread().getName(),
+    #                                                                 itemId=itemUrlEntity.itemId, proxyIp=ip))
 
 
 def split_list(listTemp, n):
@@ -180,8 +204,8 @@ def processBookDataCurrent(itemIds, logUtils):
 def executeDefaultBookDataCurrent():
     logUtils = Logger(filename='./logs/detail-base-data.log', level='info')
     dataReptiledb.init(None, "./logs/db-current.log")
-    size = 1000
-    n = 1000
+    size = 6000
+    n = 6000
     item_ids = dataReptiledb.getNotDealItemUrl(size)
     temp_ids = split_list(item_ids, n)
     threadIndex = 0
@@ -201,7 +225,7 @@ def executeDefaultBookDataCurrent():
 #
 # match = re.match(".*?(id=\d*)", "https://detail.tmall.com/item.htm?id=41903097818&skuId=1111", re.S).group(1).replace("id=","")
 # print(match)
-# nohup python getItemBaseDataCurrent_V2.py  >> logs/nohup-base.log 2>&1 &
+# nohup python getItemBaseDataCurrent_h5_V2.py  >> logs/nohup-base-h5.log 2>&1 &
 if __name__ == '__main__':
     # startId = 0
     # endId = 999999999

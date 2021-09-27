@@ -99,11 +99,11 @@ def scroll():
 
 
 def get_start_pos():
-    return pag.locateOnScreen("start.png", confidence=0.9)
+    return pag.locateOnScreen("start1.png", confidence=0.9)
 
 
 def get_drag_pos():
-    box = pag.locateOnScreen("3.png", confidence=0.9)
+    box = pag.locateOnScreen("4.png", confidence=0.9)
     return box
 
 
@@ -137,6 +137,7 @@ def process():
                 my_drag(800, account)
             else:
                 my_drag_slow(800, account)
+        pyautogui.press('f5')
 
 
 
@@ -144,4 +145,5 @@ def process():
 # 895,733
 
 if __name__ == '__main__':
-    process()
+    while True :
+        process()

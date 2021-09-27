@@ -88,7 +88,7 @@ def auto_process(flag):
         categorys = dataReptiledb.getNotDealCategoryByBook()
     if flag == 2 or flag == 3 or flag == '2' or flag =='3':
         # 从item_url 中查
-        categorys = dataReptiledb.getNotDealCategoryByItemUrl()
+        categorys = dataReptiledb.getNotDealCategoryByItemUrl(None,None)
     # 查询 cookies
     headers = dataReptiledb.getHeaders(None)
     if categorys is None or headers is None:

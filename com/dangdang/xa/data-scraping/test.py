@@ -249,9 +249,37 @@ def macth_brackets(text):
             break
     return jsonStr
 
+def macth_h5_detail(text):
+    match = re.search("_DATA_Detail =(.*)};", text, re.S)
+    text = match.group(0)
+    stack = []
+    match_s = "{"
+    match_e = "}"
+    jsonStr = ""
+    start_index = text.find("_DATA_Detail = ") + len("_DATA_Detail = ")
+    end_index = len(text) - 1
+    for i in range(start_index, end_index):
+        if text[i] == match_s:
+            stack.append(i)
+        if text[i] == match_e:
+            stack.pop()
+        if len(stack) == 0:
+            jsonStr = text[start_index:i+1]
+            break
+    return jsonStr
 
-
-
+def conver(book,key,value):
+    if "书名" in key:
+        book.setName(value.replace(" ", "").replace(" ", ""))
+    if "ISBN" in key:
+        book.setIsbn(value.replace("ISBN编号: ", "").replace(" ", ""))
+    if ("作者" in key) or ("编者" in key):
+        if "作者地区" not in key:
+            book.setAuther(value.replace("作者: ", "").replace(" ", ""))
+    if ("定价:" in key) or ("定价：" in key) or ("定价" in key):
+        book.setFixPrice(value.replace("定价: ", "").replace("价格: ", "").replace("定价：", "").replace(" ", ""))
+    if ("出版社" in key) or ("出版社" in key):
+        book.setPress(value.replace("出版社名称:", "").replace(" ", "").replace(" ", ""))
 if __name__ == '__main__':
     proxyIp = getIpProxyPool.get_proxy_from_redis()['proxy_detail']['ip']
 
@@ -280,11 +308,26 @@ if __name__ == '__main__':
     # ip = "112.29.178.13:45148"
     proxy = {'http': "http://" + proxyIp, 'https': "https://" + proxyIp}
     session = HTMLSession()
-    detailResponse = session.get("https://detail.tmall.com/item.htm?id=556741761245&rn=5f6fa8b61661c51c2643703c00330a43&abbucket=17", headers=tempHeaders, proxies=proxy)
-    #detailResponse = session.get("https://detail.tmall.com/item.htm?id=592236784280&rn=5f6fa8b61661c51c2643703c00330a43&abbucket=17", headers=tempHeaders)
+    #detailResponse = session.get("https://detail.tmall.com/item.htm?id=556741761245&rn=5f6fa8b61661c51c2643703c00330a43&abbucket=17", headers=tempHeaders, proxies=proxy)
+    detailResponse = session.get("https://detail.m.tmall.com/templatesNew/index?id=656215723016", proxies=proxy)
     detailHtmlSoup = BeautifulSoup(detailResponse.text.encode("utf-8"), features='html.parser')
     print(detailResponse.text)
-
+    detail = macth_h5_detail(detailResponse.text)
+    loads = json.loads(detail)
+    print(detail)
+    detail = macth_h5_detail(detailResponse.text)
+    detailJson = json.loads(detail)
+    baseDetails = detailJson.get("props").get("groupProps")[0].get("基本信息")
+    book = Book(tmId=None, name=None, isbn=None, auther=None, fixPrice=None, promotionPrice=None,
+                promotionPriceDesc=None, price=None, promotionType=None, activeStartTime=None,
+                activeEndTime=None,
+                activeDesc="", shopName=None, category=None, sales="0", press=None,
+                skuId=None, skuName=None)
+    for temp in baseDetails:
+        for key,value in temp.items():
+            print(key,value)
+            conver(book,key,value)
+    print(book.toString())
 
 
     # match= re.search("TShop\\.Setup\\((.*)\\);", detailResponse.text, re.S)

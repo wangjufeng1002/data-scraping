@@ -66,7 +66,36 @@ def getHeaders(account):
         return headers
     finally:
         conn.close()
-
+def getUseHeaders(account):
+    headers = []
+    try:
+        conn = POOL.connection()
+        cursor = conn.cursor()
+        if account is not None:
+            execute = cursor.execute(
+                "select `cookie`,`referer`,`user-agent`,`account`  from headers where account='%s' " % account)
+        else:
+            execute = cursor.execute("select `cookie`,`referer`,`user-agent`,`account`  from headers ")
+        result = cursor.fetchall()
+        description = cursor.description
+        columns = []
+        for i in range(len(description)):
+            columns.append(description[i][0])  # 获取字段名，咦列表形式保存
+        for i in range(len(result)):
+            head = {}
+            # 取出每一行 和 列名组成map
+            row = list(result[i])
+            for j in range(len(columns)):
+                head[columns[j]] = row[j]
+            headers.append(head)
+        cursor.close()
+        conn.commit()
+        return headers
+    except:
+        conn.rollback()
+        return headers
+    finally:
+        conn.close()
 
 def insertDetailPrice(book):
     conn = POOL.connection()
@@ -387,7 +416,7 @@ def getNotDealCategoryByItemUrl(startId,endId):
     conn = pymysql.connect(host=host, port=9174, user="data_scraping_rw", password="my@#6VIDwc1vRW", database="data_scraping",
                            charset="utf8")
     # sql = "select DISTINCT category  as category from book where (book_prom_type is null or book_prom_type = '无' or book_prom_type = 'NULL') and   category is not NULL"
-    if id is not None:
+    if startId is not None:
         sql = "select DISTINCT category  as category from item_url where is_success <=0 and  category is not NULL and id >= {startId} and id <= {endId}".format(startId=startId,endId=endId)
     else:
         sql = "select DISTINCT category  as category from item_url where is_success <=0 and  category is not NULL"
