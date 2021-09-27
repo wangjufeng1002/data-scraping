@@ -71,7 +71,7 @@ def getHeaders(account):
 def insertDetailPrice(book):
     conn = POOL.connection()
     cursor = conn.cursor()
-    sql = "INSERT INTO `data-reptile`.`book`" \
+    sql = "INSERT INTO `data_scraping`.`book`" \
           " ( `tm_id`, `book_name`, `book_isbn`, `book_auther`, `book_price`, `book_fix_price`, `book_prom_price`, `book_prom_price_desc`, " \
           "`book_active_desc`, `shop_name`,`book_prom_type`,`book_active_start_time`,`book_active_end_time`,`category`,`book_sales`,`book_press`) " \
           "VALUES ( '%s', '%s', '%s', '%s', '%s', '%s', '%s', '%s', '%s', '%s', '%s', '%s', '%s','%s','%s','%s') " \

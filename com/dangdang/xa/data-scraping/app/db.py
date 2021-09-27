@@ -117,3 +117,53 @@ def insert_book_url(url, id, shop):
             url, id, shop)
         um.cursor.execute(sql)
         um._conn.commit()
+
+def get_book_url_by_status(status):
+    with UsingMysql() as um:
+        sql = "select item_id,item_url,shop_name from item_url where is_success='{}' limit 10".format(status)
+        um.cursor.execute(sql)
+        return um.cursor.fetchall()
+
+def insert_book_data(book):
+    with UsingMysql() as um:
+        sql = "INSERT INTO `data_scraping`.`book`" \
+              " ( `tm_id`, `book_name`, `book_isbn`, `book_auther`, `book_price`, `book_fix_price`, `book_prom_price`, `book_prom_price_desc`, " \
+              "`book_active_desc`, `shop_name`,`book_prom_type`,`book_active_start_time`,`book_active_end_time`,`category`,`book_sales`,`book_press`,`sku_id`,`sku_name`) " \
+              "VALUES ( '%s', '%s', '%s', '%s', '%s', '%s', '%s', '%s', '%s', '%s', '%s', '%s', '%s','%s','%s','%s','%s','%s') " \
+              "ON DUPLICATE KEY " \
+              "UPDATE " \
+              "book_name= '%s' " \
+              ", book_isbn= '%s' " \
+              ", book_auther = '%s' " \
+              ", book_price = '%s'" \
+              ", book_fix_price = '%s'" \
+              ", book_prom_price = '%s'" \
+              ", book_prom_price_desc = '%s'" \
+              ", book_active_desc = '%s'" \
+              ", shop_name = '%s'" \
+              ", book_prom_type = '%s'" \
+              ", book_active_start_time = '%s'" \
+              ", book_active_end_time = '%s'" \
+              ", category = '%s'" \
+              ", book_sales = '%s'" \
+              ", book_press = '%s'" \
+              ", sku_id = '%s' " \
+              ", sku_name = '%s' " \
+              % (book.getTmId(), book.getName(), book.getIsbn(), book.getAuther(), book.getPrice(), book.getFixPrice(),
+                 book.getPromotionPrice(), book.getPromotionPriceDesc(), book.getActiveDescStr(), book.getShopName(),
+                 book.getPromotionType(), book.getActiveStartTime(), book.getActiveEndTime(), book.getCategory(),
+                 book.getSales(), book.getPress(), book.getSkuId(), book.getSkuName(),
+
+                 book.getName(), book.getIsbn(), book.getAuther(), book.getPrice(), book.getFixPrice(),
+                 book.getPromotionPrice(), book.getPromotionPriceDesc(), book.getActiveDescStr(), book.getShopName(),
+                 book.getPromotionType(), book.getActiveStartTime(), book.getActiveEndTime(), book.getCategory(),
+                 book.getSales(), book.getPress(), book.getSkuId(), book.getSkuName(),
+                 )
+        um.cursor.execute(sql)
+        um._conn.commit()
+
+def update_item_url_status(status,item_id):
+    with UsingMysql() as um:
+        sql = "update  item_url set is_success='{}'  where item_id ='{}' ".format(status,item_id)
+        um.cursor.execute(sql)
+        um._conn.commit()
