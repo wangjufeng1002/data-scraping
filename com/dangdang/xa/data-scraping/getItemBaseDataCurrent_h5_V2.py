@@ -204,8 +204,8 @@ def processBookDataCurrent(itemIds, logUtils):
 def executeDefaultBookDataCurrent():
     logUtils = Logger(filename='./logs/detail-base-data.log', level='info')
     dataReptiledb.init(None, "./logs/db-current.log")
-    size = 6000
-    n = 6000
+    size = 8000
+    n = 1000
     item_ids = dataReptiledb.getNotDealItemUrl(size)
     temp_ids = split_list(item_ids, n)
     threadIndex = 0
