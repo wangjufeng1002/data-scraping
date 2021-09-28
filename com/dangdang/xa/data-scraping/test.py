@@ -341,11 +341,11 @@ if __name__ == '__main__':
         "cookie":"hng=CN%7Czh-CN%7CCNY%7C156; miid=2308380591735044775; OZ_1U_2061=vid=v0dc113aa9e628.0&ctime=1626253285&ltime=1626251577; _uab_collina=163176095720886309866329; cna=lf7KGSbBLWICAXAuRv5KSRT5; t=6eea51d2023af5f8b189f7a42098ab7d; _tb_token_=e133fe53e5f3e; cookie2=1cc2deae226c103e2af9d331b3ba0cf7; xlly_s=1; dnk=starlpwba; uc1=cookie15=UtASsssmOIJ0bQ%3D%3D&cookie21=VT5L2FSpccLvQjsn%2FRsa&cookie16=U%2BGCWk%2F74Mx5tgzv3dWpnhjPaQ%3D%3D&cookie14=Uoe3dYeA3Ie8Pg%3D%3D&pas=0&existShop=false; uc3=nk2=EEo%2Bp%2FLK58jc&id2=UUkPJL%2B7%2B962Hg%3D%3D&lg2=VT5L2FSpMGV7TQ%3D%3D&vt3=F8dCujaJqoWvvwXZk0I%3D; tracknick=starlpwba; lid=starlpwba; uc4=nk4=0%40EpM1dMmt7RMYXlGxkrLgGLNgaa0%3D&id4=0%40U2uDcV6ImQfsGvqMv8rADKr5ZU20; _l_g_=Ug%3D%3D; unb=2115355958; lgc=starlpwba; cookie1=AHspna58nSMPuxsW597yfuDVzyAexrcnCkoHNvFa7wQ%3D; login=true; cookie17=UUkPJL%2B7%2B962Hg%3D%3D; _nk_=starlpwba; sgcookie=E100KANtI6NGC650L%2BKs01wI9y8kwCLnOs4lJELF1f3SustSdzD8Eb5tWbWEHNfu4e44MkRnPXSyOuIo5bqo1gyFwOQ93aW5ZadB%2Bhl2F5RPvnQ%3D; cancelledSubSites=empty; sg=a8b; csg=29c53f93; enc=xg3%2B0ozu62eQWxUJx8wIy8a6d7aZCVHH2sInbi51RXkWKqWucgMWX3oUlFaeY8cj3uYas7%2BGlG%2BRSOD5X1ZXbA%3D%3D; cq=ccp%3D0; pnm_cku822=098%23E1hvF9vUvbpvUpCkvvvvvjiWPsqOsjl8PLMwgjEUPmPh1jE2PL5W0jY8RLSyQjlWRQgCvvpvvPMMvvhvC9vhvvCvpb9Cvm9vvvvvphvvvvvv99Cvpv9HvvmmvhCvmhWvvUUvphvUI9vv99CvpvkkkvhvC99vvOCtou9Cvv9vvUv%2FOnS%2B%2Fv9CvhQWrXgvC0RxCaV9%2Bul08ToQD70OVC69D7zyaX44ah7QD7zydigLXGeDKX6cWsEarp033Le3b6KxIExreC9anbmxfamK5kx%2F6j7%2BD40wRvhvCvvvvvmevpvhvvmv99%3D%3D; tfstk=c_XOBQ9-dy4itIKd41F3cME6vtWAZYk9kcTrHkQLnU_b5HMAizWle9kL1339pkC..; l=eBMCAbpugsEP5udsBOfZnurza779IIRAguPzaNbMiOCPOyf65Y3RW6eYKiTBCnGVh6SWR37gE--uBeYBqID6rVm1a6Fy_Ckmn; isg=BOTkVrgGWQd1va3LqaA8C6SkteLWfQjnDE3d__4Fcq9yqYRzJokQd6sLbQGxcUA_",
         "user-agent": "Mozilla/5.0 (Windows NT 10.0; WOW64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/93.0.4577.82 Safari/537.36"
     }
-    # ip = "112.29.178.13:45148"
+    proxyIp = "111.126.77.179:4245"
     proxy = {'http': "http://" + proxyIp, 'https': "https://" + proxyIp}
     session = HTMLSession()
     #detailResponse = session.get("https://detail.tmall.com/item.htm?id=556741761245&rn=5f6fa8b61661c51c2643703c00330a43&abbucket=17", headers=tempHeaders, proxies=proxy)
-    detailResponse = session.get("https://detail.m.tmall.com/templatesNew/index?id=654184045400", proxies=proxy)
+    detailResponse = session.get("https://detail.m.tmall.com/templatesNew/index?id=653510659650", proxies=proxy)
     detailHtmlSoup = BeautifulSoup(detailResponse.text.encode("utf-8"), features='html.parser')
     print(detailResponse.text)
     detail = macth_h5_detail(detailResponse.text)

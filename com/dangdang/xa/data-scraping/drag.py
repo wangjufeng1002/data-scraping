@@ -70,6 +70,7 @@ def my_drag(x, ratio, timed_ratio=1):
 
 
 def drag():
+    #一共拖动多久
     timed = random.uniform(0.20, 0.35)
     user = get_user()
 
