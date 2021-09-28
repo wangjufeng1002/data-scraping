@@ -2,9 +2,10 @@ from bs4 import BeautifulSoup
 from requests_html import HTMLSession, AsyncHTMLSession
 
 if __name__ == '__main__':
+   startprice=1
+   formaturl = "https://muduots.tmall.com/search.htm?tsearch=y&search=y&orderType=hotsell_desc&viewType=grid&keyword=&lowPrice={}&highPrice={}"
+   for i in range(1,20):
+       url = formaturl.format(str("%.2f" % startprice),str("%.2f" % (startprice+0.1)))
+       startprice=startprice+0.1
+       print(url)
 
-    session = HTMLSession()
-    detailResponse = session.get(
-        "https://detail.tmall.com/item.htm?id=639273188572&rn=ee05056c4d5f08774e1c67ee62f7b955&abbucket=4")
-    detailHtmlSoup = BeautifulSoup(detailResponse.text.encode("utf-8"), features='html.parser')
-    print(detailResponse.text)

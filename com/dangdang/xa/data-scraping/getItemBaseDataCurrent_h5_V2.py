@@ -98,20 +98,27 @@ def analySkuInfoJsonH5(json):
     for temp in skuBase:
         sku_id_map.setdefault(temp.get("skuId"),temp.get("propPath").split(":")[1])
     # 取出skuID 对象的名称
-    skuBase = json.get("skuBase").get("props").get("values")
-    for temp in skuBase:
-        sku_name_map.setdefault(temp.get("vid"),temp.get("name"))
+    if json.get("skuBase").get("props") is not None and isinstance(json.get("skuBase").get("props"),list):
+        for prop in json.get("skuBase").get("props"):
+            skuBase = prop.get("values")
+            for temp in skuBase:
+                sku_name_map.setdefault(temp.get("vid"),temp.get("name"))
+    if json.get("skuBase").get("props") is not None and isinstance(json.get("skuBase").get("props"),dict):
+        skuBase = json.get("skuBase").get("props").get("values")
+        for temp in skuBase:
+            sku_name_map.setdefault(temp.get("vid"), temp.get("name"))
     #取出skuId 对应的价格
     skuBase = json.get("mock").get("skuCore").get("sku2info")
     for key,value in skuBase.items():
         sku_price_map.setdefault(key,value.get("price").get("priceText"))
     #组装
-    for key,value in sku_id_map:
+    for key,value in sku_id_map.items():
         info = SkuInfo(sku_id=None, spu_id=None, name=None, price=None)
         #获取价格
         info.sku_id=key
         info.name=sku_name_map.get(value)
         info.price=sku_price_map.get(key)
+        sku_infos.append(info)
     return sku_infos
 
 
@@ -204,7 +211,7 @@ def processBookDataCurrent(itemIds, logUtils):
 def executeDefaultBookDataCurrent():
     logUtils = Logger(filename='./logs/detail-base-data.log', level='info')
     dataReptiledb.init(None, "./logs/db-current.log")
-    size = 8000
+    size = 6000
     n = 1000
     item_ids = dataReptiledb.getNotDealItemUrl(size)
     temp_ids = split_list(item_ids, n)

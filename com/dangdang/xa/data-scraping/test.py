@@ -3,7 +3,7 @@ import json, re, demjson
 import time, random
 from requests_html import HTMLSession, AsyncHTMLSession
 import dataReptiledb
-from entity import Book, ItemUrl, Logger
+from entity import Book, ItemUrl, Logger,SkuInfo
 import threading, time
 import getIpProxyPool
 from app import entity
@@ -280,6 +280,42 @@ def conver(book,key,value):
         book.setFixPrice(value.replace("定价: ", "").replace("价格: ", "").replace("定价：", "").replace(" ", ""))
     if ("出版社" in key) or ("出版社" in key):
         book.setPress(value.replace("出版社名称:", "").replace(" ", "").replace(" ", ""))
+        
+def analySkuInfoJsonH5(json):
+    sku_infos = []
+    #skuID 和 propPath 的对应关系
+    sku_id_map={}
+    sku_name_map={}
+    sku_price_map = {}
+    skuBase = json.get("skuBase").get("skus")
+    if skuBase is None or len(skuBase) ==0:
+        return sku_infos
+    #skuid-vid
+    for temp in skuBase:
+        sku_id_map.setdefault(temp.get("skuId"),temp.get("propPath").split(":")[1])
+    # 取出skuID 对象的名称
+    if json.get("skuBase").get("props") is not None and isinstance(json.get("skuBase").get("props"),list):
+        for prop in json.get("skuBase").get("props"):
+            skuBase = prop.get("values")
+            for temp in skuBase:
+                sku_name_map.setdefault(temp.get("vid"),temp.get("name"))
+    if json.get("skuBase").get("props") is not None and isinstance(json.get("skuBase").get("props"),dict):
+        skuBase = json.get("skuBase").get("props").get("values")
+        for temp in skuBase:
+            sku_name_map.setdefault(temp.get("vid"), temp.get("name"))
+    #取出skuId 对应的价格
+    skuBase = json.get("mock").get("skuCore").get("sku2info")
+    for key,value in skuBase.items():
+        sku_price_map.setdefault(key,value.get("price").get("priceText"))
+    #组装
+    for key,value in sku_id_map.items():
+        info = SkuInfo(sku_id=None, spu_id=None, name=None, price=None)
+        #获取价格
+        info.sku_id=key
+        info.name=sku_name_map.get(value)
+        info.price=sku_price_map.get(key)
+    return sku_infos
+
 if __name__ == '__main__':
     proxyIp = getIpProxyPool.get_proxy_from_redis()['proxy_detail']['ip']
 
@@ -309,7 +345,7 @@ if __name__ == '__main__':
     proxy = {'http': "http://" + proxyIp, 'https': "https://" + proxyIp}
     session = HTMLSession()
     #detailResponse = session.get("https://detail.tmall.com/item.htm?id=556741761245&rn=5f6fa8b61661c51c2643703c00330a43&abbucket=17", headers=tempHeaders, proxies=proxy)
-    detailResponse = session.get("https://detail.m.tmall.com/templatesNew/index?id=656215723016", proxies=proxy)
+    detailResponse = session.get("https://detail.m.tmall.com/templatesNew/index?id=654184045400", proxies=proxy)
     detailHtmlSoup = BeautifulSoup(detailResponse.text.encode("utf-8"), features='html.parser')
     print(detailResponse.text)
     detail = macth_h5_detail(detailResponse.text)
@@ -327,8 +363,8 @@ if __name__ == '__main__':
         for key,value in temp.items():
             print(key,value)
             conver(book,key,value)
-    print(book.toString())
-
+    #print(book.toString())
+    h_ = analySkuInfoJsonH5(detailJson)
 
     # match= re.search("TShop\\.Setup\\((.*)\\);", detailResponse.text, re.S)
     # text = match.group(0)

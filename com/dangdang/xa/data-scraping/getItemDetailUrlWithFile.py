@@ -94,7 +94,7 @@ def processTxtUrl(path,category,coon):
         detail_url = el.attrs['href']
         detailUrl.append(detail_url)
     detailUrl = list(set(detailUrl))
-    write_db(detailUrl=detailUrl, shopName="新华文轩网络书店", category=category,coon=coon)
+    write_db(detailUrl=detailUrl, shopName="木垛旗舰店", category=category,coon=coon)
 
 
 if __name__ == '__main__':
