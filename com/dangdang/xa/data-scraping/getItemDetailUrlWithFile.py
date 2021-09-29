@@ -94,13 +94,13 @@ def processTxtUrl(path,category):
         detail_url = el.attrs['href']
         detailUrl.append(detail_url)
     detailUrl = list(set(detailUrl))
-    write_db(detailUrl=detailUrl, shopName="博库图书专营店", category=category)
+    write_db(detailUrl=detailUrl, shopName="木垛旗舰店", category=category)
 
 
 if __name__ == '__main__':
 
 
-    rootdir='D:\\bknew'
+    rootdir='D:\chrome-downloads'
     files,names=getallfile(rootdir)
     for file in files:
         print(file)
