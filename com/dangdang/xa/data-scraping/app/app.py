@@ -125,7 +125,7 @@ def random_search(devices, random_policy, ip, port, account):
         devices.send_keys(keys[random.randint(0, len(keys) - 1)])
         time.sleep(0.5)
         get_search_button(devices).click_exists(timeout=10)
-        if valid(devices) is not None:
+        if valid(devices,account, ip, port) is not None:
             log.info("随机搜索出现验证")
             db.insert_account_log(account, ip, port, "-24", "账号随机搜索出现验证")
             time.sleep(1)
@@ -144,7 +144,7 @@ def click_search(devices, name, random_policy, ip, port, account, phone):
     random_message(devices, random_policy['message'], ip, port, account)
     random_switch_tabs(devices, random_policy['switchTabs'], ip, port, account)
     if phone is True:
-        devices.xpath("扫一扫").parent().click()
+        devices.xpath('//android.widget.LinearLayout').click()
     else:
         get_search_view(devices).click_exists(timeout=10)
     time.sleep(0.5)
@@ -323,8 +323,30 @@ def skip_positive(devices):
         button.click()
 
 
-def valid(devices):
-    return devices.xpath('@android:id/decor_content_parent').wait(timeout=1)
+def valid(devices,account, ip, port):
+    #如果存在验证
+    if devices.xpath('@android:id/decor_content_parent').exists is True:
+        for i in range(1,5):
+            #是否需要刷新
+            if devices.xpath("nc_1_refresh1").exists is True:
+                devices.xpath("nc_1_refresh1").click()
+                time.sleep(0.5)
+            startX = 165 #开始 x 坐标
+            startY=1356  #开始 y 轴坐标
+            endX = random.randint(945,1000) #结束坐标
+            endY = 1470                     #结束Y轴坐标
+            s= random.randint(1,9)/100
+            #拖动滑块
+            devices.swipe_points([(startX, startY), (endX, endY)], s)
+            time.sleep(0.5)
+            if devices.xpath("nc_1_refresh1").exists is True:
+                db.insert_account_log(account, ip, port, '27', "拖动验证滑块失败 startX={startX},starY={startY},endX={endX},endY={endY},s={s}".format(startX=startX,startY=startY,endX=endX,endY=endY,s=s))
+                devices.xpath("nc_1_refresh1").click()
+                time.sleep(0.5)
+            else:
+                db.insert_account_log(account, ip, port, '26',  "拖动验证滑块成功 startX={startX},starY={startY},endX={endX},endY={endY},s={s}".format(startX=startX,startY=startY,endX=endX,endY=endY,s=s))
+    if devices.xpath('@android:id/decor_content_parent').exists is True:
+        return True
 
 
 def skip_hongbao(devices):
@@ -454,7 +476,8 @@ def run_item(device, ip, port, account, item, random_policy, number, logged_acco
         url = 'http://detail.tmall.com/item.htm?id=' + str(item)
     click_search(device, url, random_policy, ip, port, account, phone)
     time.sleep(0.3)
-    valid_button = valid(device)
+    #判断是否出现验证码
+    valid_button = valid(device,account, ip, port)
     if valid_button is not None:
         if phone is False:
             log.info("进程%s账号%s暂时失效", number, logged_account)
@@ -467,7 +490,13 @@ def run_item(device, ip, port, account, item, random_policy, number, logged_acco
         else:
             db.insert_account_log(account, ip, port, '-1', "账号出现验证码")
             log.info("手机上出现验证")
-            time.sleep(100)
+            time.sleep(1)
+            #出现验证重启app
+            device.app_stop("com.taobao.taobao")
+            time.sleep(1)
+            device.app_start("com.taobao.taobao")
+            return
+
     content = get_item_detail(devices=device, item_id=item, account=logged_account, index=number,
                               conf=random_policy, ip=ip, port=port, phone=phone, sku=sku)
     if content is not None and len(content) > 0:
