@@ -144,7 +144,8 @@ def click_search(devices, name, random_policy, ip, port, account, phone):
     random_message(devices, random_policy['message'], ip, port, account)
     random_switch_tabs(devices, random_policy['switchTabs'], ip, port, account)
     if phone is True:
-        devices.xpath('//android.widget.LinearLayout').click()
+        devices.xpath(
+            '//*[@resource-id="com.taobao.taobao:id/sv_search_view"]/android.widget.FrameLayout[1]/android.widget.FrameLayout[1]/android.widget.FrameLayout[1]/android.widget.FrameLayout[5]/android.widget.FrameLayout[1]/android.widget.LinearLayout[1]/android.widget.FrameLayout[2]/android.widget.FrameLayout[1]/android.widget.FrameLayout[1]/android.widget.LinearLayout[1]').click()
     else:
         get_search_view(devices).click_exists(timeout=10)
     time.sleep(0.5)
@@ -207,7 +208,7 @@ def random_message(devices, weight, ip, port, account):
 def random_switch_tabs(devices, weight, ip, port, account):
     if random_do(float(weight) * 10):
         db.insert_account_log(account, ip, port, "23", "账号随机切换标签页")
-        tabs = devices.xpath("//android.widget.HorizontalScrollView").child("//android.widget.TextView").all()
+        tabs = devices.xpath("@com.taobao.taobao:id/rv_main_container").child("//android.widget.HorizontalScrollView").child("//android.widget.TextView").all()
         if len(tabs) <= 0:
             return
         index = random.randint(0, len(tabs) - 1)
@@ -435,10 +436,21 @@ def go_home(device):
 
 def heart( account, addr):
     job_status = db.get_job_status_by_account(account)
+    device = u2.connect(addr)
+    valid_button = valid(device, job_status['account'], job_status['ip'], job_status['port'])
+    if valid_button is not  None:
+        db.insert_account_log(account, job_status['ip'], job_status['port'], '-1', "账号出现验证码")
+        log.info("手机上出现验证")
+        time.sleep(1)
+        # 出现验证重启app
+        device.app_stop("com.taobao.taobao")
+        time.sleep(1)
+        # device.app_start("com.taobao.taobao")
+        db.update_job_status(job_status['ip'], job_status['port'], 0)
+        return
     if job_status['run_status'] == 1:
         log.info("任务正在处理中,不进行心跳检测,%s", account)
         return
-    device = u2.connect(addr)
     try:
 
         job_status = db.get_job_status_by_account(account)
@@ -494,7 +506,8 @@ def run_item(device, ip, port, account, item, random_policy, number, logged_acco
             #出现验证重启app
             device.app_stop("com.taobao.taobao")
             time.sleep(1)
-            device.app_start("com.taobao.taobao")
+            #device.app_start("com.taobao.taobao")
+            db.update_job_status(ip,port,0)
             return
 
     content = get_item_detail(devices=device, item_id=item, account=logged_account, index=number,
