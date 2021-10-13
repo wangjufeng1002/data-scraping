@@ -37,6 +37,15 @@ def run_cmd(cmd):
     out = pr.stdout.readlines()
     return out
 
+def skip_special_page(devices):
+    try:
+        webWiew = devices.xpath("//android.webkit.WebView").all()
+        for w in webWiew:
+            if "金币小镇-首页" in w.text:
+                devices.press("back")
+    except:
+        log.info("跳过金币小镇页面失败")
+
 
 def kill_adb_connect():
     cmd = r'adb kill-server'
@@ -432,6 +441,8 @@ def heart( account, addr):
 
 @func_set_timeout(300)
 def run_item(device, ip, port, account, item, random_policy, number, logged_account, task_id, task_label, phone, sku):
+    #跳过特殊页面
+    skip_special_page(device)
     if phone is False:
         random_search(device, random_policy['search'], ip, port, account)
     if item.isdigit() is not True:
