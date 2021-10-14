@@ -153,7 +153,7 @@ def click_search(devices, name, random_policy, ip, port, account, phone):
                 go_back_home(devices)
             devices.xpath("扫一扫").parent().click()
             time.sleep(0.1)
-            if devices.xpath('//*[@resource-id="com.taobao.taobao:id/searchbtn"]').exists is False:
+            if devices.xpath("搜索").exists is False:
                 devices.press("back")
             else:
                 break
