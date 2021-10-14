@@ -1,7 +1,9 @@
 import uiautomator2 as u2
 
 if __name__ == '__main__':
-    adb = u2.connect("7be1f4a9")
+    adb = u2.connect("401fab3")
+    if adb.xpath('//*[@resource-id="com.taobao.taobao:id/searchbtn"]').exists is False:
+         adb.press("back")
     #running = adb.app_list_running()
     #adb.app_stop("com.taobao.taobao")
     #adb.app_start("com.taobao.taobao")
