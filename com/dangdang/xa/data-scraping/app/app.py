@@ -144,8 +144,9 @@ def click_search(devices, name, random_policy, ip, port, account, phone):
     random_message(devices, random_policy['message'], ip, port, account)
     random_switch_tabs(devices, random_policy['switchTabs'], ip, port, account)
     if phone is True:
-        devices.xpath(
-            '//*[@resource-id="com.taobao.taobao:id/sv_search_view"]/android.widget.FrameLayout[1]/android.widget.FrameLayout[1]/android.widget.FrameLayout[1]/android.widget.FrameLayout[5]/android.widget.FrameLayout[1]/android.widget.LinearLayout[1]/android.widget.FrameLayout[2]/android.widget.FrameLayout[1]/android.widget.FrameLayout[1]/android.widget.LinearLayout[1]').click()
+        ##devices.xpath(
+         #   '//*[@resource-id="com.taobao.taobao:id/sv_search_view"]/android.widget.FrameLayout[1]/android.widget.FrameLayout[1]/android.widget.FrameLayout[1]/android.widget.FrameLayout[5]/android.widget.FrameLayout[1]/android.widget.LinearLayout[1]/android.widget.FrameLayout[2]/android.widget.FrameLayout[1]/android.widget.FrameLayout[1]/android.widget.LinearLayout[1]').click()
+        devices.xpath("扫一扫").parent().click()
     else:
         get_search_view(devices).click_exists(timeout=10)
     time.sleep(0.5)
