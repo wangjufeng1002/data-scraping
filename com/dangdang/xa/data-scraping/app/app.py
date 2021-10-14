@@ -149,6 +149,7 @@ def click_search(devices, name, random_policy, ip, port, account, phone):
         ##devices.xpath(
          #   '//*[@resource-id="com.taobao.taobao:id/sv_search_view"]/android.widget.FrameLayout[1]/android.widget.FrameLayout[1]/android.widget.FrameLayout[1]/android.widget.FrameLayout[5]/android.widget.FrameLayout[1]/android.widget.LinearLayout[1]/android.widget.FrameLayout[2]/android.widget.FrameLayout[1]/android.widget.FrameLayout[1]/android.widget.LinearLayout[1]').click()
         while True:
+            time.sleep(0.3)
             if devices.xpath("扫一扫").exists is False:
                 go_back_home(devices)
             devices.xpath("扫一扫").parent().click()
@@ -363,8 +364,8 @@ def valid(devices,account, ip, port):
                 return True
             time.sleep(1)
         return False
-    if devices.xpath('@android:id/decor_content_parent').exists is True:
-        return False
+    else:
+        return True
 
 
 def skip_hongbao(devices):
