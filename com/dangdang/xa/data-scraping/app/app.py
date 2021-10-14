@@ -522,7 +522,6 @@ def run_item(device, ip, port, account, item, random_policy, number, logged_acco
             time.sleep(1)
             #出现验证重启app
             device.app_stop("com.taobao.taobao")
-            time.sleep(1)
             #device.app_start("com.taobao.taobao")
             db.update_job_status(ip,port,0)
             return
