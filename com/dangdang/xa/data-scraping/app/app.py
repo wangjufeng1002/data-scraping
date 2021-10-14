@@ -149,6 +149,8 @@ def click_search(devices, name, random_policy, ip, port, account, phone):
         ##devices.xpath(
          #   '//*[@resource-id="com.taobao.taobao:id/sv_search_view"]/android.widget.FrameLayout[1]/android.widget.FrameLayout[1]/android.widget.FrameLayout[1]/android.widget.FrameLayout[5]/android.widget.FrameLayout[1]/android.widget.LinearLayout[1]/android.widget.FrameLayout[2]/android.widget.FrameLayout[1]/android.widget.FrameLayout[1]/android.widget.LinearLayout[1]').click()
         while True:
+            if  devices.xpath("扫一扫").exists is False:
+                go_back_home(devices)
             devices.xpath("扫一扫").parent().click()
             time.sleep(0.1)
             if devices.xpath('//*[@resource-id="com.taobao.taobao:id/searchbtn"]').exists is False:
