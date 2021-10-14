@@ -327,6 +327,7 @@ def skip_positive(devices):
 def valid(devices,account, ip, port):
     #如果存在验证
     if devices.xpath('@android:id/decor_content_parent').exists is True:
+        time.sleep(0.5)
         for i in range(1,5):
             #是否需要刷新
             if devices.xpath("nc_1_refresh1").exists is True:
@@ -346,6 +347,8 @@ def valid(devices,account, ip, port):
                 time.sleep(0.5)
             else:
                 db.insert_account_log(account, ip, port, '26',  "拖动验证滑块成功 startX={startX},starY={startY},endX={endX},endY={endY},s={s}".format(startX=startX,startY=startY,endX=endX,endY=endY,s=s))
+                break
+            time.sleep(1)
     if devices.xpath('@android:id/decor_content_parent').exists is True:
         return True
 
