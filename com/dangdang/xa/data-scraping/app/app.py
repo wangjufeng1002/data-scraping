@@ -153,6 +153,8 @@ def click_search(devices, name, random_policy, ip, port, account, phone):
             time.sleep(0.1)
             if devices.xpath('//*[@resource-id="com.taobao.taobao:id/searchbtn"]').exists is False:
                 devices.press("back")
+            else:
+                break
     else:
         get_search_view(devices).click_exists(timeout=10)
     time.sleep(0.5)
