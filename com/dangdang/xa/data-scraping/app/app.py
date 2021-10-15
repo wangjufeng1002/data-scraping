@@ -192,7 +192,7 @@ def random_refresh(devices, weight, ip, port, account):
     if random_do(float(weight) * 10):
         db.insert_account_log(account, ip, port, "20", "账号随机刷新")
         time.sleep(0.2)
-        devices.swipe_ext("down", scale=0.3)
+        devices.swipe_ext("up", scale=0.5)
         time.sleep(1)
 
 
@@ -339,6 +339,9 @@ def skip_positive(devices):
 def valid(devices,account, ip, port):
     #如果存在验证
     if devices.xpath('@android:id/decor_content_parent').exists is True:
+        #记录日志
+        db.insert_account_log(account, ip, port, '-1', "账号出现验证码")
+        log.info("手机上出现验证")
         time.sleep(0.5)
         for i in range(1,5):
             #是否需要刷新
@@ -455,17 +458,26 @@ def go_home(device):
 def heart( account, addr):
     job_status = db.get_job_status_by_account(account)
     device = u2.connect(addr)
+    #1. 息屏检测
+    if device.info["screenOn"] == False:
+        device.press("power")
+        device.swipe_ext("up", scale=0.9)
+    #2.连续充电时间长
+    if device.xpath("好").exists is True:
+        device.xpath("好").click()
+    #3.检测验证码
     valid_button = valid(device, job_status['account'], job_status['ip'], job_status['port'])
     if valid_button is False:
-        db.insert_account_log(account, job_status['ip'], job_status['port'], '-1', "账号出现验证码")
-        log.info("手机上出现验证")
-        time.sleep(1)
+        #db.insert_account_log(account, job_status['ip'], job_status['port'], '-1', "账号出现验证码")
+        #log.info("手机上出现验证")
+        #time.sleep(1)
         # 出现验证重启app
         device.app_stop("com.taobao.taobao")
         time.sleep(1)
         # device.app_start("com.taobao.taobao")
         db.update_job_status(job_status['ip'], job_status['port'], 0)
         return
+    #4.检测任务运行态
     if job_status['run_status'] == 1:
         log.info("任务正在处理中,不进行心跳检测,%s", account)
         return
@@ -518,8 +530,8 @@ def run_item(device, ip, port, account, item, random_policy, number, logged_acco
             # 账号失效了就暂时不用了,这次请求直接结束
             return
         else:
-            db.insert_account_log(account, ip, port, '-1', "账号出现验证码")
-            log.info("手机上出现验证")
+            #db.insert_account_log(account, ip, port, '-1', "账号出现验证码")
+            #log.info("手机上出现验证")
             time.sleep(1)
             #出现验证重启app
             device.app_stop("com.taobao.taobao")
@@ -565,12 +577,15 @@ def run_phone(devices_addr, number, account, products, task_id, task_label, port
 
 
 def run(devices_addr, number, account, products, task_id, task_label, ip, port, phone=False):
+    device = None
     try:
         global main_end
         main_end = False
         device = time_out_connect(devices_addr)
         time.sleep(2)
         random_policy = get_memu_policy(account)
+        #添加滑块监控
+        addWatch(device,account,ip,port)
         # 启动代理app todo 自动配置代理ip
         device.app_start("com.tunnelworkshop.postern")
         device.app_stop("com.taobao.taobao")
@@ -613,9 +628,15 @@ def run(devices_addr, number, account, products, task_id, task_label, ip, port, 
         # 出现异常终止操作 并终止app
         if phone is False:
             stop_memu(number)
+    finally:
+        if device is not  None:
+            device.watcher.stop()
     main_end = True
     db.update_job_status(ip, port, '0')
 
+def addWatch(device,account,ip,port):
+    device.watcher("check").when("@android:id/decor_content_parent").click(valid(device, account, ip, port))
+    device.watcher.start(3)
 
 if __name__ == '__main__':
     begin =26.0
