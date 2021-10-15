@@ -685,9 +685,10 @@ def run(devices_addr, number, account, products, task_id, task_label, ip, port, 
     main_end = True
     db.update_job_status(ip, port, '0')
 
-def open_app(adb):
+def open_app(device):
     log.info("首屏监控启动")
-    adb.app_start("com.taobao.taobao")
+    device.app_start("com.tunnelworkshop.postern")
+    device.app_start("com.taobao.taobao")
 
 def addWatch(device,account,ip,port):
     device.watcher("check").when("@android:id/decor_content_parent").call(lambda d : check_slider(device, account, ip, port,True))
