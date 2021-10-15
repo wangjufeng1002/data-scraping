@@ -1,12 +1,12 @@
 import uiautomator2 as u2
 import time
 def screeon(adb):
-    adb.press("power")
+    adb.press("back")
     adb.swipe_ext("up", scale=0.9)
     return True
 if __name__ == '__main__':
-    adb = u2.connect("401fab3")
-    adb.watcher.when("首页").call(screeon(adb))
+    adb = u2.connect("4e788cb2")
+    adb.watcher("首页").when("赚金币").call(screeon(adb))
     adb.watcher.start(1)
     # screen = adb.info
     # if screen["screenOn"] == False:  # 屏幕状态

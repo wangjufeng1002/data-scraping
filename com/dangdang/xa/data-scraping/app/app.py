@@ -125,7 +125,7 @@ def random_search(devices, random_policy, ip, port, account):
         devices.send_keys(keys[random.randint(0, len(keys) - 1)])
         time.sleep(0.5)
         get_search_button(devices).click_exists(timeout=10)
-        if valid(devices,account, ip, port) is False:
+        if valid(devices,account, ip, port,False) is False:
             log.info("随机搜索出现验证")
             db.insert_account_log(account, ip, port, "-24", "账号随机搜索出现验证")
             time.sleep(1)
@@ -336,11 +336,14 @@ def skip_positive(devices):
         button.click()
 
 
-def valid(devices,account, ip, port):
+def valid(devices,account, ip, port,watch=False):
     #如果存在验证
     if devices.xpath('@android:id/decor_content_parent').exists is True:
         #记录日志
-        db.insert_account_log(account, ip, port, '-1', "账号出现验证码")
+        if watch is True:
+            db.insert_account_log(account, ip, port, '-1', "异步检测-账号出现验证码")
+        else:
+            db.insert_account_log(account, ip, port, '-1', "账号出现验证码")
         log.info("手机上出现验证")
         time.sleep(0.5)
         for i in range(1,5):
@@ -466,7 +469,7 @@ def heart( account, addr):
     if device.xpath("好").exists is True:
         device.xpath("好").click()
     #3.检测验证码
-    valid_button = valid(device, job_status['account'], job_status['ip'], job_status['port'])
+    valid_button = valid(device, job_status['account'], job_status['ip'], job_status['port'],False)
     if valid_button is False:
         #db.insert_account_log(account, job_status['ip'], job_status['port'], '-1', "账号出现验证码")
         #log.info("手机上出现验证")
@@ -519,7 +522,7 @@ def run_item(device, ip, port, account, item, random_policy, number, logged_acco
     click_search(device, url, random_policy, ip, port, account, phone)
     time.sleep(0.3)
     #判断是否出现验证码
-    valid_button = valid(device,account, ip, port)
+    valid_button = valid(device,account, ip, port,False)
     if valid_button is False:
         if phone is False:
             log.info("进程%s账号%s暂时失效", number, logged_account)
@@ -635,8 +638,10 @@ def run(devices_addr, number, account, products, task_id, task_label, ip, port, 
     db.update_job_status(ip, port, '0')
 
 def addWatch(device,account,ip,port):
-    device.watcher("check").when("@android:id/decor_content_parent").click(valid(device, account, ip, port))
-    device.watcher.start(3)
+    device.watcher("check").when("@android:id/decor_content_parent").call(valid(device, account, ip, port,True))
+    device.watcher("goldCoins").when("赚金币").press("back")
+    device.watcher.start(5)
+
 
 if __name__ == '__main__':
     begin =26.0
