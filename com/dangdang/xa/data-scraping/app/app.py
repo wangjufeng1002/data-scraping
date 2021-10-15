@@ -334,7 +334,55 @@ def skip_positive(devices):
     button = devices.xpath('@com.taobao.taobao:id/provision_positive_button').wait(3)
     if button is not None:
         button.click()
-
+#校验处理滑块
+def check_slider(devices,account, ip, port,watch=False,phone=True):
+    if devices.xpath('@android:id/decor_content_parent').exists is True:
+        # 记录日志
+        if watch is True:
+            db.insert_account_log(account, ip, port, '-1', "异步检测-账号出现验证码")
+        else:
+            db.insert_account_log(account, ip, port, '-1', "账号出现验证码")
+        log.info("手机上出现验证")
+        for i in range(1, 5):
+            # 是否需要刷新
+            if devices.xpath("nc_1_refresh1").exists is True:
+                devices.xpath("nc_1_refresh1").click()
+                time.sleep(0.5)
+            startX = 165  # 开始 x 坐标
+            startY = 1356  # 开始 y 轴坐标
+            endX = random.randint(945, 1000)  # 结束坐标
+            endY = 1470  # 结束Y轴坐标
+            s = random.randint(1, 9) / 100
+            # 拖动滑块
+            if devices.xpath('@android:id/decor_content_parent').exists is True:
+                devices.swipe_points([(startX, startY), (endX, endY)], s)
+            time.sleep(0.5)
+            # 滑动失败
+            if devices.xpath("nc_1_refresh1").exists is True:
+                db.insert_account_log(account, ip, port, '27',
+                                      "拖动验证滑块失败 startX={startX},starY={startY},endX={endX},endY={endY},s={s}".format(
+                                          startX=startX, startY=startY, endX=endX, endY=endY, s=s))
+                devices.xpath("nc_1_refresh1").click()
+                time.sleep(0.5)
+            # 滑动成功
+            if devices.xpath('@android:id/decor_content_parent').exists is False:
+                db.insert_account_log(account, ip, port, '26',
+                                      "拖动验证滑块成功 startX={startX},starY={startY},endX={endX},endY={endY},s={s}".format(
+                                          startX=startX, startY=startY, endX=endX, endY=endY, s=s))
+                break
+            time.sleep(1)
+        #滑块还在，设置为拖动失败
+        if devices.xpath('@android:id/decor_content_parent').exists is True or devices.xpath("nc_1_refresh1").exists is True:
+            if phone is False:
+                log.info("进程%s账号%s暂时失效", port,account)
+                db.update_account_info(account)
+                db.insert_account_log(account, ip, port, '-1', "账号出现验证码")
+                stop_memu(port)
+                db.update_job_status(ip, port, '0')
+            else:
+                devices.app_stop("com.taobao.taobao")
+                time.sleep(0.5)
+                db.update_job_status(ip, port, 0)
 
 def valid(devices,account, ip, port,watch=False):
     #如果存在验证
@@ -468,18 +516,18 @@ def heart( account, addr):
     #2.连续充电时间长
     if device.xpath("好").exists is True:
         device.xpath("好").click()
-    #3.检测验证码
-    valid_button = valid(device, job_status['account'], job_status['ip'], job_status['port'],False)
-    if valid_button is False:
-        #db.insert_account_log(account, job_status['ip'], job_status['port'], '-1', "账号出现验证码")
-        #log.info("手机上出现验证")
-        #time.sleep(1)
-        # 出现验证重启app
-        device.app_stop("com.taobao.taobao")
-        time.sleep(1)
-        # device.app_start("com.taobao.taobao")
-        db.update_job_status(job_status['ip'], job_status['port'], 0)
-        return
+    # #3.检测验证码
+    # valid_button = valid(device, job_status['account'], job_status['ip'], job_status['port'],False)
+    # if valid_button is False:
+    #     #db.insert_account_log(account, job_status['ip'], job_status['port'], '-1', "账号出现验证码")
+    #     #log.info("手机上出现验证")
+    #     #time.sleep(1)
+    #     # 出现验证重启app
+    #     device.app_stop("com.taobao.taobao")
+    #     time.sleep(1)
+    #     # device.app_start("com.taobao.taobao")
+    #     db.update_job_status(job_status['ip'], job_status['port'], 0)
+    #     return
     #4.检测任务运行态
     if job_status['run_status'] == 1:
         log.info("任务正在处理中,不进行心跳检测,%s", account)
@@ -520,27 +568,27 @@ def run_item(device, ip, port, account, item, random_policy, number, logged_acco
     else:
         url = 'http://detail.tmall.com/item.htm?id=' + str(item)
     click_search(device, url, random_policy, ip, port, account, phone)
-    time.sleep(0.3)
+    time.sleep(0.5)
     #判断是否出现验证码
-    valid_button = valid(device,account, ip, port,False)
-    if valid_button is False:
-        if phone is False:
-            log.info("进程%s账号%s暂时失效", number, logged_account)
-            db.update_account_info(account)
-            db.insert_account_log(account, ip, port, '-1', "账号出现验证码")
-            stop_memu(number)
-            db.update_job_status(ip, port, '0')
-            # 账号失效了就暂时不用了,这次请求直接结束
-            return
-        else:
-            #db.insert_account_log(account, ip, port, '-1', "账号出现验证码")
-            #log.info("手机上出现验证")
-            time.sleep(1)
-            #出现验证重启app
-            device.app_stop("com.taobao.taobao")
-            #device.app_start("com.taobao.taobao")
-            db.update_job_status(ip,port,0)
-            return
+    # valid_button = valid(device,account, ip, port,False)
+    # if valid_button is False:
+    #     if phone is False:
+    #         log.info("进程%s账号%s暂时失效", number, logged_account)
+    #         db.update_account_info(account)
+    #         db.insert_account_log(account, ip, port, '-1', "账号出现验证码")
+    #         stop_memu(number)
+    #         db.update_job_status(ip, port, '0')
+    #         # 账号失效了就暂时不用了,这次请求直接结束
+    #         return
+    #     else:
+    #         #db.insert_account_log(account, ip, port, '-1', "账号出现验证码")
+    #         #log.info("手机上出现验证")
+    #         time.sleep(1)
+    #         #出现验证重启app
+    #         device.app_stop("com.taobao.taobao")
+    #         #device.app_start("com.taobao.taobao")
+    #         db.update_job_status(ip,port,0)
+    #         return
 
     content = get_item_detail(devices=device, item_id=item, account=logged_account, index=number,
                               conf=random_policy, ip=ip, port=port, phone=phone, sku=sku)
@@ -637,10 +685,15 @@ def run(devices_addr, number, account, products, task_id, task_label, ip, port, 
     main_end = True
     db.update_job_status(ip, port, '0')
 
+def open_app(adb):
+    log.info("首屏监控启动")
+    adb.app_start("com.taobao.taobao")
+
 def addWatch(device,account,ip,port):
-    device.watcher("check").when("@android:id/decor_content_parent").call(valid(device, account, ip, port,True))
+    device.watcher("check").when("@android:id/decor_content_parent").call(lambda d : check_slider(device, account, ip, port,True))
     device.watcher("goldCoins").when("赚金币").press("back")
-    device.watcher.start(5)
+    device.watcher("2").when("信息").when("拨号").when("浏览器").when("相机").call(lambda d:open_app(device))
+    device.watcher.start(3)
 
 
 if __name__ == '__main__':

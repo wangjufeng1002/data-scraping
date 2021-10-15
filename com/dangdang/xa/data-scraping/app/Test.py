@@ -4,10 +4,15 @@ def screeon(adb):
     adb.press("back")
     adb.swipe_ext("up", scale=0.9)
     return True
+def open_app(adb):
+    adb.app_start("com.taobao.taobao")
 if __name__ == '__main__':
-    adb = u2.connect("4e788cb2")
-    adb.watcher("首页").when("赚金币").call(screeon(adb))
+    adb = u2.connect("9da9fa9d")
+    # adb.watcher("首页").when("赚金币").call(lambda d:screeon(adb))
+    # adb.watcher.start(1)
+    adb.watcher("1").when("信息").when("拨号").when("浏览器").when("相机").call(lambda d:open_app(adb))
     adb.watcher.start(1)
+    time.sleep(20000)
     # screen = adb.info
     # if screen["screenOn"] == False:  # 屏幕状态
     #     adb.press("power")
