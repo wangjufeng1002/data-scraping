@@ -336,14 +336,17 @@ def skip_positive(devices):
         button.click()
 #校验处理滑块
 def check_slider(devices,account, ip, port,watch=False,phone=True):
-    if devices.xpath('@android:id/decor_content_parent').exists is True:
+    #如果当前软件不是 taobao ,则终止滑块检测
+    if devices.app_current().get('package') != 'com.taobao.taobao':
+        return
+    if  devices.xpath('@android:id/decor_content_parent').exists is True:
         # 记录日志
         if watch is True:
             db.insert_account_log(account, ip, port, '-1', "异步检测-账号出现验证码")
         else:
             db.insert_account_log(account, ip, port, '-1', "账号出现验证码")
         log.info("手机上出现验证")
-        for i in range(1, 5):
+        for i in range(1, 3):
             # 是否需要刷新
             if devices.xpath("nc_1_refresh1").exists is True:
                 devices.xpath("nc_1_refresh1").click()
@@ -692,7 +695,7 @@ def open_app(adb):
 def addWatch(device,account,ip,port):
     device.watcher("check").when("@android:id/decor_content_parent").call(lambda d : check_slider(device, account, ip, port,True))
     device.watcher("goldCoins").when("赚金币").press("back")
-    device.watcher("2").when("信息").when("拨号").when("浏览器").when("相机").call(lambda d:open_app(device))
+    device.watcher("home").when("信息").when("拨号").when("浏览器").when("相机").call(lambda d:open_app(device))
     device.watcher.start(3)
 
 
