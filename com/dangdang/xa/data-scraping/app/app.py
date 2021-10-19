@@ -337,7 +337,7 @@ def skip_positive(devices):
 #校验处理滑块
 def check_slider(devices,account, ip, port,watch=False,phone=True):
     #如果当前软件不是 taobao ,则终止滑块检测
-    if devices.app_current().get('package') != 'com.taobao.taobao':
+    if devices.app_current() is None or devices.app_current().get('package') is None or devices.app_current().get('package') != 'com.taobao.taobao':
         return
     if  devices.xpath('@android:id/decor_content_parent').exists is True:
         # 记录日志

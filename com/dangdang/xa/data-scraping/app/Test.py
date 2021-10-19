@@ -17,6 +17,7 @@ if __name__ == '__main__':
     # adb.watcher.start(1)
     #adb.watcher("1").when("信息").when("拨号").when("浏览器").when("相机").call(lambda d:open_app(adb))
     adb.watcher("check").when("@android:id/decor_content_parent").call(lambda d:check(adb))
+    adb.watcher("goldCoins").when("赚金币").press("back")
     adb.watcher.start(1)
     time.sleep(20000)
     # screen = adb.info
