@@ -12,6 +12,7 @@ from timeit import default_timer
 import db
 import socket
 from datetime import datetime
+import psutil
 
 # 主线程运行标志,来让跳过弹窗的子线程能随主线程终止而结束
 main_end = False
@@ -385,6 +386,11 @@ def check_slider(devices,account, ip, port,watch=False,phone=True):
             else:
                 devices.app_stop("com.taobao.taobao")
                 time.sleep(30)
+                process = psutil.Process(pid)
+                process.kill()
+                db.insert_account_log(account, ip, port, '28', "pid=%s,tid=%s 关闭进程" % (str(pid), str(tid)))
+                db.update_job_status(ip, port, '0')
+
 
 def valid(devices,account, ip, port,watch=False):
     #如果存在验证
