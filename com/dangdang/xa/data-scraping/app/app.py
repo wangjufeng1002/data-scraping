@@ -336,15 +336,17 @@ def skip_positive(devices):
         button.click()
 #校验处理滑块
 def check_slider(devices,account, ip, port,watch=False,phone=True):
+    pid = multiprocessing.current_process().pid
+    tid = threading.current_thread().ident
     #如果当前软件不是 taobao ,则终止滑块检测
     if devices.app_current() is None or devices.app_current().get('package') is None or devices.app_current().get('package') != 'com.taobao.taobao':
         return
     if  devices.xpath('@android:id/decor_content_parent').exists is True:
         # 记录日志
         if watch is True:
-            db.insert_account_log(account, ip, port, '-1', "异步检测-账号出现验证码")
+            db.insert_account_log(account, ip, port, '-1',"pid=%s,tid=%s 异步检测-账号出现验证码"%(str(pid),str(tid)))
         else:
-            db.insert_account_log(account, ip, port, '-1', "账号出现验证码")
+            db.insert_account_log(account, ip, port, '-1',"pid=%s,tid=%s 异步检测-账号出现验证码"%(str(pid),str(tid)))
         log.info("手机上出现验证")
         for i in range(1, 3):
             # 是否需要刷新
@@ -363,15 +365,15 @@ def check_slider(devices,account, ip, port,watch=False,phone=True):
             # 滑动失败
             if devices.xpath("nc_1_refresh1").exists is True:
                 db.insert_account_log(account, ip, port, '27',
-                                      "拖动验证滑块失败 startX={startX},starY={startY},endX={endX},endY={endY},s={s}".format(
-                                          startX=startX, startY=startY, endX=endX, endY=endY, s=s))
+                                      "pid={pid},tid={tid},拖动验证滑块失败 startX={startX},starY={startY},endX={endX},endY={endY},s={s}".format(
+                                          pid=pid, tid=tid,startX=startX, startY=startY, endX=endX, endY=endY, s=s))
                 devices.xpath("nc_1_refresh1").click()
                 time.sleep(0.5)
             # 滑动成功
             if devices.xpath('@android:id/decor_content_parent').exists is False:
                 db.insert_account_log(account, ip, port, '26',
-                                      "拖动验证滑块成功 startX={startX},starY={startY},endX={endX},endY={endY},s={s}".format(
-                                          startX=startX, startY=startY, endX=endX, endY=endY, s=s))
+                                      "pid={pid},tid={tid},拖动验证滑块成功 startX={startX},starY={startY},endX={endX},endY={endY},s={s}".format(
+                                          pid=pid,tid=tid,startX=startX, startY=startY, endX=endX, endY=endY, s=s))
                 break
             time.sleep(1)
         #滑块还在，设置为拖动失败
@@ -379,13 +381,10 @@ def check_slider(devices,account, ip, port,watch=False,phone=True):
             if phone is False:
                 log.info("进程%s账号%s暂时失效", port,account)
                 db.update_account_info(account)
-                db.insert_account_log(account, ip, port, '-1', "账号出现验证码")
                 stop_memu(port)
-                db.update_job_status(ip, port, '0')
             else:
                 devices.app_stop("com.taobao.taobao")
-                time.sleep(0.5)
-                db.update_job_status(ip, port, 0)
+                time.sleep(30)
 
 def valid(devices,account, ip, port,watch=False):
     #如果存在验证
@@ -493,6 +492,7 @@ def process_data(account, passwd, products, port, task_id, task_label):
         db.update_job_status(ip, port, '0')
     except Exception as e:
         log.info(traceback.format_exc())
+    finally:
         db.update_job_status(ip, port, '0')
 
 
