@@ -386,10 +386,10 @@ def check_slider(devices,account, ip, port,watch=False,phone=True):
             else:
                 devices.app_stop("com.taobao.taobao")
                 time.sleep(30)
-                process = psutil.Process(pid)
-                process.kill()
-                db.insert_account_log(account, ip, port, '28', "pid=%s,tid=%s 关闭进程" % (str(pid), str(tid)))
-                db.update_job_status(ip, port, '0')
+                # process = psutil.Process(pid)
+                # process.kill()
+                # db.insert_account_log(account, ip, port, '28', "pid=%s,tid=%s 关闭进程" % (str(pid), str(tid)))
+                # db.update_job_status(ip, port, '0')
 
 
 def valid(devices,account, ip, port,watch=False):
@@ -639,6 +639,8 @@ def run_phone(devices_addr, number, account, products, task_id, task_label, port
 def run(devices_addr, number, account, products, task_id, task_label, ip, port, phone=False):
     device = None
     try:
+        pid = multiprocessing.current_process().pid
+        tid = threading.current_thread().ident
         global main_end
         main_end = False
         device = time_out_connect(devices_addr)
@@ -652,6 +654,7 @@ def run(devices_addr, number, account, products, task_id, task_label, ip, port, 
         go_back(device, 1)
         time.sleep(1)
         device.app_start("com.taobao.taobao")
+        db.insert_account_log(account, ip, port, '3', "pid=%s,tid=%s APP 淘宝启动" % (str(pid), str(tid)))
         # 开启跳过广告线程
         # threading.Thread(target=skip, args=(device,)).start()
         logged_account = get_memu_login_account(ip, port)
