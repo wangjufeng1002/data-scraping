@@ -347,7 +347,7 @@ def check_slider(devices,account, ip, port,watch=False,phone=True):
         if watch is True:
             db.insert_account_log(account, ip, port, '-1',"pid=%s,tid=%s 异步检测-账号出现验证码"%(str(pid),str(tid)))
         else:
-            db.insert_account_log(account, ip, port, '-1',"pid=%s,tid=%s 异步检测-账号出现验证码"%(str(pid),str(tid)))
+            db.insert_account_log(account, ip, port, '-1',"pid=%s,tid=%s 账号出现验证码"%(str(pid),str(tid)))
         log.info("手机上出现验证")
         for i in range(1, 3):
             # 是否需要刷新
@@ -385,11 +385,12 @@ def check_slider(devices,account, ip, port,watch=False,phone=True):
                 stop_memu(port)
             else:
                 devices.app_stop("com.taobao.taobao")
-                time.sleep(30)
-                # process = psutil.Process(pid)
-                # process.kill()
-                # db.insert_account_log(account, ip, port, '28', "pid=%s,tid=%s 关闭进程" % (str(pid), str(tid)))
-                # db.update_job_status(ip, port, '0')
+                time.sleep(5)
+                db.insert_account_log(account, ip, port, '28', "pid=%s,tid=%s 关闭进程" % (str(pid), str(tid)))
+                db.update_job_status(ip, port, '0')
+                process = psutil.Process(pid)
+                process.kill()
+
 
 
 def valid(devices,account, ip, port,watch=False):
@@ -579,6 +580,8 @@ def run_item(device, ip, port, account, item, random_policy, number, logged_acco
     click_search(device, url, random_policy, ip, port, account, phone)
     time.sleep(0.5)
     #判断是否出现验证码
+    check_slider(device,account,ip,port,False)
+    #判断是否出现验证码
     # valid_button = valid(device,account, ip, port,False)
     # if valid_button is False:
     #     if phone is False:
@@ -703,7 +706,7 @@ def open_app(device):
     device.app_start("com.taobao.taobao")
 
 def addWatch(device,account,ip,port):
-    device.watcher("check").when("@android:id/decor_content_parent").call(lambda d : check_slider(device, account, ip, port,True))
+    #device.watcher("check").when("@android:id/decor_content_parent").call(lambda d : check_slider(device, account, ip, port,True))
     device.watcher("goldCoins").when("赚金币").press("back")
     device.watcher("home").when("信息").when("拨号").when("浏览器").when("相机").call(lambda d:open_app(device))
     device.watcher.start(3)
