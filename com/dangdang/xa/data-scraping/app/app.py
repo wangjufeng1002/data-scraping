@@ -341,7 +341,7 @@ def check_slider(devices,account, ip, port,watch=False,phone=True):
     tid = threading.current_thread().ident
     #如果当前软件不是 taobao ,则终止滑块检测
     if devices.app_current() is None or devices.app_current().get('package') is None or devices.app_current().get('package') != 'com.taobao.taobao':
-        return
+        return True
     if  devices.xpath('@android:id/decor_content_parent').exists is True:
         # 记录日志
         if watch is True:
@@ -370,12 +370,13 @@ def check_slider(devices,account, ip, port,watch=False,phone=True):
                                           pid=pid, tid=tid,startX=startX, startY=startY, endX=endX, endY=endY, s=s))
                 devices.xpath("nc_1_refresh1").click()
                 time.sleep(0.5)
+                continue
             # 滑动成功
             if devices.xpath('@android:id/decor_content_parent').exists is False:
                 db.insert_account_log(account, ip, port, '26',
                                       "pid={pid},tid={tid},拖动验证滑块成功 startX={startX},starY={startY},endX={endX},endY={endY},s={s}".format(
                                           pid=pid,tid=tid,startX=startX, startY=startY, endX=endX, endY=endY, s=s))
-                break
+                return True
             time.sleep(1)
         #滑块还在，设置为拖动失败
         if devices.xpath('@android:id/decor_content_parent').exists is True or devices.xpath("nc_1_refresh1").exists is True:
@@ -384,12 +385,12 @@ def check_slider(devices,account, ip, port,watch=False,phone=True):
                 db.update_account_info(account)
                 stop_memu(port)
             else:
-                devices.app_stop("com.taobao.taobao")
-                time.sleep(5)
-                db.insert_account_log(account, ip, port, '28', "pid=%s,tid=%s 关闭进程" % (str(pid), str(tid)))
-                db.update_job_status(ip, port, '0')
-                process = psutil.Process(pid)
-                process.kill()
+                #devices.app_stop("com.taobao.taobao")
+                return False
+        else:
+            return True
+    else:
+        return True
 
 
 
@@ -580,7 +581,10 @@ def run_item(device, ip, port, account, item, random_policy, number, logged_acco
     click_search(device, url, random_policy, ip, port, account, phone)
     time.sleep(0.5)
     #判断是否出现验证码
-    check_slider(device,account,ip,port,False)
+    if check_slider(device,account,ip,port,False) is False:
+        ##c 休眠5秒，抛出异常，
+        time.sleep(5)
+        raise RuntimeError('出现验证码，无法拖动')
     #判断是否出现验证码
     # valid_button = valid(device,account, ip, port,False)
     # if valid_button is False:
