@@ -707,6 +707,7 @@ def open_app(device):
 
 def addWatch(device,account,ip,port):
     #device.watcher("check").when("@android:id/decor_content_parent").call(lambda d : check_slider(device, account, ip, port,True))
+    device.watcher().when("淘金币小镇正在拼命加载中").press("back")
     device.watcher("goldCoins").when("赚金币").press("back")
     device.watcher("home").when("信息").when("拨号").when("浏览器").when("相机").call(lambda d:open_app(device))
     device.watcher.start(3)
