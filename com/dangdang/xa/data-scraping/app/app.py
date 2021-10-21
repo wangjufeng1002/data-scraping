@@ -384,6 +384,7 @@ def check_slider(devices,account, ip, port,watch=False,phone=True):
                 log.info("进程%s账号%s暂时失效", port,account)
                 db.update_account_info(account)
                 stop_memu(port)
+                return False
             else:
                 #devices.app_stop("com.taobao.taobao")
                 return False
