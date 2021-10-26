@@ -232,7 +232,8 @@ def random_switch_tabs(devices, weight, ip, port, account):
 def get_item_detail(item_id, devices, account, index, conf, ip, port, phone, sku):
     exist = devices.xpath("商品过期不存在").wait(timeout=1)
     exist2 =devices.xpath("宝贝不在了").wait(timeout=1)
-    if exist is not None or exist2 is not None:
+    exist3 = devices.xpath("很抱歉，您查看的宝贝不存在，可能已下架或被转移").wait(timeout=1)
+    if exist is not None or exist2 is not None or exist3 is not None:
         log.info("商品%s过期或不存在", item_id)
         return "商品%s过期或不存在".format(item_id)
     devices.xpath('@com.taobao.taobao:id/uik_public_menu_action_icon').wait()
@@ -712,7 +713,7 @@ def open_app(device):
 
 def addWatch(device,account,ip,port):
     #device.watcher("check").when("@android:id/decor_content_parent").call(lambda d : check_slider(device, account, ip, port,True))
-    device.watcher().when("淘金币小镇正在拼命加载中").press("back")
+    device.watcher("taojinbiLoad").when("淘金币小镇正在拼命加载中").press("back")
     device.watcher("goldCoins").when("赚金币").press("back")
     device.watcher("home").when("信息").when("拨号").when("浏览器").when("相机").call(lambda d:open_app(device))
     device.watcher.start(3)
