@@ -1,4 +1,5 @@
 import json
+import os
 import random
 import traceback
 from decimal import Decimal
@@ -632,6 +633,7 @@ def run_phone(devices_addr, number, account, products, task_id, task_label, port
         log.info("ip:%s,port:%s的分片正在运行,请稍后请求", ip, port)
         return -1
     try:
+        #创建进程标识文件
         db.update_job_status(ip, port, 1)
         p = multiprocessing.Process(target=run,
                                     args=(
@@ -646,10 +648,18 @@ def run_phone(devices_addr, number, account, products, task_id, task_label, port
 
 
 def run(devices_addr, number, account, products, task_id, task_label, ip, port, phone=False):
+    pid = multiprocessing.current_process().pid
+    tid = threading.current_thread().ident
+    try:
+        os_open = os.open(r'.\pid\\' + port, os.O_CREAT | os.O_EXCL | os.O_EXLOCK)
+        os.write(os_open,str(pid).encode('UTF-8'))
+        os.close(os_open)
+    except:
+        log.info("创建进程文件标识失败%s,%s"%(port,pid))
+        log.info(traceback.format_exc())
+        return
     device = None
     try:
-        pid = multiprocessing.current_process().pid
-        tid = threading.current_thread().ident
         global main_end
         main_end = False
         device = time_out_connect(devices_addr)
@@ -703,6 +713,10 @@ def run(devices_addr, number, account, products, task_id, task_label, ip, port, 
     finally:
         if device is not  None:
             device.watcher.stop()
+        try:
+            os.remove(r'.\pid\\' + port)
+        except:
+            pass
     main_end = True
     db.update_job_status(ip, port, '0')
 
