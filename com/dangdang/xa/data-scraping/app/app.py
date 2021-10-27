@@ -635,7 +635,8 @@ def run_phone(devices_addr, number, account, products, task_id, task_label, port
         return -1
     try:
         #创建进程标识文件
-        db.update_job_status(ip, port, 1)
+        if db.update_job_status_lock(ip, port, 1) < 1:
+            return
         p = multiprocessing.Process(target=run,
                                     args=(
                                         devices_addr, number, account, products, task_id, task_label, ip,
