@@ -570,6 +570,7 @@ def heart( account, addr):
 
 @func_set_timeout(300)
 def run_item(device, ip, port, account, item, random_policy, number, logged_account, task_id, task_label, phone, sku):
+    db.update_job_status(ip, port, '1')
     #跳过特殊页面
     skip_special_page(device)
     if phone is False:
