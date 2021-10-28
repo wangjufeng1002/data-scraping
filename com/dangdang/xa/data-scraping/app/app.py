@@ -637,6 +637,7 @@ def run_phone(devices_addr, number, account, products, task_id, task_label, port
         #创建进程标识文件
         if db.update_job_status_lock(ip, port, 1) < 1:
             return
+        db.insert_account_log(account, ip, port, '29', "进程准备启动")
         p = multiprocessing.Process(target=run,
                                     args=(
                                         devices_addr, number, account, products, task_id, task_label, ip,
@@ -654,6 +655,7 @@ def run(devices_addr, number, account, products, task_id, task_label, ip, port, 
     try:
         pid = multiprocessing.current_process().pid
         tid = threading.current_thread().ident
+        db.insert_account_log(account, ip, port, '30', "pid=%s,tid=%s 进程启动" % (str(pid), str(tid)))
         global main_end
         main_end = False
         device = time_out_connect(devices_addr)
