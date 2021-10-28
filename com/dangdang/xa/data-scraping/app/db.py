@@ -73,6 +73,14 @@ def update_job_status_lock(ip, port, status):
         um._conn.commit()
         return um.cursor.rowcount
 
+def update_job_pid(ip,port,pid):
+    with UsingMysql() as um:
+        sql = "update account_info set pid={},last_modified_time=now() where ip='{}' and port='{}' ".format(
+            pid, ip, port)
+        um.cursor.execute(sql)
+        um._conn.commit()
+        return um.cursor.rowcount
+
 def get_keywords():
     with UsingMysql() as um:
         sql = "select key_words from random_keywords"

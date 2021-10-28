@@ -656,6 +656,8 @@ def run(devices_addr, number, account, products, task_id, task_label, ip, port, 
         pid = multiprocessing.current_process().pid
         tid = threading.current_thread().ident
         db.insert_account_log(account, ip, port, '30', "pid=%s,tid=%s 进程启动" % (str(pid), str(tid)))
+        #写入进程编号
+        db.update_job_pid(ip,port,pid)
         global main_end
         main_end = False
         device = time_out_connect(devices_addr)
