@@ -661,6 +661,10 @@ def run(devices_addr, number, account, products, task_id, task_label, ip, port, 
         global main_end
         main_end = False
         device = time_out_connect(devices_addr)
+        #. 息屏检测
+        if device.info["screenOn"] == False:
+           device.press("power")
+           device.swipe_ext("up", scale=0.9)
         time.sleep(2)
         random_policy = get_memu_policy(account)
         #添加滑块监控
