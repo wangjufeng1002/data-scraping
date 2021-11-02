@@ -1,4 +1,5 @@
 import json
+import os
 import random
 import traceback
 from decimal import Decimal
@@ -232,7 +233,8 @@ def random_switch_tabs(devices, weight, ip, port, account):
 def get_item_detail(item_id, devices, account, index, conf, ip, port, phone, sku):
     exist = devices.xpath("商品过期不存在").wait(timeout=1)
     exist2 =devices.xpath("宝贝不在了").wait(timeout=1)
-    if exist is not None or exist2 is not None:
+    exist3 = devices.xpath("很抱歉，您查看的宝贝不存在，可能已下架或被转移").wait(timeout=1)
+    if exist is not None or exist2 is not None or exist3 is not None:
         log.info("商品%s过期或不存在", item_id)
         return "商品%s过期或不存在".format(item_id)
     devices.xpath('@com.taobao.taobao:id/uik_public_menu_action_icon').wait()
@@ -568,6 +570,7 @@ def heart( account, addr):
 
 @func_set_timeout(300)
 def run_item(device, ip, port, account, item, random_policy, number, logged_account, task_id, task_label, phone, sku):
+    db.update_job_status(ip, port, '1')
     #跳过特殊页面
     skip_special_page(device)
     if phone is False:
@@ -631,7 +634,10 @@ def run_phone(devices_addr, number, account, products, task_id, task_label, port
         log.info("ip:%s,port:%s的分片正在运行,请稍后请求", ip, port)
         return -1
     try:
-        db.update_job_status(ip, port, 1)
+        #创建进程标识文件
+        if db.update_job_status_lock(ip, port, 1) < 1:
+            return
+        db.insert_account_log(account, ip, port, '29', "进程准备启动")
         p = multiprocessing.Process(target=run,
                                     args=(
                                         devices_addr, number, account, products, task_id, task_label, ip,
@@ -649,9 +655,16 @@ def run(devices_addr, number, account, products, task_id, task_label, ip, port, 
     try:
         pid = multiprocessing.current_process().pid
         tid = threading.current_thread().ident
+        db.insert_account_log(account, ip, port, '30', "pid=%s,tid=%s 进程启动" % (str(pid), str(tid)))
+        #写入进程编号
+        db.update_job_pid(ip,port,pid)
         global main_end
         main_end = False
         device = time_out_connect(devices_addr)
+        #. 息屏检测
+        if device.info["screenOn"] == False:
+           device.press("power")
+           device.swipe_ext("up", scale=0.9)
         time.sleep(2)
         random_policy = get_memu_policy(account)
         #添加滑块监控
@@ -712,7 +725,7 @@ def open_app(device):
 
 def addWatch(device,account,ip,port):
     #device.watcher("check").when("@android:id/decor_content_parent").call(lambda d : check_slider(device, account, ip, port,True))
-    device.watcher().when("淘金币小镇正在拼命加载中").press("back")
+    device.watcher("taojinbiLoad").when("淘金币小镇正在拼命加载中").press("back")
     device.watcher("goldCoins").when("赚金币").press("back")
     device.watcher("home").when("信息").when("拨号").when("浏览器").when("相机").call(lambda d:open_app(device))
     device.watcher.start(3)
