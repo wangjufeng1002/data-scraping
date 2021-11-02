@@ -6,10 +6,10 @@ def update_info(origin_text, item_id, task_id, task_label,sku):
     origin_text= origin_text.replace("'","").replace("\\","")
     with UsingMysql()as um:
         if sku is not None:
-            sql = "update product_record set  original_info='{}',`status`=2 where item_id='{}'and sku_id='{}' and task_id='{}' and task_label='{}'".format(
+            sql = "update product_record set  original_info='{}',`status`=2 where item_id='{}'and sku_id='{}' and task_id='{}' and task_label='{}' and status=1".format(
                 origin_text, item_id,sku, task_id, task_label)
         else:
-            sql = "update product_record set  original_info='{}',`status`=2 where item_id='{}' and task_id='{}' and task_label='{}'".format(
+            sql = "update product_record set  original_info='{}',`status`=2 where item_id='{}' and task_id='{}' and task_label='{}' and status=1".format(
                 origin_text, item_id, task_id, task_label)
         um.cursor.execute(sql)
         um._conn.commit()
