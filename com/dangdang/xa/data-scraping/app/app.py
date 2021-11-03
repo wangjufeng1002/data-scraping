@@ -162,10 +162,10 @@ def click_search(devices, name, random_policy, ip, port, account, phone):
                 break
     else:
         get_search_view(devices).click_exists(timeout=10)
-    time.sleep(0.5)
+    #time.sleep(0.5)
 
     devices.set_fastinput_ime(True)
-    time.sleep(0.5)
+    time.sleep(0.3)
     devices.send_keys(name)
     time.sleep(0.5)
     if phone is True:
@@ -618,12 +618,12 @@ def run_item(device, ip, port, account, item, random_policy, number, logged_acco
         db.insert_account_log(account, ip, port, '1', "账号获取商品详情")
     time.sleep(0.3)
     go_back_home(device)
-    start = random_policy['timeSleep']['begin']
-    end = random_policy['timeSleep']['end']
-    sleep_time = random.randint(int(start), int(end))
-    log.info("账号%s休息%s秒", account, sleep_time)
-    db.insert_account_log(account, ip, port, '2', "账号休息{}秒".format(sleep_time))
-    time.sleep(sleep_time)
+    # start = random_policy['timeSleep']['begin']
+    # end = random_policy['timeSleep']['end']
+    # sleep_time = random.randint(int(start), int(end))
+    # log.info("账号%s休息%s秒", account, sleep_time)
+    # db.insert_account_log(account, ip, port, '2', "账号休息{}秒".format(sleep_time))
+    # time.sleep(sleep_time)
 
 
 def run_phone(devices_addr, number, account, products, task_id, task_label, port):
@@ -665,7 +665,7 @@ def run(devices_addr, number, account, products, task_id, task_label, ip, port, 
         if device.info["screenOn"] == False:
            device.press("power")
            device.swipe_ext("up", scale=0.9)
-        time.sleep(2)
+        #time.sleep(2)
         random_policy = get_memu_policy(account)
         #添加滑块监控
         addWatch(device,account,ip,port)
