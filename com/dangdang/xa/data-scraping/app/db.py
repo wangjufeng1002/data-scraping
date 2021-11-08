@@ -182,3 +182,33 @@ def update_item_url_status(status,item_id):
         sql = "update  item_url set is_success='{}'  where item_id ='{}' ".format(status,item_id)
         um.cursor.execute(sql)
         um._conn.commit()
+
+def get_account_status(status):
+    with UsingMysql() as um:
+        sql = "select * from account_info where status='{}'".format(status)
+        um.cursor.execute(sql)
+        return um.cursor.fetchall()
+
+def get_account_port(port):
+    with UsingMysql() as um:
+        sql = "select * from account_info where port='{}'".format(port)
+        um.cursor.execute(sql)
+        return um.cursor.fetchone()
+def update_account_status( port, status):
+    with UsingMysql() as um:
+        sql = "update account_info set run_status={},last_modified_time=now() where  port='{}'".format(
+            status, port)
+        um.cursor.execute(sql)
+        um._conn.commit()
+
+def update_record_info(origin_text, item_id, task_id, task_label,sku):
+    origin_text= origin_text.replace("'","").replace("\\","")
+    with UsingMysql()as um:
+        if sku is not None:
+            sql = "update product_record set  original_info='{}',`status`=2 where item_id='{}'and sku_id='{}' and task_id='{}' and task_label='{}'".format(
+                origin_text, item_id,sku, task_id, task_label)
+        else:
+            sql = "update product_record set  original_info='{}',`status`=2 where item_id='{}' and task_id='{}' and task_label='{}'".format(
+                origin_text, item_id, task_id, task_label)
+        um.cursor.execute(sql)
+        um._conn.commit()
