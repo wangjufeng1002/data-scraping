@@ -348,6 +348,7 @@ def proc_run(account, array):
 
 def get_task_data(port):
     get = requests.get("http://192.168.47.230:10003/product/getTaskData?port=%s"%(port))
+    log.info("{port} 请求需要处理的数据 {result}".format(port=port,result=get.text))
     return json.loads(get.text)
 
 # 注册退出方法
