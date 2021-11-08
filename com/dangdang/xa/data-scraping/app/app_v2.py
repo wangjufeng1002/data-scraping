@@ -165,7 +165,7 @@ def go_back(devices, times):
 
 
 def go_back_home(device):
-     while device.xpath("首页").exists is False:
+     while device.xpath("首页").exists is False and device.xpath("扫一扫").exists is False:
         go_back(device, 1)
         device.xpath("首页").wait(timeout=0.1)
 
