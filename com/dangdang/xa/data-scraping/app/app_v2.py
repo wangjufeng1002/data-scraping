@@ -209,7 +209,7 @@ def click_search(devices, name, random_policy, ip, port, account, phone):
 
 @func_set_timeout(5)
 def get_item_detail(item_id, devices, account, phone, sku):
-    while devices.xpath("店内宝贝").exists is False and devices.xpath("加入购物车").exists is False and devices.xpath("@com.taobao.taobao:id/uik_public_menu_action_icon").exists is False and devices.xpath("试试其他相似宝贝").exists is False:
+    while devices.xpath("加入购物车").exists is False and devices.xpath("店内宝贝").exists is False and devices.xpath("@com.taobao.taobao:id/uik_public_menu_action_icon").exists is False and devices.xpath("试试其他相似宝贝").exists is False:
         time.sleep(0.1)
     exist = devices.xpath("商品过期不存在").exists
     exist2 = devices.xpath("宝贝不在了").exists
