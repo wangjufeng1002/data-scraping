@@ -110,6 +110,7 @@ def addWatch(device, account, ip, port):
     device.watcher("taojinbiLoad").when("淘金币小镇正在拼命加载中").press("back")
     device.watcher("goldCoins").when("赚金币").press("back")
     device.watcher("home").when("信息").when("拨号").when("浏览器").when("相机").call(lambda d: open_app(device))
+    device.watcher("net").when("网络竟然崩溃了").press("back")
     device.watcher.start(3)
 
 
@@ -209,12 +210,14 @@ def click_search(devices, name, random_policy, ip, port, account, phone):
 
 
 def get_item_detail(item_id, devices, account, phone, sku):
-    exist = devices.xpath("商品过期不存在").wait(timeout=0.2)
-    exist2 = devices.xpath("宝贝不在了").wait(timeout=0.2)
-    exist3 = devices.xpath("很抱歉，您查看的宝贝不存在，可能已下架或被转移").wait(timeout=0.2)
-    if exist is not None or exist2 is not None or exist3 is not None:
+    while devices.xpath("店内宝贝").exists is False and  devices.xpath("加入购物车").exists is False:
+        time.sleep(0.1)
+    exist = devices.xpath("商品过期不存在").exists
+    exist2 = devices.xpath("宝贝不在了").exists
+    exist3 = devices.xpath("很抱歉，您查看的宝贝不存在，可能已下架或被转移").exists
+    if exist is True  or exist2 is True or exist3 is True:
         log.info("商品%s过期或不存在", item_id)
-        return "商品%s过期或不存在".format(item_id)
+        return "商品%s过期或不存在"%(item_id)
     devices.xpath('@com.taobao.taobao:id/uik_public_menu_action_icon').wait()
     content = ''
     devices.swipe_ext("up", scale=0.5)
@@ -267,7 +270,7 @@ def run_item(device, ip, port, account, item, random_policy, task_id, task_label
         time.sleep(2)
         raise RuntimeError('出现验证码，无法拖动')
     content = get_item_detail(devices=device, item_id=item, account=account, phone=phone, sku=sku)
-    if content is not None and len(content) > 0:
+    if content is not None:
         db.update_record_info(content, item, task_id, task_label, sku)
         db.update_account_info_date(account)
         db.insert_account_log(account, ip, port, '1', "账号获取商品详情")
@@ -317,9 +320,11 @@ def proc_run(account, array):
     db.update_job_pid(account['ip'], account['port'], pid)
     db.update_account_status(account['port'],1)
     device = None
+
     try:
         # 开始启动adb,taobao,postern
         device = time_out_connect(account['port'])
+        addWatch(device,account['account'],account['ip'],account['port'])
     except:
         log.info("%s 连接失败"%(account['port']))
         db.update_account_status(account['port'], 0)
