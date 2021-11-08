@@ -20,7 +20,11 @@ def get_running_account():
         sql = "select * from account_info where run_status='1'"
         um.cursor.execute(sql)
         return um.cursor.fetchall()
-
+def get_vaild_account():
+    with UsingMysql() as um:
+        sql = "select * from account_info where status > '0'"
+        um.cursor.execute(sql)
+        return um.cursor.fetchall()
 
 def update_account_info(account):
     with UsingMysql() as um:

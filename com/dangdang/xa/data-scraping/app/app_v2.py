@@ -12,7 +12,6 @@ import MyLog
 from timeit import default_timer
 import db
 import psutil
-import setproctitle
 import socket
 from func_timeout import func_set_timeout
 import atexit

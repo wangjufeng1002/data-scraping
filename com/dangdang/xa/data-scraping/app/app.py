@@ -141,10 +141,10 @@ def random_search(devices, random_policy, ip, port, account):
 
 def click_search(devices, name, random_policy, ip, port, account, phone):
     # 随机策略
-    random_refresh(devices, random_policy['refresh'], ip, port, account)
-    random_shop_cart(devices, random_policy['shopCart'], ip, port, account)
-    random_message(devices, random_policy['message'], ip, port, account)
-    random_switch_tabs(devices, random_policy['switchTabs'], ip, port, account)
+    # random_refresh(devices, random_policy['refresh'], ip, port, account)
+    # random_shop_cart(devices, random_policy['shopCart'], ip, port, account)
+    # random_message(devices, random_policy['message'], ip, port, account)
+    # random_switch_tabs(devices, random_policy['switchTabs'], ip, port, account)
     #随机策略完成后需要退回到首页
     go_back_home(devices)
     if phone is True:
