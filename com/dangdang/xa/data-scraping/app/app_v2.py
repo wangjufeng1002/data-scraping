@@ -268,7 +268,9 @@ def run_item(device, ip, port, account, item, random_policy, task_id, task_label
         ##c 休眠5秒，抛出异常，
         time.sleep(2)
         raise RuntimeError('出现验证码，无法拖动')
+    time_time = time.time()
     content = get_item_detail(devices=device, item_id=item, account=account, phone=phone, sku=sku)
+    log.info("账号%s-%s 抓取 %s 详情所用时间 %d" % (account['account'], account['port'], item, (time.time() - time_time)))
     if content is not None:
         db.update_record_info(content, item, task_id, task_label, sku)
         db.update_account_info_date(account)
@@ -306,7 +308,7 @@ def run_items(device: u2.Device, account, products, task_id, task_label):
         else:
             run_item(device, account['ip'], account['port'], account['account'], item, random_policy, task_id, task_label,
                      True, None)
-        log.info((time.time()-time_time))
+        log.info("账号%s-%s抓取%s所用时间 %d"%(account['account'],account['port'],item,(time.time()-time_time)))
     return
 
 
