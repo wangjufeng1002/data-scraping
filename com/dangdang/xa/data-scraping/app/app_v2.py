@@ -341,7 +341,7 @@ def proc_run(account, array):
         app_start_check(device)
 
 def get_task_data(port):
-    get = requests.get("http://localhost:10003/product/getTaskData?port=%s"%(port))
+    get = requests.get("http://192.168.47.230:10003/product/getTaskData?port=%s"%(port))
     return json.loads(get.text)
 
 # 注册退出方法
