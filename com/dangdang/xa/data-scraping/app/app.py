@@ -1,19 +1,17 @@
 import json
-import os
-import random
-import traceback
-from decimal import Decimal
-import uiautomator2 as u2
-import time
-import subprocess
 import multiprocessing
-import threading
-import MyLog
-from timeit import default_timer
-import db
+import random
 import socket
-from datetime import datetime
-import psutil
+import subprocess
+import threading
+import time
+import traceback
+from timeit import default_timer
+
+import uiautomator2 as u2
+
+import MyLog
+import db
 
 # 主线程运行标志,来让跳过弹窗的子线程能随主线程终止而结束
 main_end = False

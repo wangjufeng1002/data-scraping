@@ -85,7 +85,7 @@ def processPriceData(itemUrlEntity,header, ip):
     # detailResponse = s.get(url=itemUrlEntity.itemUrl.replace("http","https"), headers=tempHeaders, timeout=300,proxies=proxy)
 
     session = HTMLSession()
-    proxy ={'http:':"http://"+ip,'https:':"https://"+ip}
+    proxy ={'http':"http://"+ip,'https':"https://"+ip}
     detailResponse = session.get(url=itemUrlEntity.itemUrl.replace("http","https"),proxies=proxy,timeout=(3,4))
 
     detailHtmlSoup = BeautifulSoup(detailResponse.text, features='html.parser')
@@ -126,7 +126,7 @@ def processPriceData(itemUrlEntity,header, ip):
 
 
 def processPromotion(book, header, ip):
-    proxy = {'http:': "http://" + ip, 'https:': "https://" + ip}
+    proxy = {'http': "http://" + ip, 'https': "https://" + ip}
     session = HTMLSession()
     promotionJsonp = session.get(promotionUrl.format(itemId=book.getTmId()), headers=header, proxies=proxy)
     #promotionJsonp = session.get(promotionUrl.format(itemId=book.getTmId()), headers=header)
