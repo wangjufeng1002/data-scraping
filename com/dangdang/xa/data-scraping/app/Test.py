@@ -9,7 +9,8 @@ def open_app(adb):
 def check(adb):
     print("出现验证码")
 if __name__ == '__main__':
-    adb = u2.connect("401fab3")
+    adb = u2.connect("7ed1fca1")
+    adb.app_start("com.taobao.taobao")
     print(adb.app_current().get('package'))
     print(adb.app_info("com.taobao.taobao"))
     print(adb.app_list_running())
