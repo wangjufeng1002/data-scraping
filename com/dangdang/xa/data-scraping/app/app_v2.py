@@ -184,7 +184,8 @@ def get_search_button(devices):
 
 def click_search(devices, name, random_policy, ip, port, account, phone):
     #如果当前搜索框存在 就不进行退回首页操作
-    if devices.xpath("@com.taobao.taobao:id/edit_del_btn").exists is True:
+    edit_del = devices.xpath("@com.taobao.taobao:id/edit_del_btn").wait(0.1)
+    if edit_del is not  None and devices.xpath("@com.taobao.taobao:id/edit_del_btn").exists is True:
         devices.xpath("@com.taobao.taobao:id/edit_del_btn").click()
         devices.xpath("@com.taobao.taobao:id/searchEdit").click()
     else:    # 随机策略完成后需要退回到首页
@@ -207,14 +208,14 @@ def click_search(devices, name, random_policy, ip, port, account, phone):
     else:
         get_search_button(devices).click_exists(timeout=2)
 
-@func_set_timeout(5)
+@func_set_timeout(10)
 def get_item_detail(item_id, devices, account, phone, sku):
     while devices.xpath("加入购物车").exists is False and devices.xpath("店内宝贝").exists is False and devices.xpath("@com.taobao.taobao:id/uik_public_menu_action_icon").exists is False and devices.xpath("试试其他相似宝贝").exists is False:
-        time.sleep(0.1)
+        pass
     exist = devices.xpath("商品过期不存在").exists
     exist2 = devices.xpath("宝贝不在了").exists
     exist3 = devices.xpath("很抱歉，您查看的宝贝不存在，可能已下架或被转移").exists
-    if exist is True  or exist2 is True or exist3 is True:
+    if exist is True or exist2 is True or exist3 is True:
         log.info("商品%s过期或不存在", item_id)
         return "商品%s过期或不存在"%(item_id)
     devices.xpath('@com.taobao.taobao:id/uik_public_menu_action_icon').wait()
@@ -269,12 +270,16 @@ def run_item(device, ip, port, account, item, random_policy, task_id, task_label
         time.sleep(2)
         raise RuntimeError('出现验证码，无法拖动')
     time_time = time.time()
-    content = get_item_detail(devices=device, item_id=item, account=account, phone=phone, sku=sku)
+    try:
+        content = get_item_detail(devices=device, item_id=item, account=account, phone=phone, sku=sku)
+        if content is not None:
+            db.update_record_info(content, item, task_id, task_label, sku)
+            db.update_account_info_date(account)
+            db.insert_account_log(account, ip, port, '1', "账号获取商品详情")
+    except:
+        log.info(traceback.format_exc())
+        pass
     log.info("账号%s-%s 抓取 %s 详情所用时间 %d" % (account, port, item, (time.time() - time_time)))
-    if content is not None:
-        db.update_record_info(content, item, task_id, task_label, sku)
-        db.update_account_info_date(account)
-        db.insert_account_log(account, ip, port, '1', "账号获取商品详情")
     #
     go_back(device,1)
     #go_back_home(device)
@@ -293,12 +298,14 @@ def get_memu_policy(account):
     return config['random']
 
 
-def run_items(device: u2.Device, account, products, task_id, task_label):
+def run_items(device: u2.Device, account, products, task_id, task_label,proc_dict):
     # 获取账号动态配置信息
-    random_policy = get_memu_policy(account['account'])
+    #random_policy = get_memu_policy(account['account'])
+    random_policy=None
     # 再次进行检测
     app_start_check(device)
     for item in products:
+        proc_dict[multiprocessing.current_process().pid] = int(time.time())
         time_time = time.time()
         if '-' in item:
             #带有skuid，
@@ -312,7 +319,7 @@ def run_items(device: u2.Device, account, products, task_id, task_label):
     return
 
 
-def proc_run(account, array):
+def proc_run(account, proc_dict):
     # 记录线程，进程信息
     pid = multiprocessing.current_process().pid
     tid = threading.current_thread().ident
@@ -320,12 +327,13 @@ def proc_run(account, array):
                           "pid=%s,tid=%s 进程启动" % (str(pid), str(tid)))
     db.update_job_pid(account['ip'], account['port'], pid)
     db.update_account_status(account['port'],1)
-    device = None
-
     try:
         # 开始启动adb,taobao,postern
         device = time_out_connect(account['port'])
-        addWatch(device,account['account'],account['ip'],account['port'])
+        # 开启检测线程
+        thread = threading.Thread(target=check_thread, args=(device,account,))
+        thread.setDaemon(True)
+        thread.start()
     except:
         log.info("%s 连接失败"%(account['port']))
         db.update_account_status(account['port'], 0)
@@ -333,6 +341,7 @@ def proc_run(account, array):
     # app启动，初始化
     app_init(device)
     while True:
+        proc_dict[multiprocessing.current_process().pid] = int(time.time())
         data = get_task_data(account['port'])
         products = data['itemIds']
         task_id = data['taskId']
@@ -341,7 +350,7 @@ def proc_run(account, array):
             time.sleep(2)
             continue
         try:
-            run_items(device=device, account=account, products=products, task_id=task_id, task_label=task_label)
+            run_items(device=device, account=account, products=products, task_id=task_id, task_label=task_label,proc_dict=proc_dict)
         except:
             log.info(traceback.format_exc())
             app_init(device)
@@ -354,51 +363,63 @@ def get_task_data(port):
     log.info("{port} 请求需要处理的数据 {result}".format(port=port,result=get.text))
     return json.loads(get.text)
 
+def check_thread(device: u2.Device,account):
+    while True:
+        if device.xpath("浮层关闭按钮").exists is True:
+            device.xpath("浮层关闭按钮").click()
+            db.insert_account_log(account['account'], account['ip'], account['port'], '31', "检测到浮层")
+            return
+        if device.xpath("淘金币小镇正在拼命加载中").exists is True:
+            device.press("back")
+            db.insert_account_log(account['account'], account['ip'], account['port'], '31', "检测到加载淘金币")
+            return
+        if device.xpath("赚金币").exists is True:
+            device.press("back")
+            db.insert_account_log(account['account'], account['ip'], account['port'], '31', "赚金币")
+            return
+        if  device.xpath("网络竟然崩溃了").exists is True:
+            device.press("back")
+            db.insert_account_log(account['account'], account['ip'], account['port'], '31', "网络异常")
+            return
+        time.sleep(10)
 # 注册退出方法
 # atexit.register(main_out_run)
 if __name__ == '__main__':
-    array = multiprocessing.Manager().list()
-    ALL_PROCESS = []
+    proc_dict = multiprocessing.Manager().dict()
     # 1.查询有效的进程
     account_infos = db.get_account_status(1)
     # 2.kill 正在运行的进程
     kill_exit_proc(account_infos)
+
     # 3.启动进程
     for account in account_infos:
         db.insert_account_log(account['account'], account['ip'], account['port'], '29', "进程准备启动")
-        current_process = multiprocessing.Process(target=proc_run, args=(account, array,), name=account['port'])
+        current_process = multiprocessing.Process(target=proc_run, args=(account, proc_dict,), name=account['port'])
         current_process.start()
-        ALL_PROCESS.append(current_process)
     time.sleep(5)
     while True:
-        time.sleep(10)
-        # 检测所有的账号有没有全部启动
-        accounts = db.get_account_status(1)
-        run_adb_code = []
-        error_process = []
-        for proc in ALL_PROCESS:
-            if proc.is_alive():
-                run_adb_code.append(proc.name)
-                continue
-            else:
-                # 移除该线程
-                #ALL_PROCESS.remove(proc)
-                error_process.append(proc)
-                log.info("进程=%s,porst=%s 结束，需要重启", proc.pid, proc.name)
-                # 线程结束，需要重新启动
-                # account = db.get_account_port(proc.name)
-                # db.insert_account_log(account['account'], account['ip'], account['port'], '29', "进程准备启动")
-                # current_process = multiprocessing.Process(target=proc_run, args=(account, array,), name=account['port'])
-                # ALL_PROCESS.append(current_process)
-                # current_process.start()
-                # log.info("进程=%s,port=%s 启动成功，"%(current_process.pid, current_process.name))
-        log.info("run process now,{pid},{run_adb_code}".format(pid=multiprocessing.current_process().pid,run_adb_code=run_adb_code))
-        for proc in error_process:
-            ALL_PROCESS.remove(proc)
-        for account in accounts:
-            if account['port'] not in run_adb_code:
-                db.insert_account_log(account['account'], account['ip'], account['port'], '29', "进程准备启动")
-                current_process = multiprocessing.Process(target=proc_run, args=(account, array,), name=account['port'])
-                ALL_PROCESS.append(current_process)
-                current_process.start()
-                log.info("进程=%s,port=%s 启动成功"%(current_process.pid, current_process.name))
+        try:
+            time.sleep(10)
+            # 检测所有的账号有没有全部启动
+            accounts = db.get_account_status(1)
+            run_adb_code = []
+            error_process = []
+            for proc in multiprocessing.active_children():
+                if 'SyncManager' in proc.name:
+                    continue
+                if int(time.time())-proc_dict[proc.pid] >= 60:
+                    db.insert_account_log_v2(proc.name, '28', "关闭进程")
+                    psutil.Process(proc.pid).kill()
+                if proc.is_alive():
+                    run_adb_code.append(proc.name)
+                    continue
+            log.info("run process now,{pid},{run_adb_code}".format(pid=multiprocessing.current_process().pid,run_adb_code=run_adb_code))
+            for account in accounts:
+                if account['port'] not in run_adb_code:
+                    db.insert_account_log(account['account'], account['ip'], account['port'], '29', "进程准备启动")
+                    current_process = multiprocessing.Process(target=proc_run, args=(account, proc_dict,), name=account['port'])
+                    current_process.start()
+                    log.info("进程=%s,port=%s 启动成功"%(current_process.pid, current_process.name))
+        except:
+            log.info(traceback.format_exc())
+            pass

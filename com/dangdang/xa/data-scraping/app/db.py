@@ -100,6 +100,16 @@ def insert_account_log(account, ip, port, action, remark):
             account, ip, proxy,port, action, remark)
         um.cursor.execute(sql)
         um._conn.commit()
+def insert_account_log_v2(port, action, remark):
+    account_port = get_account_port(port)
+    proxy=account_port['proxy_ip']
+    account = account_port['account']
+    ip = account_port['ip']
+    with UsingMysql() as um:
+        sql = "INSERT INTO account_log (`account`, `ip`, `proxy_ip`,`port`, `action`, `remark`, `create_date`) VALUES ('{}','{}','{}','{}','{}','{}',now())".format(
+            account, ip, proxy,port, action, remark)
+        um.cursor.execute(sql)
+        um._conn.commit()
 
 
 def get_cookies():
