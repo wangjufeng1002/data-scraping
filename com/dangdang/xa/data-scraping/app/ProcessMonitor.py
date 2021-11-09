@@ -100,25 +100,23 @@ def monitor_start():
     currIp = socket.gethostbyname(currhost)
     #程序不能乱跑   必须是当前执行机器
     result = queryData(currIp)
-    processCount = 0
+    processions = get_process_run_count("python.exe")
     try:
         if len(result) == 0:
-            processCount = get_process_run_count("python.exe")
-            log.info("....python.exe....此进程....目前启动....{}....个....".format(processCount))
+            log.info("....python.exe....此进程....目前启动....{}....个....".format(processions))
             return
         else:
             for re in result:
-                if (get_process(processCount,"python.exe", re['pid'],re['port']) is False):
+                if (get_process("python.exe", re['pid'],re['port'],re['update_time']) is True):
                     updateData(re['id'])
-        log.info("...python.exe...此进程...目前启动...{}...个...".format(processCount))
+        log.info("...python.exe...此进程...目前启动...{}...个...".format(processions))
     except:
         log.info("++++++定时检测进程,程序执行异常------")
 
 
-
 def queryData(runIp):
     with UsingMysql() as um:
-        sql = "select id,pid,port,proxy_ip from account_info where run_status='1' and status=1  and  SUBDATE(update_time,INTERVAL 1 MINUTE) and ip='{}'".format(runIp)
+        sql = "select id,pid,port,update_time from account_info where run_status='1' and status=1  and  SUBDATE(update_time,INTERVAL 1 MINUTE) and ip='{}'".format(runIp)
         um.cursor.execute(sql)
         data = um.cursor.fetchall()
         return data
@@ -131,21 +129,24 @@ def updateData(iid):
         um._conn.commit()
 
 
-def get_process(count,pname, runPid, port):
+def get_process(pname, runPid, port, uptime):
     for proc in psutil.process_iter():
         sname = proc.name()
         spid = proc.pid
-        if sname == pname:
-            count = count+1
-            if spid == int(runPid):
-                curr = time.time()
-                ptime = proc.create_time()
-                #进程一直活着 但超过一定时间 打个日志标识下 不进行处理
-                if(datetime.datetime.fromtimestamp(curr) - datetime.datetime.fromtimestamp(ptime)).seconds > 600:
-                 log.info("手机='{}',进程号='{}',启动时间='{}',长时间还活着,做个记录".format(port, spid, datetime.datetime.fromtimestamp(ptime)))
+        if sname == pname and spid == int(runPid):
+            curr = time.time()
+            ptime = proc.create_time()
+            #数据库更新时间间隔2分钟,直接杀掉进程 重启
+            if (datetime.datetime.fromtimestamp(curr) - datetime.datetime.fromtimestamp(uptime)).seconds > 120:
+                log.info("手机='{}',进程号='{}',上次更新时间='{}',距离上次更新时间超过2分钟,强杀进程".format(port, spid, datetime.datetime.fromtimestamp(uptime)))
+                proc.kill(spid)
                 return True
+            # 进程一直活着 但超过一定时间 打个日志标识下 不进行处理
+            if (datetime.datetime.fromtimestamp(curr) - datetime.datetime.fromtimestamp(ptime)).seconds > 600:
+                log.info("手机='{}',进程号='{}',启动时间='{}',长时间稳定运行,做个记录".format(port, spid,datetime.datetime.fromtimestamp(ptime)))
+                return False
     log.info("手机='{}',记录进程号='{}',该进程不存在,但是数据库状态为1,需要更新数据库".format(port, runPid))
-    return False
+    return True
 
 def get_process_run_count(pname):
     count = 0
