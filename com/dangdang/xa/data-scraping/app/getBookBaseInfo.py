@@ -1,11 +1,11 @@
-import uiautomator2 as u2
 import time
-import multiprocessing
-import threading
+
+import uiautomator2 as u2
+
 import MyLog
-from timeit import default_timer
 import db
-from  entity import Book
+from entity import Book
+
 log = MyLog.Logger('CMT').get_log()
 def skip_sao_yi_sao(adb):
     time.sleep(0.5)

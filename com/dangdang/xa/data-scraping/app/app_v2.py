@@ -1,21 +1,18 @@
 import json
-import os
-import random
-import traceback
-from decimal import Decimal
-import uiautomator2 as u2
-import time
-import subprocess
 import multiprocessing
+import random
 import threading
-import MyLog
-from timeit import default_timer
-import db
+import time
+import traceback
+
 import psutil
-import socket
-from func_timeout import func_set_timeout
-import atexit
 import requests
+import uiautomator2 as u2
+from func_timeout import func_set_timeout
+
+import MyLog
+import db
+
 log = MyLog.Logger('CMT').get_log()
 
 
