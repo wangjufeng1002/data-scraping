@@ -57,27 +57,50 @@ def processPromo(headers, categorys, logUtils):
             logUtils.logger.info("线程启动结束")
     return threadParamMap
 
+def processDefaultInfo(headers, categorys,logUtils):
+    dataReptiledb.init(None, "./logs/db-current.log")
+    if categorys is None or len(categorys) <= 0:
+        logUtils.logger.error("未找到需要处理的分类")
+        raise Exception("未找到需要处理的分类")
+    if headers is None or len(headers) <= 0:
+        logUtils.logger.error("未找到headers")
+        raise Exception("未找到headers")
+    threadParamMap = {}
+    index = 0
+    for headerIndex in range(0, len(headers)):
+        if index < len(categorys):
+            headers[headerIndex].pop("status")
+            threading.Thread(target=process.processBookDefaultInfo, args=(categorys[index], headers[headerIndex],logUtils),
+                             name="$自定义<->" + categorys[index] + "<->" + headers[headerIndex].get("account")+"<->"+time.strftime('%Y-%m-%d %H:%M:%S',time.localtime())+"$").start()
+            # 每个账号绑定一个分类
+            threadParamMap[headers[headerIndex].get("account")] = categorys[index]
+            index += 1
+        else:
+            logUtils.logger.info("线程启动结束")
+    return threadParamMap
 
 def auto_process(flag):
     logUtils = Logger(filename='./logs/detail-current.log', level='info')
     dataReptiledb.init(None, "./logs/db-current.log")
     categorys = []
-    if flag == 1:
+    if flag == 1 or flag == '1' or flag == 4 or flag == '4':
         # 从book 表中查
         categorys = dataReptiledb.getNotDealCategoryByBook()
-    if flag == 2:
+    if flag == 2 or flag == 3 or flag == '2' or flag =='3':
         # 从item_url 中查
-        categorys = dataReptiledb.getNotDealCategoryByItemUrl()
+        categorys = dataReptiledb.getNotDealCategoryByItemUrl(None,None)
     # 查询 cookies
     headers = dataReptiledb.getHeaders(None)
     if categorys is None or headers is None:
         logUtils.logger.error("未找到需要处理的分类")
         raise Exception("未找到需要处理的分类")
     # 开始处理
-    if flag == 1:
+    if flag == 1 or flag == '1':
         processPromo(headers=headers, categorys=categorys, logUtils=logUtils)
-    if flag == 2:
+    if flag == 2 or flag == '2':
         processAll(headers=headers, categorys=categorys, logUtils=logUtils)
+    if flag == 3 or flag == '3' or flag == 4 or flag == '4':
+        processDefaultInfo(headers=headers, categorys=categorys, logUtils=logUtils)
     while True:
         try:
             threadParamMap = {}
@@ -103,7 +126,7 @@ def auto_process(flag):
             if flag == 1:
                 #从book 表中查
                 categorys = dataReptiledb.getNotDealCategoryByBook()
-            if flag == 2:
+            if flag == 2 or flag == 3:
                 #从item_url 中查
                 categorys = dataReptiledb.getNotDealCategoryByItemUrl()
             runCategorys = threadParamMap.values()
@@ -131,5 +154,8 @@ if __name__ == '__main__':
     # 1. 只从book表中查出信息，更新促销信息
     #auto_process(1)
     # 2. 从item_url 查出未处理的Url,更新促销信息
-    auto_process(int(active))
+
+    # 3.从item_url 查出未处理的Url,只处理基本信息
+    #auto_process(int(active))
+    auto_process(active)
     # 自动

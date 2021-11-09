@@ -20,7 +20,11 @@ def get_running_account():
         sql = "select * from account_info where run_status='1'"
         um.cursor.execute(sql)
         return um.cursor.fetchall()
-
+def get_vaild_account():
+    with UsingMysql() as um:
+        sql = "select * from account_info where status > '0'"
+        um.cursor.execute(sql)
+        return um.cursor.fetchall()
 
 def update_account_info(account):
     with UsingMysql() as um:
@@ -65,7 +69,21 @@ def update_job_status(ip, port, status):
             status, ip, port)
         um.cursor.execute(sql)
         um._conn.commit()
+def update_job_status_lock(ip, port, status):
+    with UsingMysql() as um:
+        sql = "update account_info set run_status={},last_modified_time=now() where ip='{}' and port='{}' and run_status !={}".format(
+            status, ip, port,status)
+        um.cursor.execute(sql)
+        um._conn.commit()
+        return um.cursor.rowcount
 
+def update_job_pid(ip,port,pid):
+    with UsingMysql() as um:
+        sql = "update account_info set pid={},last_modified_time=now() where ip='{}' and port='{}' ".format(
+            pid, ip, port)
+        um.cursor.execute(sql)
+        um._conn.commit()
+        return um.cursor.rowcount
 
 def get_keywords():
     with UsingMysql() as um:
@@ -77,6 +95,16 @@ def get_keywords():
 def insert_account_log(account, ip, port, action, remark):
     account_info=get_job_status(ip,port)
     proxy=account_info['proxy_ip']
+    with UsingMysql() as um:
+        sql = "INSERT INTO account_log (`account`, `ip`, `proxy_ip`,`port`, `action`, `remark`, `create_date`) VALUES ('{}','{}','{}','{}','{}','{}',now())".format(
+            account, ip, proxy,port, action, remark)
+        um.cursor.execute(sql)
+        um._conn.commit()
+def insert_account_log_v2(port, action, remark):
+    account_port = get_account_port(port)
+    proxy=account_port['proxy_ip']
+    account = account_port['account']
+    ip = account_port['ip']
     with UsingMysql() as um:
         sql = "INSERT INTO account_log (`account`, `ip`, `proxy_ip`,`port`, `action`, `remark`, `create_date`) VALUES ('{}','{}','{}','{}','{}','{}',now())".format(
             account, ip, proxy,port, action, remark)
@@ -166,5 +194,35 @@ def insert_book_data(book):
 def update_item_url_status(status,item_id):
     with UsingMysql() as um:
         sql = "update  item_url set is_success='{}'  where item_id ='{}' ".format(status,item_id)
+        um.cursor.execute(sql)
+        um._conn.commit()
+
+def get_account_status(status):
+    with UsingMysql() as um:
+        sql = "select * from account_info where status='{}'".format(status)
+        um.cursor.execute(sql)
+        return um.cursor.fetchall()
+
+def get_account_port(port):
+    with UsingMysql() as um:
+        sql = "select * from account_info where port='{}'".format(port)
+        um.cursor.execute(sql)
+        return um.cursor.fetchone()
+def update_account_status( port, status):
+    with UsingMysql() as um:
+        sql = "update account_info set run_status={},last_modified_time=now() where  port='{}'".format(
+            status, port)
+        um.cursor.execute(sql)
+        um._conn.commit()
+
+def update_record_info(origin_text, item_id, task_id, task_label,sku):
+    origin_text= origin_text.replace("'","").replace("\\","")
+    with UsingMysql()as um:
+        if sku is not None:
+            sql = "update product_record set  original_info='{}',`status`=2 where item_id='{}'and sku_id='{}' and task_id='{}' and task_label='{}'".format(
+                origin_text, item_id,sku, task_id, task_label)
+        else:
+            sql = "update product_record set  original_info='{}',`status`=2 where item_id='{}' and task_id='{}' and task_label='{}'".format(
+                origin_text, item_id, task_id, task_label)
         um.cursor.execute(sql)
         um._conn.commit()

@@ -72,6 +72,7 @@ def my_drag(x, ratio, timed_ratio=1):
 
 
 def drag():
+    #一共拖动多久
     timed = random.uniform(0.20, 0.35)
     #user = get_user()
 
@@ -101,11 +102,11 @@ def scroll():
 
 
 def get_start_pos():
-    return pag.locateOnScreen("start.png", confidence=0.9)
+    return pag.locateOnScreen("start1.png", confidence=0.9)
 
 
 def get_drag_pos():
-    box = pag.locateOnScreen("3.png", confidence=0.9)
+    box = pag.locateOnScreen("4.png", confidence=0.9)
     return box
 
 
@@ -123,11 +124,23 @@ def get_pos():
 
 
 def process():
+    account = get_user()['account']
+    res = requests.get("http://localhost:10001/getFailtimes?account=" + account)
+    count=res.json()[0]
     while get_drag_pos() is not None:
+        account = 'superamayamay'
+        res = requests.get("http://localhost:10001/getFailtimes?account=" + account)
         noise_remove()
+        time.sleep(0.1 * count)
         move_to_start()
-        drag()
-        pag.press('f5')
+        if count % 3 == 0:
+            drag()
+        else:
+            if count % 3 == 1:
+                my_drag(800, account)
+            else:
+                my_drag_slow(800, account)
+        pyautogui.press('f5')
 
 
 

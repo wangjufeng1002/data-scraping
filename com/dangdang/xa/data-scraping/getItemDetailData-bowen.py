@@ -14,7 +14,7 @@ file_object = open('./TM/item-detail-base-bowen.txt', "a", encoding='utf-8')
 def processPriceData(itemUrlEntity, ip):
     threadName= threading.current_thread().name
     session = HTMLSession()
-    proxy = {'http:': "http://" + ip, 'https:': "https://" + ip}
+    proxy = {'http': "http://" + ip, 'https': "https://" + ip}
     detailResponse = session.get(url=itemUrlEntity.itemUrl.replace("http", "https"), proxies=proxy, timeout=(3, 4))
 
     detailHtmlSoup = BeautifulSoup(detailResponse.text, features='html.parser')
