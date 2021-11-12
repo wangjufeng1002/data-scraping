@@ -84,10 +84,8 @@ def check_slider(devices, account, ip, port, watch=False, phone=True):
             if phone is False:
                 log.info("进程%s账号%s暂时失效", port, account)
                 db.update_account_info(account)
-                # stop_memu(port)
                 return False
             else:
-                # devices.app_stop("com.taobao.taobao")
                 return False
         else:
             return True
@@ -162,11 +160,12 @@ def go_back(devices, times):
 
 
 def go_back_home(device):
-     if device.xpath("首页").exists is True:
-         device.xpath("首页").click()
-     while device.xpath("首页").exists is False or device.xpath("扫一扫").exists is False or device.xpath("搜索").exists is False:
-        go_back(device, 1)
-        device.xpath("首页").wait(timeout=0.1)
+    while device.xpath("推荐").exists is False  or device.xpath("扫一扫").exists is False or device.xpath("搜索").exists is False:
+         if device.xpath("首页").exists is True:
+             device.xpath("首页").click()
+         else:
+            go_back(device, 1)
+            device.xpath("首页").wait(timeout=0.1)
 
 
 # 获取搜索框坐标
@@ -378,7 +377,10 @@ def check_thread(device: u2.Device,account):
             device.press("back")
             db.insert_account_log(account['account'], account['ip'], account['port'], '31', "网络异常")
             return
-        time.sleep(10)
+        if check_slider(device, account['account'],  account['ip'], account['port'], False) is False:
+            time.sleep(2)
+            return
+        time.sleep(5)
 # 注册退出方法
 # atexit.register(main_out_run)
 if __name__ == '__main__':
@@ -404,9 +406,12 @@ if __name__ == '__main__':
             for proc in multiprocessing.active_children():
                 if 'SyncManager' in proc.name:
                     continue
-                if int(time.time())-proc_dict[proc.pid] >= 60:
-                    db.insert_account_log_v2(proc.name, '28', "关闭进程")
-                    psutil.Process(proc.pid).kill()
+                try:
+                    if proc_dict[proc.pid] is None or int(time.time()) - proc_dict[proc.pid] >= 60:
+                        db.insert_account_log_v2(proc.name, '28', "关闭进程")
+                        psutil.Process(proc.pid).kill()
+                except:
+                    pass
                 if proc.is_alive():
                     run_adb_code.append(proc.name)
                     continue
