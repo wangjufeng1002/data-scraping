@@ -102,21 +102,14 @@ if __name__ == '__main__':
     # http://detail.tmall.com/item.htm?id=526553709162
     # http://detail.tmall.com/item.htm?id=565480423538
     device = u2.connect("7be1f4a9")
-    #go_back_home(device)
-    if device.xpath("@com.taobao.taobao:id/edit_del_btn").exists is True:
-        device.xpath("@com.taobao.taobao:id/edit_del_btn").click()
-        device.xpath("@com.taobao.taobao:id/searchEdit").click()
-        device.send_keys("http://detail.tmall.com/item.htm?id=565480423538")
-        device.xpath("搜索").click()
-    detail = app_v2.get_item_detail(item_id="526553709162", devices=device, account='xxx', phone=True, sku=None)
-    device.press("back")
-    if device.xpath("网络竟然崩溃了").exists is True:
-        device.xpath("刷新").click()
-    if device.xpath("浮层关闭按钮").exists is True:
-        print("定位到了")
-        device.xpath("浮层关闭按钮").click()
+    go_back_home(device)
+    # if device.xpath("首页").exists is True and  device.xpath("扫一扫").exists is True and device.xpath("搜索").exists is True:
+    #     print("ssss")
+    # if device.xpath("订阅").exists is True and  device.xpath("推荐").exists is True and device.xpath("搜索").exists is True and device.xpath("扫一扫").exists is True:
+    #     print("ssss")
+    if device.xpath("软件更新").exists is True and device.xpath("查看详情").exists is True:
+        device.xpath("查看详情").click()
+        time.sleep(0.2)
+        device.press("back")
 
-# dict = dict()
-# dict['1111']= 1
-# dict['1111'] = 2
-# print(dict)
+

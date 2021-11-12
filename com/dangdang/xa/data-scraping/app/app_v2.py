@@ -380,6 +380,12 @@ def check_thread(device: u2.Device,account):
         if check_slider(device, account['account'],  account['ip'], account['port'], False) is False:
             time.sleep(2)
             return
+        if device.xpath("软件更新").exists is True and device.xpath("查看详情").exists is True:
+            db.insert_account_log(account['account'], account['ip'], account['port'], '31', "系统软件更新提示")
+            device.xpath("查看详情").click()
+            time.sleep(0.2)
+            device.press("back")
+            return
         time.sleep(5)
 # 注册退出方法
 # atexit.register(main_out_run)
