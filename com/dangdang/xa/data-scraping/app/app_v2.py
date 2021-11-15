@@ -325,7 +325,7 @@ def run_items(device: u2.Device, account, products, task_id, task_label, proc_di
 
 def proc_run(account, proc_dict):
     # 0.检查所需的文件目录
-    check_file_path()
+    #check_file_path()
     # 记录线程，进程信息
     pid = multiprocessing.current_process().pid
     tid = threading.current_thread().ident
@@ -414,7 +414,8 @@ def check_thread(device: u2.Device, account, proc_dict):
                     int(time.time()) - proc_dict[multiprocessing.current_process().pid]) > 15:
                 img = device.screenshot()
                 tmp_time = time.strftime("%Y-%m-%d %H时%M分%S秒 ", time.localtime())
-                save_path = img_path + account['port'] + "\\"
+                date = time.strftime("%Y-%m-%d", time.localtime())
+                save_path = img_path + date + "\\"  + account['port'] + "\\"
                 if os.path.exists(save_path) is False:
                     os.makedirs(save_path)
                 imgName = account['port'] + " " + tmp_time + '.png'  # 截图可以单独保存为别的名字的文件
