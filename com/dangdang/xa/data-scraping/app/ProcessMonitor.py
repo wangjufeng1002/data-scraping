@@ -137,7 +137,7 @@ def get_process(pname, runPid, port, uptime):
             curr = time.time()
             ptime = proc.create_time()
             #数据库更新时间间隔2分钟,直接杀掉进程 重启
-            if (datetime.datetime.fromtimestamp(curr) - datetime.datetime.fromtimestamp(uptime)).seconds > 120:
+            if (datetime.datetime.fromtimestamp(curr) - uptime).seconds > 120:
                 log.info("手机='{}',进程号='{}',上次更新时间='{}',距离上次更新时间超过2分钟,强杀进程".format(port, spid, datetime.datetime.fromtimestamp(uptime)))
                 proc.kill(spid)
                 return True
