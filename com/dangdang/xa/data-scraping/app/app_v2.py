@@ -217,7 +217,8 @@ def get_item_detail(item_id, devices, account, phone, sku):
     exist = devices.xpath("商品过期不存在").exists
     exist2 = devices.xpath("宝贝不在了").exists
     exist3 = devices.xpath("很抱歉，您查看的宝贝不存在，可能已下架或被转移").exists
-    if exist is True or exist2 is True or exist3 is True:
+    exist4 = devices.xpath("商品已经下架啦~要不要瞧瞧别的~").exists
+    if exist is True or exist2 is True or exist3 is True or exist4 is True:
         log.info("商品%s过期或不存在", item_id)
         return "商品%s过期或不存在" % (item_id)
     devices.xpath('@com.taobao.taobao:id/uik_public_menu_action_icon').wait()
