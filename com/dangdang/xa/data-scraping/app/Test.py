@@ -32,7 +32,7 @@ def go_back_home(device):
 
 
 import app_v2
-
+import datetime
 if __name__ == '__main__':
     # adb = u2.connect("401fab3")
     # adb.app_start("com.taobao.taobao")
@@ -101,15 +101,14 @@ if __name__ == '__main__':
     # http://detail.tmall.com/item.htm?id=626285676217
     # http://detail.tmall.com/item.htm?id=526553709162
     # http://detail.tmall.com/item.htm?id=565480423538
-    device = u2.connect("7be1f4a9")
-    go_back_home(device)
-    # if device.xpath("首页").exists is True and  device.xpath("扫一扫").exists is True and device.xpath("搜索").exists is True:
-    #     print("ssss")
-    # if device.xpath("订阅").exists is True and  device.xpath("推荐").exists is True and device.xpath("搜索").exists is True and device.xpath("扫一扫").exists is True:
-    #     print("ssss")
-    if device.xpath("软件更新").exists is True and device.xpath("查看详情").exists is True:
-        device.xpath("查看详情").click()
-        time.sleep(0.2)
-        device.press("back")
+    device = u2.connect("91e7facc")
+    img = device.screenshot()  # 屏幕截图，
+    t = time.time()
+    imgName = 'imgName' + datetime.datetime.now().strftime('%Y%m%d%H%M%S') + str(
+        round((t - int(t)) * 1000)) + '.png'  # 截图可以单独保存为别的名字的文件
+    stringPath = './log' + imgName
+    # img.save('filename.png')#图片保存在当前项目的文件夹下边
+    img.save(stringPath)  # 保存文件到指定的文件夹下边
+
 
 

@@ -1,5 +1,6 @@
 import json
 import multiprocessing
+import os
 import random
 import threading
 import time
@@ -14,6 +15,7 @@ import MyLog
 import db
 
 log = MyLog.Logger('CMT').get_log()
+img_path = 'D:\\logs\\cmt\\img\\'
 
 
 # 退出执行的方法
@@ -117,7 +119,7 @@ def kill_exit_proc(account_infos):
                 psutil.Process(account['pid']).kill()
             except:
                 pass
-        db.update_account_status(account['port'],0)
+        db.update_account_status(account['port'], 0)
     log.info("清除线程结束")
     return
 
@@ -160,10 +162,11 @@ def go_back(devices, times):
 
 
 def go_back_home(device):
-    while device.xpath("推荐").exists is False  or device.xpath("扫一扫").exists is False or device.xpath("搜索").exists is False:
-         if device.xpath("首页").exists is True:
-             device.xpath("首页").click()
-         else:
+    while device.xpath("推荐").exists is False or device.xpath("扫一扫").exists is False or device.xpath(
+            "搜索").exists is False:
+        if device.xpath("首页").exists is True:
+            device.xpath("首页").click()
+        else:
             go_back(device, 1)
             device.xpath("首页").wait(timeout=0.1)
 
@@ -179,12 +182,12 @@ def get_search_button(devices):
 
 
 def click_search(devices, name, random_policy, ip, port, account, phone):
-    #如果当前搜索框存在 就不进行退回首页操作
+    # 如果当前搜索框存在 就不进行退回首页操作
     edit_del = devices.xpath("@com.taobao.taobao:id/edit_del_btn").wait(0.1)
-    if edit_del is not  None and devices.xpath("@com.taobao.taobao:id/edit_del_btn").exists is True:
+    if edit_del is not None and devices.xpath("@com.taobao.taobao:id/edit_del_btn").exists is True:
         devices.xpath("@com.taobao.taobao:id/edit_del_btn").click()
         devices.xpath("@com.taobao.taobao:id/searchEdit").click()
-    else:    # 随机策略完成后需要退回到首页
+    else:  # 随机策略完成后需要退回到首页
         go_back_home(devices)
         if phone is True:
             while True:
@@ -204,16 +207,19 @@ def click_search(devices, name, random_policy, ip, port, account, phone):
     else:
         get_search_button(devices).click_exists(timeout=2)
 
+
 @func_set_timeout(10)
 def get_item_detail(item_id, devices, account, phone, sku):
-    while devices.xpath("加入购物车").exists is False and devices.xpath("店内宝贝").exists is False and devices.xpath("@com.taobao.taobao:id/uik_public_menu_action_icon").exists is False and devices.xpath("试试其他相似宝贝").exists is False:
+    while devices.xpath("加入购物车").exists is False and devices.xpath("店内宝贝").exists is False and devices.xpath(
+            "@com.taobao.taobao:id/uik_public_menu_action_icon").exists is False and devices.xpath(
+        "试试其他相似宝贝").exists is False:
         pass
     exist = devices.xpath("商品过期不存在").exists
     exist2 = devices.xpath("宝贝不在了").exists
     exist3 = devices.xpath("很抱歉，您查看的宝贝不存在，可能已下架或被转移").exists
     if exist is True or exist2 is True or exist3 is True:
         log.info("商品%s过期或不存在", item_id)
-        return "商品%s过期或不存在"%(item_id)
+        return "商品%s过期或不存在" % (item_id)
     devices.xpath('@com.taobao.taobao:id/uik_public_menu_action_icon').wait()
     content = ''
     devices.swipe_ext("up", scale=0.5)
@@ -257,7 +263,7 @@ def run_item(device, ip, port, account, item, random_policy, task_id, task_label
         url = 'http://detail.tmall.com/item.htm?id=' + str(item) + '&skuId=' + str(sku)
     else:
         url = 'http://detail.tmall.com/item.htm?id=' + str(item)
-    #搜索
+    # 搜索
     click_search(device, url, random_policy, ip, port, account, phone)
     time.sleep(0.1)
     # 判断是否出现验证码
@@ -277,8 +283,8 @@ def run_item(device, ip, port, account, item, random_policy, task_id, task_label
         pass
     log.info("账号%s-%s 抓取 %s 详情所用时间 %d" % (account, port, item, (time.time() - time_time)))
     #
-    go_back(device,1)
-    #go_back_home(device)
+    go_back(device, 1)
+    # go_back_home(device)
     # start = random_policy['timeSleep']['begin']
     # end = random_policy['timeSleep']['end']
     # sleep_time = random.randint(int(start), int(end))
@@ -294,49 +300,55 @@ def get_memu_policy(account):
     return config['random']
 
 
-def run_items(device: u2.Device, account, products, task_id, task_label,proc_dict):
+def run_items(device: u2.Device, account, products, task_id, task_label, proc_dict):
     # 获取账号动态配置信息
-    #random_policy = get_memu_policy(account['account'])
-    random_policy=None
+    # random_policy = get_memu_policy(account['account'])
+    random_policy = None
     # 再次进行检测
     app_start_check(device)
     for item in products:
         proc_dict[multiprocessing.current_process().pid] = int(time.time())
         time_time = time.time()
         if '-' in item:
-            #带有skuid，
+            # 带有skuid，
             item_ids = str.split(item, '-')
             run_item(device, account['ip'], account['port'], account['account'], item_ids[0], random_policy, task_id,
                      task_label, True, item_ids[1])
         else:
-            run_item(device, account['ip'], account['port'], account['account'], item, random_policy, task_id, task_label,
+            run_item(device, account['ip'], account['port'], account['account'], item, random_policy, task_id,
+                     task_label,
                      True, None)
-        log.info("账号%s-%s抓取%s所用时间 %d"%(account['account'],account['port'],item,(time.time()-time_time)))
+        log.info("账号%s-%s抓取%s所用时间 %d" % (account['account'], account['port'], item, (time.time() - time_time)))
     return
 
 
 def proc_run(account, proc_dict):
+    # 0.检查所需的文件目录
+    check_file_path()
     # 记录线程，进程信息
     pid = multiprocessing.current_process().pid
     tid = threading.current_thread().ident
     db.insert_account_log(account['account'], account['ip'], account['port'], '30',
                           "pid=%s,tid=%s 进程启动" % (str(pid), str(tid)))
     db.update_job_pid(account['ip'], account['port'], pid)
-    db.update_account_status(account['port'],1)
+    db.update_account_status(account['port'], 1)
+    # 进程共享变量设置 最新时间
+    proc_dict[multiprocessing.current_process().pid] = int(time.time())
     try:
         # 开始启动adb,taobao,postern
         device = time_out_connect(account['port'])
         # 开启检测线程
-        thread = threading.Thread(target=check_thread, args=(device,account,))
+        thread = threading.Thread(target=check_thread, args=(device, account, proc_dict,))
         thread.setDaemon(True)
         thread.start()
     except:
-        log.info("%s 连接失败"%(account['port']))
+        log.info("%s 连接失败" % (account['port']))
         db.update_account_status(account['port'], 0)
-        raise Exception("%s 连接失败"%(account['port']))
+        raise Exception("%s 连接失败" % (account['port']))
     # app启动，初始化
     app_init(device)
     while True:
+        # 共享变量赋值，供主进程进程检测
         proc_dict[multiprocessing.current_process().pid] = int(time.time())
         data = get_task_data(account['port'])
         products = data['itemIds']
@@ -346,7 +358,8 @@ def proc_run(account, proc_dict):
             time.sleep(2)
             continue
         try:
-            run_items(device=device, account=account, products=products, task_id=task_id, task_label=task_label,proc_dict=proc_dict)
+            run_items(device=device, account=account, products=products, task_id=task_id, task_label=task_label,
+                      proc_dict=proc_dict)
         except:
             log.info(traceback.format_exc())
             app_init(device)
@@ -354,41 +367,79 @@ def proc_run(account, proc_dict):
             pass
         app_start_check(device)
 
+
 def get_task_data(port):
-    get = requests.get("http://192.168.47.230:10003/product/getTaskData?port=%s"%(port))
-    log.info("{port} 请求需要处理的数据 {result}".format(port=port,result=get.text))
+    get = requests.get("http://192.168.47.230:10003/product/getTaskData?port=%s" % (port))
+    log.info("{port} 请求需要处理的数据 {result}".format(port=port, result=get.text))
     return json.loads(get.text)
 
-def check_thread(device: u2.Device,account):
+
+def check_thread(device: u2.Device, account, proc_dict):
     while True:
-        if device.xpath("浮层关闭按钮").exists is True:
-            device.xpath("浮层关闭按钮").click()
-            db.insert_account_log(account['account'], account['ip'], account['port'], '31', "检测到浮层")
-            return
-        if device.xpath("淘金币小镇正在拼命加载中").exists is True:
-            device.press("back")
-            db.insert_account_log(account['account'], account['ip'], account['port'], '31', "检测到加载淘金币")
-            return
-        if device.xpath("赚金币").exists is True:
-            device.press("back")
-            db.insert_account_log(account['account'], account['ip'], account['port'], '31', "赚金币")
-            return
-        if  device.xpath("网络竟然崩溃了").exists is True:
-            device.press("back")
-            db.insert_account_log(account['account'], account['ip'], account['port'], '31', "网络异常")
-            return
-        if check_slider(device, account['account'],  account['ip'], account['port'], False) is False:
-            time.sleep(2)
-            return
-        if device.xpath("软件更新").exists is True and device.xpath("查看详情").exists is True:
-            db.insert_account_log(account['account'], account['ip'], account['port'], '31', "系统软件更新提示")
-            device.xpath("查看详情").click()
-            time.sleep(0.2)
-            device.press("back")
-            return
+        try:
+            # 浮层关闭按钮
+            if device.xpath("浮层关闭按钮").exists is True:
+                device.xpath("浮层关闭按钮").click()
+                db.insert_account_log(account['account'], account['ip'], account['port'], '31', "检测到浮层")
+                return
+            # 淘金币小镇正在拼命加载中
+            if device.xpath("淘金币小镇正在拼命加载中").exists is True:
+                device.press("back")
+                db.insert_account_log(account['account'], account['ip'], account['port'], '31', "检测到加载淘金币")
+                return
+            # 赚金币
+            if device.xpath("赚金币").exists is True:
+                device.press("back")
+                db.insert_account_log(account['account'], account['ip'], account['port'], '31', "赚金币")
+                return
+            # 网络崩溃
+            if device.xpath("网络竟然崩溃了").exists is True:
+                device.press("back")
+                db.insert_account_log(account['account'], account['ip'], account['port'], '31', "网络异常")
+                return
+            # 检测滑块
+            if check_slider(device, account['account'], account['ip'], account['port'], False) is False:
+                time.sleep(2)
+                return
+            # 软件更新
+            if device.xpath("软件更新").exists is True and device.xpath("查看详情").exists is True:
+                db.insert_account_log(account['account'], account['ip'], account['port'], '31', "系统软件更新提示")
+                device.xpath("查看详情").click()
+                time.sleep(0.2)
+                device.press("back")
+                return
+            # 屏幕截图
+            if proc_dict[multiprocessing.current_process().pid] is not None and (
+                    int(time.time()) - proc_dict[multiprocessing.current_process().pid]) > 15:
+                img = device.screenshot()
+                tmp_time = time.strftime("%Y-%m-%d %H时%M分%S秒 ", time.localtime())
+                save_path = img_path + account['port'] + "\\"
+                if os.path.exists(save_path) is False:
+                    os.makedirs(save_path)
+                imgName = account['port'] + " " + tmp_time + '.png'  # 截图可以单独保存为别的名字的文件
+                stringPath = save_path + imgName
+                # img.save('filename.png')#图片保存在当前项目的文件夹下边
+                img.save(stringPath)  # 保存文件到指定的文件夹下边
+        except Exception as e:
+            # 检测线程不能停止，出现异常记录日志忽略
+            log.info(traceback.format_exc())
+            pass
         time.sleep(5)
+
+
 # 注册退出方法
 # atexit.register(main_out_run)
+def check_file_path():
+    # 检查截屏的目录
+    global img_path
+    date = time.strftime("%Y-%m-%d", time.localtime())
+    temp_img_path = img_path + "\\" + date + "\\"
+    exists = os.path.exists(temp_img_path)
+    if exists is False:
+        os.makedirs(temp_img_path)
+    img_path = temp_img_path
+
+
 if __name__ == '__main__':
     proc_dict = multiprocessing.Manager().dict()
     # 1.查询有效的进程
@@ -421,13 +472,17 @@ if __name__ == '__main__':
                 if proc.is_alive():
                     run_adb_code.append(proc.name)
                     continue
-            log.info("run process now,{pid},{run_adb_code}".format(pid=multiprocessing.current_process().pid,run_adb_code=run_adb_code))
+            db.insert_account_v3('32', "进程存活信息信息,主进程:{},子进程:{}".format(multiprocessing.current_process().pid,
+                                                                       ','.join(run_adb_code)))
+            log.info("run process now,{pid},{run_adb_code}".format(pid=multiprocessing.current_process().pid,
+                                                                   run_adb_code=run_adb_code))
             for account in accounts:
                 if account['port'] not in run_adb_code:
                     db.insert_account_log(account['account'], account['ip'], account['port'], '29', "进程准备启动")
-                    current_process = multiprocessing.Process(target=proc_run, args=(account, proc_dict,), name=account['port'])
+                    current_process = multiprocessing.Process(target=proc_run, args=(account, proc_dict,),
+                                                              name=account['port'])
                     current_process.start()
-                    log.info("进程=%s,port=%s 启动成功"%(current_process.pid, current_process.name))
+                    log.info("进程=%s,port=%s 启动成功" % (current_process.pid, current_process.name))
         except:
             log.info(traceback.format_exc())
             pass
