@@ -163,7 +163,7 @@ def go_back(devices, times):
     for i in range(times):
         devices.press("back")
 
-
+@func_set_timeout(60)
 def go_back_home(device):
     while device.xpath("推荐").exists is False or device.xpath("扫一扫").exists is False or device.xpath(
             "搜索").exists is False:
@@ -311,6 +311,8 @@ def run_items(device: u2.Device, account, products, task_id, task_label, proc_di
     random_policy = None
     # 再次进行检测
     app_start_check(device)
+    #这里给共享变量赋值一次，防止检测时出现超时，导致中断进程执行
+    proc_dict[multiprocessing.current_process().pid] = int(time.time())
     for item in products:
         time_time = time.time()
         if '-' in item:
