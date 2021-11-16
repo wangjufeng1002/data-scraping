@@ -155,6 +155,9 @@ def app_init(device: u2.Device):
     time.sleep(0.3)
     device.app_start("com.taobao.taobao")
 
+def app_restart(device: u2.Device):
+    device.app_start(package_name="com.taobao.taobao",stop=True)
+
 
 def go_back(devices, times):
     for i in range(times):
@@ -281,9 +284,11 @@ def run_item(device, ip, port, account, item, random_policy, task_id, task_label
     except:
         log.info(traceback.format_exc())
         pass
+    else:
+        go_back(device, 1)
     log.info("账号%s-%s 抓取 %s 详情所用时间 %d" % (account, port, item, (time.time() - time_time)))
     #
-    go_back(device, 1)
+
     # go_back_home(device)
     # start = random_policy['timeSleep']['begin']
     # end = random_policy['timeSleep']['end']
@@ -362,10 +367,15 @@ def proc_run(account, proc_dict):
                       proc_dict=proc_dict)
         except:
             log.info(traceback.format_exc())
+            #app 初始化
             app_init(device)
+            #异常重启 app
+            app_restart(device)
+            #app启动检测
             app_start_check(device)
             pass
-        app_start_check(device)
+        else:
+            app_start_check(device)
 
 
 def get_task_data(port):
