@@ -259,14 +259,13 @@ def get_item_sku_detail(devices):
 
 @func_set_timeout(300)
 def run_item(device, ip, port, account, item, random_policy, task_id, task_label, phone, sku):
-    db.update_job_status(ip, port, '1')
     if sku is not None:
         url = 'http://detail.tmall.com/item.htm?id=' + str(item) + '&skuId=' + str(sku)
     else:
         url = 'http://detail.tmall.com/item.htm?id=' + str(item)
     # 搜索
     click_search(device, url, random_policy, ip, port, account, phone)
-    time.sleep(0.1)
+    db.update_job_status(ip, port, '1')
     # 判断是否出现验证码
     if check_slider(device, account, ip, port, False) is False:
         ##c 休眠5秒，抛出异常，
@@ -308,7 +307,6 @@ def run_items(device: u2.Device, account, products, task_id, task_label, proc_di
     # 再次进行检测
     app_start_check(device)
     for item in products:
-        proc_dict[multiprocessing.current_process().pid] = int(time.time())
         time_time = time.time()
         if '-' in item:
             # 带有skuid，
@@ -319,6 +317,7 @@ def run_items(device: u2.Device, account, products, task_id, task_label, proc_di
             run_item(device, account['ip'], account['port'], account['account'], item, random_policy, task_id,
                      task_label,
                      True, None)
+        proc_dict[multiprocessing.current_process().pid] = int(time.time())
         log.info("账号%s-%s抓取%s所用时间 %d" % (account['account'], account['port'], item, (time.time() - time_time)))
     return
 
