@@ -14,7 +14,7 @@ from func_timeout import func_set_timeout
 import MyLog
 import db
 
-log = MyLog.Logger('CMT').get_log()
+log = None
 img_path = 'D:\\logs\\cmt\\img\\'
 
 
@@ -133,6 +133,7 @@ def screen_on(device: u2.Device):
 
 
 def app_start_check(device: u2.Device):
+    log.info("app_start_check start")
     # 1.息屏检测
     screen_on(device)
     running = device.app_list_running()
@@ -145,18 +146,23 @@ def app_start_check(device: u2.Device):
         device.app_start("com.taobao.taobao")
     # 退回到首页
     go_back_home(device)
+    log.info("app_start_check end")
 
 
 def app_init(device: u2.Device):
+    log.info("app_init start")
     # 1.息屏检测
     screen_on(device)
     # 2.启动淘宝app
     device.app_start("com.tunnelworkshop.postern")
     time.sleep(0.3)
     device.app_start("com.taobao.taobao")
+    log.info("app_init end")
 
 def app_restart(device: u2.Device):
+    log.info("app_restart start")
     device.app_start(package_name="com.taobao.taobao",stop=True)
+    log.info("app_restart end")
 
 
 def go_back(devices, times):
@@ -165,6 +171,7 @@ def go_back(devices, times):
 
 @func_set_timeout(60)
 def go_back_home(device):
+    log.info("go_back_home start")
     while device.xpath("推荐").exists is False or device.xpath("扫一扫").exists is False or device.xpath(
             "搜索").exists is False:
         if device.xpath("首页").exists is True:
@@ -172,6 +179,7 @@ def go_back_home(device):
         else:
             go_back(device, 1)
             device.xpath("首页").wait(timeout=0.1)
+    log.info("go_back_home end")
 
 
 # 获取搜索框坐标
@@ -282,7 +290,8 @@ def run_item(device, ip, port, account, item, random_policy, task_id, task_label
             db.update_account_info_date(account)
             db.insert_account_log(account, ip, port, '1', "账号获取商品详情")
     except:
-        log.info(traceback.format_exc())
+        log.error("run_item exception,port={}".format(port))
+        log.error(traceback.format_exc())
         pass
     else:
         go_back(device, 1)
@@ -306,6 +315,7 @@ def get_memu_policy(account):
 
 
 def run_items(device: u2.Device, account, products, task_id, task_label, proc_dict):
+    log.info("run_items start port={},size={}".format(account['port'],str(len(products))))
     # 获取账号动态配置信息
     # random_policy = get_memu_policy(account['account'])
     random_policy = None
@@ -332,6 +342,8 @@ def run_items(device: u2.Device, account, products, task_id, task_label, proc_di
 def proc_run(account, proc_dict):
     # 0.检查所需的文件目录
     #check_file_path()
+    global log
+    log = MyLog.Logger(account['port']).get_log()
     # 记录线程，进程信息
     pid = multiprocessing.current_process().pid
     tid = threading.current_thread().ident
@@ -454,6 +466,7 @@ def check_file_path():
 
 
 if __name__ == '__main__':
+    log = MyLog.Logger('CMT').get_log()
     proc_dict = multiprocessing.Manager().dict()
     # 1.查询有效的进程
     account_infos = db.get_account_status(1)
