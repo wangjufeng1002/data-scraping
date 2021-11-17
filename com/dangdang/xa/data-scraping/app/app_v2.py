@@ -166,12 +166,14 @@ def app_restart(device: u2.Device):
 
 
 def go_back(devices, times):
+    log.info(" go_back start ")
     for i in range(times):
         devices.press("back")
+    log.info(" go_back end ")
 
 @func_set_timeout(60)
 def go_back_home(device):
-    log.info("go_back_home start")
+    log.info(" go_back_home start")
     while device.xpath("推荐").exists is False or device.xpath("扫一扫").exists is False or device.xpath(
             "搜索").exists is False:
         if device.xpath("首页").exists is True:
@@ -179,7 +181,7 @@ def go_back_home(device):
         else:
             go_back(device, 1)
             device.xpath("首页").wait(timeout=0.1)
-    log.info("go_back_home end")
+    log.info(" go_back_home end")
 
 
 # 获取搜索框坐标
@@ -191,7 +193,7 @@ def get_search_view(devices):
 def get_search_button(devices):
     return devices.xpath('@com.taobao.taobao:id/searchbtn')
 
-
+@func_set_timeout(10)
 def click_search(devices, name, random_policy, ip, port, account, phone):
     # 如果当前搜索框存在 就不进行退回首页操作
     edit_del = devices.xpath("@com.taobao.taobao:id/edit_del_btn").wait(0.1)
@@ -199,20 +201,23 @@ def click_search(devices, name, random_policy, ip, port, account, phone):
         devices.xpath("@com.taobao.taobao:id/edit_del_btn").click()
         devices.xpath("@com.taobao.taobao:id/searchEdit").click()
     else:  # 随机策略完成后需要退回到首页
+        log.info(" run_item.click_search go back home start,port={}".format(port))
         go_back_home(devices)
         if phone is True:
             while True:
-                if devices.xpath("扫一扫").exists is False:
+                if devices.xpath("扫一扫").exists is False or devices.xpath("搜索").exists is False:
                     go_back_home(devices)
-                devices.xpath("扫一扫").parent().click()
-                time.sleep(0.1)
-                if devices.xpath("搜索").exists is False:
-                    devices.press("back")
                 else:
+                    devices.xpath("扫一扫").parent().click()
+                    time.sleep(0.1)
                     break
         else:
             get_search_view(devices).click_exists(timeout=10)
+        log.info(" run_item.click_search go back home start,port={}".format(port))
+    devices.set_fastinput_ime(True)
     devices.send_keys(name)
+    if devices.xpath(name).wait(0.1) is None or devices.xpath(name).exists is False:
+        raise Exception("输入失败，需要重新定位")
     if phone is True:
         devices.xpath("搜索").click()
     else:
@@ -275,7 +280,9 @@ def run_item(device, ip, port, account, item, random_policy, task_id, task_label
     else:
         url = 'http://detail.tmall.com/item.htm?id=' + str(item)
     # 搜索
+    log.info(" run_item.click_search start,port={}".format(port))
     click_search(device, url, random_policy, ip, port, account, phone)
+    log.info(" run_item.click_search end,port={}".format(port))
     db.update_job_status(ip, port, '1')
     # 判断是否出现验证码
     if check_slider(device, account, ip, port, False) is False:
@@ -323,6 +330,7 @@ def run_items(device: u2.Device, account, products, task_id, task_label, proc_di
     app_start_check(device)
     #这里给共享变量赋值一次，防止检测时出现超时，导致中断进程执行
     proc_dict[multiprocessing.current_process().pid] = int(time.time())
+    log.info("update proc timestamp port={}".format(account['port']))
     for item in products:
         time_time = time.time()
         if '-' in item:
@@ -335,6 +343,7 @@ def run_items(device: u2.Device, account, products, task_id, task_label, proc_di
                      task_label,
                      True, None)
         proc_dict[multiprocessing.current_process().pid] = int(time.time())
+        log.info("update proc timestamp port={}".format(account['port']))
         log.info("账号%s-%s抓取%s所用时间 %d" % (account['account'], account['port'], item, (time.time() - time_time)))
     return
 
@@ -369,6 +378,7 @@ def proc_run(account, proc_dict):
     while True:
         # 共享变量赋值，供主进程进程检测
         proc_dict[multiprocessing.current_process().pid] = int(time.time())
+        log.info("update proc timestamp port={}".format(account['port']))
         data = get_task_data(account['port'])
         products = data['itemIds']
         task_id = data['taskId']
@@ -490,9 +500,10 @@ if __name__ == '__main__':
                 if 'SyncManager' in proc.name:
                     continue
                 try:
-                    if proc_dict[proc.pid] is None or int(time.time()) - proc_dict[proc.pid] >= 60:
+                    if proc_dict.get(proc.pid) is None or int(time.time()) - proc_dict.get(proc.pid) >= 60:
                         db.insert_account_log_v2(proc.name, '28', "关闭进程")
                         psutil.Process(proc.pid).kill()
+                        proc_dict.pop(proc.pid)
                 except:
                     pass
                 if proc.is_alive():
