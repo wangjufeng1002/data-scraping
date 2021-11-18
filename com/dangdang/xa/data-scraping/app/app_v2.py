@@ -193,7 +193,7 @@ def get_search_view(devices):
 def get_search_button(devices):
     return devices.xpath('@com.taobao.taobao:id/searchbtn')
 
-@func_set_timeout(10)
+#@func_set_timeout(10)
 def click_search(devices, name, random_policy, ip, port, account, phone):
     # 如果当前搜索框存在 就不进行退回首页操作
     edit_del = devices.xpath("@com.taobao.taobao:id/edit_del_btn").wait(0.1)
