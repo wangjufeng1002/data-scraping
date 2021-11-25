@@ -2,8 +2,8 @@ import pymysql
 from timeit import default_timer
 
 
-host = '10.7.40.197'
-port = 9174
+host = '10.7.40.194'
+port = 9110
 db = 'data_scraping'
 user = 'data_scraping_rw'
 password = 'my@#6VIDwc1vRW'
