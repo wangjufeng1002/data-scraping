@@ -2,6 +2,7 @@ import json
 import multiprocessing
 import os
 import random
+import re
 import threading
 import time
 import traceback
@@ -267,10 +268,25 @@ def get_item_sku_detail(devices):
         if item.text != '':
             content += item.text
     time.sleep(0.3)
+    priceStr = ''
     if '券后' in content:
-        return 'sku价格(' + page_item[4].text + ")"
+        try:
+            val = re.search("(券后|折后)￥(.+?)[\d.]+", content, re.S).group(0).replace("券后￥", "").replace("折后￥", "")
+            priceStr = 'sku价格(' + val + ')'
+        except:
+            priceStr = 'sku价格(' + page_item[4].text + ")"
     else:
-        return 'sku价格(' + page_item[1].text + ")"
+        try:
+            val = re.search("￥(.+?)[\d.]+", content, re.S).group(0).replace("￥", "")
+            priceStr = 'sku价格(' + val + ")"
+        except:
+            priceStr = 'sku价格(' + page_item[1].text + ")"
+    skuName = ''
+    if '已选' in content:
+        split = content.split("已选")
+        if len(split) >= 2:
+            skuName = 'sku名称(' + split[1].replace(": ", "") + ")"
+    return  priceStr + skuName
 
 
 @func_set_timeout(300)
