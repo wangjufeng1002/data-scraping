@@ -252,7 +252,7 @@ def get_item_detail(item_id, devices, account, phone, sku):
         if item.text != '':
             content += item.text
     if sku is not None:
-        devices.swipe_ext("up", scale=0.5)
+        devices.swipe_ext("up", scale=0.7)
         sku_info = get_item_sku_detail(devices)
         content += sku_info
     log.info("进程%s账号%s,获取商品%s数据:%s", str(multiprocessing.current_process().pid), account, item_id, content)
@@ -309,6 +309,7 @@ def run_item(device, ip, port, account, item, random_policy, task_id, task_label
     try:
         content = get_item_detail(devices=device, item_id=item, account=account, phone=phone, sku=sku)
         if content is not None:
+            content += '<@ '+port+' @>'
             db.update_record_info(content, item, task_id, task_label, sku)
             db.update_account_info_date(account)
             db.insert_account_log(account, ip, port, '1', "账号获取商品详情")
