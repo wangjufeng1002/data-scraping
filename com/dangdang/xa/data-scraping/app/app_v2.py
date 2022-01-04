@@ -225,7 +225,7 @@ def click_search(devices, name, random_policy, ip, port, account, phone):
         get_search_button(devices).click_exists(timeout=2)
 
 
-@func_set_timeout(10)
+@func_set_timeout(20)
 def get_item_detail(item_id, devices, account, phone, sku):
     while devices.xpath("加入购物车").exists is False and devices.xpath("店内宝贝").exists is False and devices.xpath(
             "@com.taobao.taobao:id/uik_public_menu_action_icon").exists is False and devices.xpath(
@@ -258,7 +258,43 @@ def get_item_detail(item_id, devices, account, phone, sku):
     log.info("进程%s账号%s,获取商品%s数据:%s", str(multiprocessing.current_process().pid), account, item_id, content)
     return content
 
-
+def get_sku_name_2(device):
+    edition_text=None
+    fascicle_text=None
+    while True:
+        frame_layouts= device.xpath("@com.taobao.taobao:id/body").child("/android.widget.FrameLayout").all()
+        for frame in frame_layouts:
+            text_view = device.xpath(frame.get_xpath()).child("//android.widget.TextView")
+            if text_view.exists is False:
+                continue
+            if edition_text is None and edition_text != '' and  '更多版本' in text_view.get_text():
+                layout__all = device.xpath(frame.get_xpath()).child("//android.widget.LinearLayout").all()
+                for lay_out in layout__all:
+                    desc_ = lay_out.attrib['content-desc']
+                    if '已选中' in desc_:
+                        edition_text = desc_
+            if fascicle_text is None and fascicle_text != '' and '分册名' in text_view.get_text():
+                layout__all = device.xpath(frame.get_xpath()).child("//android.widget.LinearLayout").all()
+                for lay_out in layout__all:
+                    desc_ = lay_out.attrib['content-desc']
+                    if '已选中' in desc_:
+                        fascicle_text = desc_
+        if device.xpath("购买数量").exists is False:
+            device.swipe_ext("up", scale=0.5)
+        else:
+            break
+    if edition_text is not None:
+        edition_text = edition_text.replace("已选中 ","").replace("已选中","")
+        edition_text = "版本:"+edition_text+";"
+    else:
+        edition_text = ''
+    if fascicle_text is not None:
+        fascicle_text = fascicle_text.replace("已选中 ", "").replace("已选中", "")
+        fascicle_text = "分册名: "+fascicle_text+";"
+    else:
+        fascicle_text = ''
+    skuName = 'sku名称(' + edition_text + fascicle_text + ")"
+    return skuName
 def get_item_sku_detail(devices):
     devices.xpath("选择").click()
     time.sleep(1)
@@ -268,29 +304,33 @@ def get_item_sku_detail(devices):
         if item.text != '':
             content += item.text
     time.sleep(0.3)
-    priceStr = ''
+    price_str = ''
+    price_result_str = ''
+    #sku券后价
     if '券后' in content:
         try:
             val = re.search("(券后|折后)￥(.+?)[\d.]+", content, re.S).group(0).replace("券后￥", "").replace("折后￥", "")
-            priceStr = 'sku价格(' + val + ')'
+            price_result_str = val
         except:
-            priceStr = 'sku价格(' + page_item[4].text + ")"
-    else:
-        try:
-            val = re.search("￥(.+?)[\d.]+", content, re.S).group(0).replace("￥", "")
-            priceStr = 'sku价格(' + val + ")"
-        except:
-            priceStr = 'sku价格(' + page_item[1].text + ")"
-    skuName = ''
-    if '已选' in content:
-        split = content.split("已选")
-        if len(split) >= 2:
-            skuName = 'sku名称(' + split[1].replace(": ", "") + ")"
+            price_result_str = page_item[4].text
+    #sku页面价
+    try:
+        val = re.search("￥(.+?)[\d.]+", content, re.S).group(0).replace("￥", "")
+        price_str = val
+    except:
+        price_str = page_item[1].text
+    if  price_result_str is None:
+        price_result_str = price_str
+    priceStr = "sku页面价格("+price_str+")" + "sku到手价格("+price_result_str+")"
+    skuName = get_sku_name_2(devices)
     return  priceStr + skuName
 
 
 @func_set_timeout(300)
 def run_item(device, ip, port, account, item, random_policy, task_id, task_label, phone, sku):
+    global log
+    if log is None:
+        log = MyLog.Logger(port).get_log()
     if sku is not None:
         url = 'http://detail.tmall.com/item.htm?id=' + str(item) + '&skuId=' + str(sku)
     else:
