@@ -319,9 +319,9 @@ def get_item_sku_detail(devices):
         price_str = val
     except:
         price_str = page_item[1].text
-    if  price_result_str is None:
+    if  price_result_str is None or price_result_str == '':
         price_result_str = price_str
-    priceStr = "sku页面价格("+price_str+")" + "sku到手价格("+price_result_str+")"
+    priceStr = "sku页面价格("+str(price_str)+")" + "sku到手价格("+str(price_result_str)+")"
     skuName = get_sku_name_2(devices)
     return  priceStr + skuName
 
