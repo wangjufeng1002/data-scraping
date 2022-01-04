@@ -261,12 +261,19 @@ def get_item_detail(item_id, devices, account, phone, sku):
 def get_sku_name_2(device):
     edition_text=None
     fascicle_text=None
+    subject_text=None
     while True:
         frame_layouts= device.xpath("@com.taobao.taobao:id/body").child("/android.widget.FrameLayout").all()
         for frame in frame_layouts:
             text_view = device.xpath(frame.get_xpath()).child("//android.widget.TextView")
             if text_view.exists is False:
                 continue
+            if subject_text is None and subject_text != '' and '科目' in text_view.get_text():
+                layout__all = device.xpath(frame.get_xpath()).child("//android.widget.LinearLayout").all()
+                for lay_out in layout__all:
+                    desc_ = lay_out.attrib['content-desc']
+                    if '已选中' in desc_:
+                        subject_text = desc_
             if edition_text is None and edition_text != '' and  '更多版本' in text_view.get_text():
                 layout__all = device.xpath(frame.get_xpath()).child("//android.widget.LinearLayout").all()
                 for lay_out in layout__all:
@@ -293,7 +300,12 @@ def get_sku_name_2(device):
         fascicle_text = "分册名: "+fascicle_text+";"
     else:
         fascicle_text = ''
-    skuName = 'sku名称(' + edition_text + fascicle_text + ")"
+    if subject_text is not None:
+        subject_text = subject_text.replace("已选中 ", "").replace("已选中", "")
+        subject_text = "科目: " + subject_text + ";"
+    else:
+        subject_text = ''
+    skuName = 'sku名称(' + edition_text + fascicle_text + subject_text + ")"
     return skuName
 def get_item_sku_detail(devices):
     devices.xpath("选择").click()
@@ -304,8 +316,8 @@ def get_item_sku_detail(devices):
         if item.text != '':
             content += item.text
     time.sleep(0.3)
-    price_str = ''
     price_result_str = ''
+    price_str=''
     #sku券后价
     if '券后' in content:
         try:
