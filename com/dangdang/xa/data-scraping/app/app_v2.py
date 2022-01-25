@@ -225,7 +225,7 @@ def click_search(devices, name, random_policy, ip, port, account, phone):
         get_search_button(devices).click_exists(timeout=2)
 
 
-@func_set_timeout(20)
+@func_set_timeout(30)
 def get_item_detail(item_id, devices, account, phone, sku):
     while devices.xpath("加入购物车").exists is False and devices.xpath("店内宝贝").exists is False and devices.xpath(
             "@com.taobao.taobao:id/uik_public_menu_action_icon").exists is False and devices.xpath(
@@ -257,35 +257,48 @@ def get_item_detail(item_id, devices, account, phone, sku):
         content += sku_info
     log.info("进程%s账号%s,获取商品%s数据:%s", str(multiprocessing.current_process().pid), account, item_id, content)
     return content
+#获取已选中的sku名称
+def get_select_sku_name(device, frame):
+    layout__all = device.xpath(frame.get_xpath()).child("//android.widget.LinearLayout").all()
+    # 如果是空，则再往上找一级，获取lay_out标签
+    if layout__all is None or len(layout__all) == 0:
+        parent = device.xpath(frame.get_xpath()).parent()
+        layout__all = device.xpath(parent.get_xpath()).child("//android.widget.LinearLayout").all()
+    for lay_out in layout__all:
+        desc_ = lay_out.attrib['content-desc']
+        if '已选中' in desc_:
+            return desc_
+    return None
+
 
 def get_sku_name_2(device):
     edition_text=None
     fascicle_text=None
     subject_text=None
+    apply_text=None
+    sku_valid=False
     while True:
         frame_layouts= device.xpath("@com.taobao.taobao:id/body").child("/android.widget.FrameLayout").all()
         for frame in frame_layouts:
             text_view = device.xpath(frame.get_xpath()).child("//android.widget.TextView")
             if text_view.exists is False:
                 continue
-            if subject_text is None and subject_text != '' and '科目' in text_view.get_text():
-                layout__all = device.xpath(frame.get_xpath()).child("//android.widget.LinearLayout").all()
-                for lay_out in layout__all:
-                    desc_ = lay_out.attrib['content-desc']
-                    if '已选中' in desc_:
-                        subject_text = desc_
+
+            if any(val in text_view.get_text() for val in ['科目','更多版本','分册名','适用地区']):
+                text = get_select_sku_name(device, frame)
+            else:
+                continue
+            if text is not None:
+                sku_valid = True
+            if subject_text is None and subject_text !='' and '科目' in text_view.get_text():
+                subject_text = text
             if edition_text is None and edition_text != '' and  '更多版本' in text_view.get_text():
-                layout__all = device.xpath(frame.get_xpath()).child("//android.widget.LinearLayout").all()
-                for lay_out in layout__all:
-                    desc_ = lay_out.attrib['content-desc']
-                    if '已选中' in desc_:
-                        edition_text = desc_
+                edition_text = text
             if fascicle_text is None and fascicle_text != '' and '分册名' in text_view.get_text():
-                layout__all = device.xpath(frame.get_xpath()).child("//android.widget.LinearLayout").all()
-                for lay_out in layout__all:
-                    desc_ = lay_out.attrib['content-desc']
-                    if '已选中' in desc_:
-                        fascicle_text = desc_
+                fascicle_text = text
+            if apply_text is None and apply_text != '' and '适用地区' in text_view.get_text():
+                apply_text = text
+                ##查看是否有已选中的标签
         if device.xpath("购买数量").exists is False:
             device.swipe_ext("up", scale=0.5)
         else:
@@ -305,8 +318,16 @@ def get_sku_name_2(device):
         subject_text = "科目: " + subject_text + ";"
     else:
         subject_text = ''
-    skuName = 'sku名称(' + edition_text + fascicle_text + subject_text + ")"
+    if apply_text is not None:
+        apply_text = apply_text.replace("已选中 ", "").replace("已选中", "")
+        apply_text = "适用地区: " + apply_text + ";"
+    else:
+        apply_text = ''
+    skuName = 'sku名称(' + edition_text + fascicle_text + subject_text + apply_text +")"
+    if sku_valid is False:
+        skuName = skuName + "sku已失效"
     return skuName
+
 def get_item_sku_detail(devices):
     if devices.xpath("选择").exists is False:
         return ""
@@ -332,12 +353,15 @@ def get_item_sku_detail(devices):
         val = re.search("￥(.+?)[\d.]+", content, re.S).group(0).replace("￥", "")
         price_str = val
     except:
-        price_str = page_item[1].text
+        try:
+            price_str = page_item[1].text
+        except:
+            pass
     if  price_result_str is None or price_result_str == '':
         price_result_str = price_str
     priceStr = "sku页面价格("+str(price_str)+")" + "sku到手价格("+str(price_result_str)+")"
-    skuName = get_sku_name_2(devices)
-    return  priceStr + skuName
+    skuInfo = get_sku_name_2(devices)
+    return  (priceStr + skuInfo)
 
 
 @func_set_timeout(300)
