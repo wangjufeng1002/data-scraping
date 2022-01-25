@@ -8,6 +8,14 @@ db = 'data_scraping'
 user = 'data_scraping_rw'
 password = 'my@#6VIDwc1vRW'
 
+# host = '192.168.47.210'
+# port = 3306
+# db = 'data-scraping'
+# user = 'root'
+# password = '123456'
+
+
+
 
 # ---- 用pymysql 操作数据库
 def get_connection():

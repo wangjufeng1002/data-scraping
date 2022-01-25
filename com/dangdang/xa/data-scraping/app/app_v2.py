@@ -308,6 +308,8 @@ def get_sku_name_2(device):
     skuName = 'sku名称(' + edition_text + fascicle_text + subject_text + ")"
     return skuName
 def get_item_sku_detail(devices):
+    if devices.xpath("选择").exists is False:
+        return ""
     devices.xpath("选择").click()
     time.sleep(1)
     content = ''
