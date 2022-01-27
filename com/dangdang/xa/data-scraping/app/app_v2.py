@@ -340,7 +340,7 @@ def get_item_sku_detail(devices):
             content += item.text
     time.sleep(0.3)
     price_result_str = ''
-    price_str=''
+    price_default_str=''
     #sku券后价
     if '券后' in content:
         try:
@@ -351,17 +351,29 @@ def get_item_sku_detail(devices):
     #sku页面价
     try:
         val = re.search("￥(.+?)[\d.]+", content, re.S).group(0).replace("￥", "")
-        price_str = val
+        price_default_str = val
     except:
         try:
-            price_str = page_item[1].text
+            price_default_str = page_item[1].text
         except:
             pass
-    if  price_result_str is None or price_result_str == '':
-        price_result_str = price_str
-    priceStr = "sku页面价格("+str(price_str)+")" + "sku到手价格("+str(price_result_str)+")"
+    price_return = ''
+    if price_result_str is None or price_result_str == '':
+        price_result_str = price_default_str
+
+    # 特殊处理
+    if price_default_str is None or price_default_str == '':
+        price_return += "sku页面价格(" + " " + ")"
+    else:
+        price_return += "sku页面价格(" + str(price_default_str) + ")"
+
+    if price_result_str is None or price_result_str == '':
+        price_return += "sku到手价格(" + " " + ")"
+    else:
+        price_return += "sku到手价格(" + str(price_result_str) + ")"
+
     skuInfo = get_sku_name_2(devices)
-    return  (priceStr + skuInfo)
+    return  (price_return + skuInfo)
 
 
 @func_set_timeout(300)
