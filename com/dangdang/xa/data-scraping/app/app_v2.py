@@ -634,6 +634,10 @@ def run_item_lowest(device, ip, port, account, task_id, task_label, phone,produc
         #休眠5秒，抛出异常，
         time.sleep(2)
         raise RuntimeError('出现验证码，无法拖动')
+    #判断下有没有找到商品
+    if device.xpath("没有找到相关产品").exists:
+        db.update_lowest_price_result(task_id=task_id,task_label=task_label,product_id=dd_product_id)
+        return
     start_time = time.time()
     try:
         proc_dict[multiprocessing.current_process().pid] = int(time.time())

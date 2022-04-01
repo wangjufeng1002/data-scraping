@@ -251,3 +251,12 @@ def insert_batch_lowest_price_result(result_list,task_id,task_label,product_id):
 
         um.cursor.execute(update_sql)
         um._conn.commit()
+
+def update_lowest_price_result(task_id,task_label,product_id):
+    with UsingMysql()as um:
+        #完事再更新下模板状态
+        update_sql = "UPDATE lowest_price_product_record set status = 10 where task_id = '{}' and  task_label = '{}' " \
+                         "and dd_product_id= '{}'  and is_template = 1".format(task_id,task_label,product_id)
+
+        um.cursor.execute(update_sql)
+        um._conn.commit()
