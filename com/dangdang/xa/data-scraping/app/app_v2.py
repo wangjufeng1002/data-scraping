@@ -509,9 +509,11 @@ def get_lowest_item_list(device,port,query_key,proc_dict):
         # 选择价格升序
         if device.xpath("价格升序").exists is True:
             device.xpath("价格升序").long_click()
-        if device.xpath("价格").exists is True:
+        elif device.xpath("价格").exists is True:
             # 点击排序选择
             device.xpath("@com.taobao.taobao:id/up_arrow").click()
+        else:
+            return
 
     #休眠一下
     time.sleep(1)
