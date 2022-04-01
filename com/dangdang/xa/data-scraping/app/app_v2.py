@@ -639,12 +639,16 @@ def run_item_lowest(device, ip, port, account, task_id, task_label, phone,produc
         proc_dict[multiprocessing.current_process().pid] = int(time.time())
         result_dic = get_lowest_item_list(device,port,isbn,proc_dict)
         proc_dict[multiprocessing.current_process().pid] = int(time.time())
-        #插入数据
-        db.insert_batch_lowest_price_result(result_dic,task_id,task_label,dd_product_id)
-        #更新账号时间戳
-        db.update_account_info_date(account)
-        #更新账号抓取记录
-        db.insert_account_log(account, ip, port, '1', "获取最低价")
+
+        if result_dic is None or len(result_dic) <= 0:
+            db.insert_account_log(account, ip, port, '33', "最低价获取失败")
+        else:
+            #插入数据
+            db.insert_batch_lowest_price_result(result_dic,task_id,task_label,dd_product_id)
+            #更新账号时间戳
+            db.update_account_info_date(account)
+            #更新账号抓取记录
+            db.insert_account_log(account, ip, port, '34', "获取最低价完成")
     except:
         log.error("run_item_lowest exception,port={}".format(port))
         log.error(traceback.format_exc())
