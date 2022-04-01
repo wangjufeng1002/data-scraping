@@ -225,7 +225,7 @@ def click_search(devices, name, random_policy, ip, port, account, phone):
         get_search_button(devices).click_exists(timeout=2)
 
 
-@func_set_timeout(30)
+#@func_set_timeout(30)
 def get_item_detail(item_id, devices, account, phone, sku):
     while devices.xpath("加入购物车").exists is False and devices.xpath("店内宝贝").exists is False and devices.xpath(
             "@com.taobao.taobao:id/uik_public_menu_action_icon").exists is False and devices.xpath(
@@ -300,7 +300,7 @@ def get_sku_name_2(device):
                 apply_text = text
                 ##查看是否有已选中的标签
         if device.xpath("购买数量").exists is False:
-            device.swipe_ext("up", scale=0.5)
+            device.swipe_ext("up", scale=0.7)
         else:
             break
     if edition_text is not None:
