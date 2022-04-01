@@ -561,7 +561,7 @@ def run_item(device, ip, port, account, item, random_policy, task_id, task_label
         url = 'http://detail.tmall.com/item.htm?id=' + str(item)
     # 搜索
     log.info(" run_item.click_search start,port={}".format(port))
-    click_search(device, url, random_policy, ip, port, account, phone)
+    click_search(device, url, port, phone)
     log.info(" run_item.click_search end,port={}".format(port))
     db.update_job_status(ip, port, '1')
     # 判断是否出现验证码
@@ -727,7 +727,7 @@ def proc_run(account, proc_dict):
         task_label =data.get('taskLabel',None)
         task_type = data.get('taskType',None)
         if task_label is None or task_id is None or products is None:
-            time.sleep(2)
+            time.sleep(3)
             continue
         try:
             #根据任务类型执行不同的抓取策略
