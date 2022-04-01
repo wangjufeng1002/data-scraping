@@ -246,7 +246,7 @@ def insert_batch_lowest_price_result(result_list,task_id,task_label,product_id):
         um.cursor.execute(query_sql)
         status = um.cursor.fetchone()
         #已经更新一次了，就return
-        if status is not  None and str(status) == '10':
+        if status is not  None and str(status) != '0' :
             return
         for original_info in original_infos:
             sql = "INSERT INTO lowest_price_product_record(task_id,task_label,dd_product_id,original_info,status,is_template,plat_form) " \
