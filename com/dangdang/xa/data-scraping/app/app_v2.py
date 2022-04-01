@@ -473,6 +473,7 @@ def get_lowest_detail(device,phone,port):
     device.xpath("复制链接").click()
     copy_text = device.clipboard
     short_url = re.search(u"】(.+?)「", copy_text).group(0).replace("】", '').replace('「', '').replace(' ', '')
+    device.set_clipboard('text', '')
     try:
         device.xpath("取消").click()
     except:
@@ -507,7 +508,7 @@ def get_lowest_item_list(device,port,query_key,proc_dict):
         device.xpath("@com.taobao.taobao:id/arrow").click()
         # 选择价格升序
         if device.xpath("价格升序").exists is True:
-            device.xpath("价格升序").click()
+            device.xpath("价格升序").long_click()
         if device.xpath("价格").exists is True:
             # 点击排序选择
             device.xpath("@com.taobao.taobao:id/up_arrow").click()
