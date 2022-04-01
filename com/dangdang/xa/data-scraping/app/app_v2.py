@@ -430,7 +430,7 @@ def get_lowest_detail(device,phone,port):
             if device.xpath("@com.taobao.taobao:id/lv_data").exists :
                 #这里应该有个小循环
                 loop = 0
-                while loop < 3:
+                while loop < 2:
                     container_all = device.xpath("@com.taobao.taobao:id/container").all()
                     for container in container_all:
                         child_el = device.xpath(container.get_xpath()).child('//android.widget.TextView').all()
@@ -445,7 +445,9 @@ def get_lowest_detail(device,phone,port):
             device.swipe_ext("up", scale=0.5)
     #店铺名称
     shop_name=''
-    while True:
+    shop_name_loop_total = 5
+    shop_name_loop_index = 0
+    while shop_name_loop_index < shop_name_loop_total:
         # 关闭下无用弹窗
         close_useless_popup(device)
         if device.xpath("进店逛逛").exists is True:
@@ -460,9 +462,13 @@ def get_lowest_detail(device,phone,port):
             print(shop_name)
             break
         else:
+            shop_name_loop_index += 1
             device.swipe_ext("up", scale=0.5)
     #短连接
-    device.xpath("ꄪ").click()
+    if device.xpath("ꄪ").exists is False:
+        device.xpath("@com.taobao.taobao:id/uik_public_menu_action_icon").click()
+    else:
+        device.xpath("ꄪ").click()
     time.sleep(0.3)
     device.xpath("复制链接").click()
     copy_text = device.clipboard
@@ -492,12 +498,20 @@ def get_lowest_detail(device,phone,port):
 
 #最低价-列表处理
 def get_lowest_item_list(device,port,query_key,proc_dict):
-    device = u2.connect("178061ed")
     # device.send_keys("9787505733183")
-    # 点击排序选择
-    device.xpath("@com.taobao.taobao:id/arrow").click()
-    # 选择价格升序
-    device.xpath("价格升序").click()
+    #判断下 价格是否单独是一个选择
+    if device.xpath("价格").exists is True:
+        # 点击排序选择
+        device.xpath("@com.taobao.taobao:id/up_arrow").click()
+    else:
+        device.xpath("@com.taobao.taobao:id/arrow").click()
+        # 选择价格升序
+        if device.xpath("价格升序").exists is True:
+            device.xpath("价格升序").click()
+        if device.xpath("价格").exists is True:
+            # 点击排序选择
+            device.xpath("@com.taobao.taobao:id/up_arrow").click()
+
     #休眠一下
     time.sleep(1)
     suc_name = set()
@@ -519,7 +533,7 @@ def get_lowest_item_list(device,port,query_key,proc_dict):
                 desc = view.attrib['content-desc']
                 if desc is None or desc == '':
                     continue
-                if '二手' in desc or '闲鱼' in desc or '电子' in desc or '印刷' in desc or '有声内容' in desc or '商品不存在等' in desc:
+                if '二手' in desc or '闲鱼' in desc or '电子书' in desc or '电子版' in desc or '印刷' in desc or '有声内容' in desc or '商品不存在等' in desc:
                     print('不合法的商品 = ' + view.attrib['content-desc'])
                     break
                 if '进店' in desc or '更多' in desc:
@@ -609,7 +623,7 @@ def run_item_lowest(device, ip, port, account, task_id, task_label, phone,produc
         return
     #搜索
     click_search(device, isbn, port,phone)
-
+    time.sleep(0.5)
     log.info(" run_item_lowest.click_search end,port={}".format(port))
     db.update_job_status(ip, port, '1')
     # 判断是否出现验证码
