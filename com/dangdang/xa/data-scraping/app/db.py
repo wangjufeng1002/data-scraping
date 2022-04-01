@@ -1,6 +1,7 @@
 from pymysql_comm import UsingMysql
 import datetime
-
+import json
+from pymysql.converters import escape_string
 
 def update_info(origin_text, item_id, task_id, task_label,sku):
     origin_text= origin_text.replace("'","").replace("\\","")
@@ -231,4 +232,22 @@ def update_record_info(origin_text, item_id, task_id, task_label,sku):
             sql = "update product_record set  original_info='{}',`status`=2 where item_id='{}' and task_id='{}' and task_label='{}' and `status`=0".format(
                 origin_text, item_id, task_id, task_label)
         um.cursor.execute(sql)
+        um._conn.commit()
+
+def insert_batch_lowest_price_result(result_list,task_id,task_label,product_id):
+    if len(result_list) <= 0:
+        return
+    original_infos = set()
+    for result in result_list:
+        original_infos.add(result['original_info'].replace("'", "").replace("\\", ""))
+    with UsingMysql()as um:
+        for original_info in original_infos:
+            sql = "INSERT INTO lowest_price_product_record(task_id,task_label,dd_product_id,original_info,status,is_template,plat_form) " \
+                  "VALUES('{}','{}','{}','{}','{}','{}','{}')".format(task_id,task_label,product_id,original_info,10,0,1)
+            um.cursor.execute(sql)
+        #完事再更新下模板状态
+        update_sql = "UPDATE lowest_price_product_record set status = 10 where task_id = '{}' and  task_label = '{}' " \
+                         "and dd_product_id= '{}'  and is_template = 1".format(task_id,task_label,product_id)
+
+        um.cursor.execute(update_sql)
         um._conn.commit()
