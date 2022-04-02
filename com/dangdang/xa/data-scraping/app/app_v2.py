@@ -418,8 +418,10 @@ def get_lowest_detail(device,phone,port):
         if item.text != '':
             content += item.text
     #开始下滑获取 基本信息，和 店铺名称
+    base_loop_total = 5
+    base_loop_index = 0
     base_dic = {}
-    while True:
+    while base_loop_index < base_loop_total:
         # 关闭下无用弹窗
         close_useless_popup(device)
         if device.xpath("参数").exists is True or device.xpath("产品参数").exists is True:
@@ -443,6 +445,10 @@ def get_lowest_detail(device,phone,port):
                 break
         else:
             device.swipe_ext("up", scale=0.5)
+            base_loop_index+=1
+            #进店逛逛都出来了，就不用再循环了，没有产品参数这个东西
+            if device.xpath("进店逛逛").exists is True:
+                break
     #店铺名称
     shop_name=''
     shop_name_loop_total = 5
@@ -465,20 +471,34 @@ def get_lowest_detail(device,phone,port):
             shop_name_loop_index += 1
             device.swipe_ext("up", scale=0.5)
     #短连接
-    if device.xpath("ꄪ").exists is False:
-        device.xpath("@com.taobao.taobao:id/uik_public_menu_action_icon").click()
-    else:
-        device.xpath("ꄪ").click()
-    time.sleep(0.3)
-    device.xpath("复制链接").click()
-    copy_text = device.clipboard
-    short_url = re.search(u"】(.+?)「", copy_text).group(0).replace("】", '').replace('「', '').replace(' ', '')
-    device.set_clipboard('text', '')
+    short_url = ''
+    shop_url_loop_total = 5
+    shop_url_loop_index = 0
+    try:
+        if device.xpath("ꄪ").exists is False:
+            device.xpath("@com.taobao.taobao:id/uik_public_menu_action_icon").click()
+        else:
+            device.xpath("ꄪ").click()
+        time.sleep(1)
+        device.set_clipboard('')
+        while short_url == '' and shop_url_loop_index < shop_url_loop_total:
+            wait = device.xpath("复制链接").wait(20)
+            if wait is None :
+                shop_url_loop_index += 1
+                continue
+            wait.click()
+            time.sleep(0.5)
+            short_url = copy_text = device.clipboard
+            if short_url != '':
+                short_url = re.search(u"】(.+?)「", copy_text).group(0).replace("】", '').replace('「', '').replace(' ', '')
+            device.set_clipboard('')
+            shop_url_loop_index += 1
+    except Exception as e:
+        log.info(traceback.format_exc())
     try:
         device.xpath("取消").click()
     except:
         pass
-
     ##拼接结果
     #拼接短连接
     content += '<@ ' + port + ' @>'
@@ -550,10 +570,14 @@ def get_lowest_item_list(device,port,query_key,proc_dict):
                 time.sleep(0.5)
                 #关闭下无用弹窗
                 close_useless_popup(device)
-                proc_dict[multiprocessing.current_process().pid] = int(time.time())
-                detail = get_lowest_detail(device, True, port=port)
-                proc_dict[multiprocessing.current_process().pid] = int(time.time())
-                suc_result.append(detail)
+                try:
+                    proc_dict[multiprocessing.current_process().pid] = int(time.time())
+                    detail = get_lowest_detail(device, True, port=port)
+                    print(detail)
+                    proc_dict[multiprocessing.current_process().pid] = int(time.time())
+                    suc_result.append(detail)
+                except:
+                    pass
                 #回到列表页
                 go_back_list(device, query_key=query_key)
             #这里再判断下是否回到了列表页
