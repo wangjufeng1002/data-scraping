@@ -808,39 +808,43 @@ def get_task_data(port):
 def check_thread(device: u2.Device, account, proc_dict):
     while True:
         try:
+            time.sleep(0.5)
             # # 关闭下无用弹窗
             close_useless_popup(device)
             # 浮层关闭按钮
             if device.xpath("浮层关闭按钮").exists is True:
                 device.xpath("浮层关闭按钮").click()
                 db.insert_account_log(account['account'], account['ip'], account['port'], '31', "检测到浮层")
-                return
+                time.sleep(2)
+                continue
             # 淘金币小镇正在拼命加载中
             if device.xpath("淘金币小镇正在拼命加载中").exists is True:
                 device.press("back")
                 db.insert_account_log(account['account'], account['ip'], account['port'], '31', "检测到加载淘金币")
-                return
+                time.sleep(2)
+                continue
             # 赚金币
             if device.xpath("赚金币").exists is True:
                 device.press("back")
                 db.insert_account_log(account['account'], account['ip'], account['port'], '31', "赚金币")
-                return
+                time.sleep(2)
+                continue
             # 网络崩溃
             if device.xpath("网络竟然崩溃了").exists is True:
                 device.press("back")
                 db.insert_account_log(account['account'], account['ip'], account['port'], '31', "网络异常")
-                return
+                continue
             # 检测滑块
             if check_slider(device, account['account'], account['ip'], account['port'], False) is False:
                 time.sleep(2)
-                return
+                continue
             # 软件更新
             if device.xpath("软件更新").exists is True and device.xpath("查看详情").exists is True:
                 db.insert_account_log(account['account'], account['ip'], account['port'], '31', "系统软件更新提示")
                 device.xpath("查看详情").click()
                 time.sleep(0.2)
                 device.press("back")
-                return
+                continue
             # 屏幕截图
             if proc_dict[multiprocessing.current_process().pid] is not None and (
                     int(time.time()) - proc_dict[multiprocessing.current_process().pid]) > 30:
