@@ -437,7 +437,7 @@ def get_lowest_detail(device,phone,port):
                     for container in container_all:
                         child_el = device.xpath(container.get_xpath()).child('//android.widget.TextView').all()
                         if len(child_el) >=2:
-                            base_dic[child_el[0].text]=child_el[1].text
+                            base_dic[child_el[0].text.replace("\"",'').replace("\'",'')]=child_el[1].text.replace("\"",'').replace("\'",'')
                     device.swipe_ext("up", scale=0.3)
                     loop+=1
                 print(base_dic)
