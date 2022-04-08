@@ -432,7 +432,7 @@ def get_lowest_detail(device,phone,port):
             if device.xpath("@com.taobao.taobao:id/lv_data").exists :
                 #这里应该有个小循环
                 loop = 0
-                while loop < 2:
+                while loop < 3:
                     container_all = device.xpath("@com.taobao.taobao:id/container").all()
                     for container in container_all:
                         child_el = device.xpath(container.get_xpath()).child('//android.widget.TextView').all()
